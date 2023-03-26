@@ -1,4 +1,4 @@
-import { RxNStore } from "rx-store-core/main/interfaces";
+import { RxNStore } from "rx-store-types";
 import {
   FormController,
   FormControlData,

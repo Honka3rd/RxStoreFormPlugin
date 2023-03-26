@@ -18,8 +18,8 @@
   },
   "homepage": "https://github.com/Honka3rd/RxStoreFormPlugin#readme",
   "dependencies": {
-    "rx-store-core": "^1.2.7",
     "immutable": "^4.2.2",
+    "rx-store-types": "^1.0.0",
     "rxjs": "^7.8.0",
     "typescript": "5.0.2"
   }

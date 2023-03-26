@@ -1,4 +1,4 @@
-import { RxNStore } from "rx-store-core/main/interfaces";
+import { RxNStore } from "rx-store-types";
 
 export type Any = {
   [K: string]: any;
