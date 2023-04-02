@@ -1,4 +1,5 @@
-import { RxNStore } from "rx-store-types";
+import { RxNStore, Subscribable } from "rx-store-types";
+import { Observable } from "rxjs";
 
 export type Any = {
   [K: string]: any;
@@ -18,21 +19,20 @@ export type FormControlBasicDatum = {
   changed: boolean;
   focused: boolean;
   hovered: boolean;
-  metadata: FormControlBasicMetadata;
 };
 
 export interface FormControlBasicDatumAsync extends FormControlBasicDatum {
-  validating: boolean;
-  validated: boolean;
-  failed: boolean;
+  validating?: boolean;
+  validated?: boolean;
+  failed?: boolean;
 }
 
-export type FormControlData = FormControlBasicDatum[];
-export type FormControlDataMixed = Array<
-  FormControlBasicDatum | FormControlBasicDatumAsync
->;
+export type FormControlData = FormControlBasicDatumAsync[];
 
-export interface FormController<F extends FormControlData> {
+export interface FormController<
+  F extends FormControlData,
+  M extends Record<F[number]["field"], FormControlBasicMetadata>
+> {
   changeFormDatum: <N extends number>(
     field: F[N]["field"],
     value: F[N]["value"]
@@ -40,15 +40,10 @@ export interface FormController<F extends FormControlData> {
 
   resetFormDatum: <N extends number>(field: F[N]["field"]) => this;
 
-  createFormDatum: (
-    fields: Array<{
-      field: F[number]["field"];
-      defaultValue: F[number]["value"];
-      defaultMeta?: F[number]["metadata"];
-    }>
-  ) => this;
-
-  deleteFormDatum: (fields: Array<F[number]["field"]>) => this;
+  updateFormFields: (fields: Array<{
+    field: F[number]["field"];
+    defaultValue?: F[number]["value"];
+  }>) => this;
 
   resetFormAll: () => this;
 
@@ -69,29 +64,19 @@ export interface FormController<F extends FormControlData> {
     hoverOrNot: boolean
   ) => this;
 
-  setFormMetadata: <N extends number>(
-    field: F[N]["field"],
-    meta: F[N]["metadata"]
-  ) => this;
+  initiator: (connector: RxNStore<Any> & Subscribable<Any>) => F;
 
-  setFormMetadataErrors: <N extends number>(
-    field: F[N]["field"],
-    errors: F[N]["metadata"]["errors"]
-  ) => this;
+  validator: (formData: F) => Partial<M>;
 
-  setFormMetadataInfo: <N extends number>(
-    field: F[N]["field"],
-    info: F[N]["metadata"]["info"]
-  ) => this;
-
-  setFormMetadataWarn: <N extends number>(
-    field: F[N]["field"],
-    warn: F[N]["metadata"]["warn"]
-  ) => this;
-
-  initiator: (connector: RxNStore<Any>) => F;
-
-  validator: <N extends number>(formData: F[N]) => F[N]["metadata"];
+  asyncValidator?: (
+    formData: F
+  ) =>
+    | Observable<Partial<M>>
+    | Promise<Partial<M>>;
 
   getFormSelector: () => string;
+
+  startObserve: (callback: (meta: Partial<M>) => void) => this;
+
+  stopObserve: () => void;
 }
