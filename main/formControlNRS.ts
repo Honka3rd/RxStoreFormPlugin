@@ -201,18 +201,24 @@ class FormControllerImpl<
           const async$ = this.asyncValidator!(asyncFormData);
           const reduced$ = async$ instanceof Promise ? from(async$) : async$;
           return reduced$.pipe(
-            map((meta) => ({ success: true, meta })),
             catchError(() => {
-              this.setAsyncState(asyncFields, AsyncState.ERROR);
               return of({
                 success: false,
                 meta: syncMeta,
               });
             }),
+            map((meta) => {
+              if ("success" in meta) {
+                return meta;
+              }
+              return { success: true, meta };
+            }),
             tap(({ success }) => {
               if (success) {
                 this.setAsyncState(asyncFields, AsyncState.DONE);
+                return;
               }
+              this.setAsyncState(asyncFields, AsyncState.ERROR);
             }),
             map(({ meta, success }) => {
               if (!success) {
