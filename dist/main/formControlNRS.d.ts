@@ -1,5 +1,5 @@
 import { RxNStore, Subscribable } from "rx-store-types";
-import { FormController, FormControlData, Any, FormControlBasicMetadata } from "./interfaces";
+import { FormController, FormControlData, Any, FormControlBasicMetadata, FormStubs } from "./interfaces";
 import { Observable } from "rxjs";
 declare class FormControllerImpl<F extends FormControlData, M extends Record<F[number]["field"], FormControlBasicMetadata>, S extends string> implements FormController<F, M> {
     private formSelector;
@@ -12,10 +12,7 @@ declare class FormControllerImpl<F extends FormControlData, M extends Record<F[n
     private unobserve?;
     private unobserveAsync?;
     private unobserveMeta?;
-    constructor(formSelector: S, validator: (formData: F) => Partial<M>, asyncValidator?: ((formData: F) => Observable<Partial<M>> | Promise<Partial<M>>) | undefined, fields?: {
-        field: F[number]["field"];
-        defaultValue: F[number]["value"];
-    }[] | undefined, metaComparator?: ((meta1: Partial<M>, meta2: Partial<M>) => boolean) | undefined);
+    constructor(formSelector: S, validator: (formData: F) => Partial<M>, asyncValidator?: ((formData: F) => Observable<Partial<M>> | Promise<Partial<M>>) | undefined, fields?: FormStubs<F> | undefined, metaComparator?: ((meta1: Partial<M>, meta2: Partial<M>) => boolean) | undefined);
     private reportNoneConnectedError;
     private safeExecute;
     private shallowCloneFormData;
@@ -28,6 +25,10 @@ declare class FormControllerImpl<F extends FormControlData, M extends Record<F[n
     private removeDataByFields;
     private appendDataByFields;
     private validatorExecutor;
+    private setAsyncState;
+    getMeta(): Partial<M> | undefined;
+    getFieldMeta(field: F[number]["field"]): Partial<M>[F[number]["field"]] | undefined;
+    getFieldsMeta(fields: F[number]["field"][]): Partial<M>;
     private asyncValidatorExecutor;
     getFormSelector(): S;
     private observeMeta;

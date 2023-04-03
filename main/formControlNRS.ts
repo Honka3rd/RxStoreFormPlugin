@@ -5,7 +5,8 @@ import {
   Any,
   FormControlBasicDatum,
   FormControlBasicMetadata,
-  FormControlBasicDatumAsync,
+  AsyncState,
+  FormStubs,
 } from "./interfaces";
 import {
   Observable,
@@ -13,6 +14,10 @@ import {
   distinctUntilChanged,
   switchMap,
   from,
+  map,
+  of,
+  catchError,
+  tap,
 } from "rxjs";
 
 class FormControllerImpl<
@@ -33,10 +38,7 @@ class FormControllerImpl<
     public asyncValidator?: (
       formData: F
     ) => Observable<Partial<M>> | Promise<Partial<M>>,
-    private fields?: Array<{
-      field: F[number]["field"];
-      defaultValue: F[number]["value"];
-    }>,
+    private fields?: FormStubs<F>,
     private metaComparator?: (meta1: Partial<M>, meta2: Partial<M>) => boolean
   ) {}
 
@@ -75,7 +77,7 @@ class FormControllerImpl<
   private findFromClonedAndExecute(
     field: F[number]["field"],
     cloned: F,
-    callback: <D extends FormControlBasicDatumAsync>(found: D) => void
+    callback: <D extends FormControlBasicDatum>(found: D) => void
   ) {
     const found = this.findDatumByField(cloned, field);
     if (found) {
@@ -114,13 +116,7 @@ class FormControllerImpl<
     });
   }
 
-  private appendDataByFields(
-    fields: Array<{
-      field: F[number]["field"];
-      defaultValue?: F[number]["value"];
-    }>,
-    data: F
-  ) {
+  private appendDataByFields(fields: FormStubs<F>, data: F) {
     fields.forEach(({ defaultValue, field }) => {
       data.push({
         field,
@@ -143,25 +139,94 @@ class FormControllerImpl<
     });
   }
 
+  private setAsyncState(fields: F[number]["field"][], state: AsyncState) {
+    this.safeExecute((connector) => {
+      const cloned = connector.getClonedState(this.formSelector);
+      fields.forEach((field) => {
+        const found = cloned.find((c) => c.field === field);
+        if (found) {
+          found.asyncState = state;
+        }
+      });
+      this.commitMutation(cloned, connector);
+    });
+  }
+
+  getMeta() {
+    return this.metadata$?.value;
+  }
+
+  getFieldMeta(field: F[number]["field"]) {
+    return this.getMeta()?.[field];
+  }
+
+  getFieldsMeta(fields: F[number]["field"][]) {
+    return fields.reduce((acc, next) => {
+      acc[next] = this.getMeta()?.[next];
+      return acc;
+    }, {} as Partial<M>);
+  }
+
   private asyncValidatorExecutor(
     connector: RxNStore<Record<S, () => F>> & Subscribable<Record<S, () => F>>
   ) {
     if (!this.asyncValidator) {
-      return () => {};
+      return;
     }
+    const comparatorMap = connector.getComparatorMap();
+    const specCompare = comparatorMap?.[this.formSelector];
+    const compare = specCompare ? specCompare : connector.comparator;
     const subscription = connector
       .getDataSource()
       .pipe(
-        distinctUntilChanged(connector.comparator),
-        switchMap((formData) => {
-          const async$ = this.asyncValidator!(formData);
-          if (async$ instanceof Promise) {
-            return from(async$);
+        map((states) => states[this.formSelector]),
+        map(
+          (formData) =>
+            formData.filter(({ isAsync }) => isAsync) as {
+              [K in keyof Record<S, () => F>]: ReturnType<
+                Record<S, () => F>[K]
+              >;
+            }[S]
+        ),
+        distinctUntilChanged(compare),
+        switchMap((asyncFormData) => {
+          const asyncFields = asyncFormData.map(({ field }) => field);
+          const syncMeta = this.getFieldsMeta(asyncFields);
+
+          if (!asyncFormData.length) {
+            return of(syncMeta);
           }
-          return async$;
+
+          this.setAsyncState(asyncFields, AsyncState.PENDING);
+          const async$ = this.asyncValidator!(asyncFormData);
+          const reduced$ = async$ instanceof Promise ? from(async$) : async$;
+          return reduced$.pipe(
+            map((meta) => ({ success: true, meta })),
+            catchError(() => {
+              this.setAsyncState(asyncFields, AsyncState.ERROR);
+              return of({
+                success: false,
+                meta: syncMeta,
+              });
+            }),
+            tap(({ success }) => {
+              if (success) {
+                this.setAsyncState(asyncFields, AsyncState.DONE);
+              }
+            }),
+            map(({ meta, success }) => {
+              if (!success) {
+                return syncMeta;
+              }
+              return {
+                ...syncMeta,
+                ...meta,
+              };
+            })
+          );
         })
       )
-      .subscribe((meta) => this.safeCommitMeta(meta));
+      .subscribe((meta) => meta && this.safeCommitMeta(meta));
     return () => subscription.unsubscribe();
   }
 
@@ -246,7 +311,7 @@ class FormControllerImpl<
         found.hovered = defaultDatum.hovered;
         found.touched = defaultDatum.touched;
         found.value = defaultDatum.value;
-        return;
+        return this;
       }
       this.removeDataByFields([field], data);
     });

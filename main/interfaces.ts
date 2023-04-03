@@ -11,6 +11,12 @@ export type FormControlBasicMetadata = {
   warn?: any;
 };
 
+export enum AsyncState {
+  PENDING,
+  DONE,
+  ERROR,
+}
+
 export type FormControlBasicDatum = {
   field: string;
   value: any;
@@ -19,15 +25,17 @@ export type FormControlBasicDatum = {
   changed: boolean;
   focused: boolean;
   hovered: boolean;
+  asyncState?: AsyncState;
+  isAsync?: boolean;
 };
 
-export interface FormControlBasicDatumAsync extends FormControlBasicDatum {
-  validating?: boolean;
-  validated?: boolean;
-  failed?: boolean;
-}
+export type FormControlData = FormControlBasicDatum[];
 
-export type FormControlData = FormControlBasicDatumAsync[];
+export type FormStubs<F extends FormControlBasicDatum[]> = Array<{
+  field: F[number]["field"];
+  defaultValue?: F[number]["value"];
+  isAsync?: boolean;
+}>
 
 export interface FormController<
   F extends FormControlData,
@@ -40,10 +48,12 @@ export interface FormController<
 
   resetFormDatum: <N extends number>(field: F[N]["field"]) => this;
 
-  updateFormFields: (fields: Array<{
-    field: F[number]["field"];
-    defaultValue?: F[number]["value"];
-  }>) => this;
+  updateFormFields: (
+    fields: Array<{
+      field: F[number]["field"];
+      defaultValue?: F[number]["value"];
+    }>
+  ) => this;
 
   resetFormAll: () => this;
 
@@ -70,13 +80,17 @@ export interface FormController<
 
   asyncValidator?: (
     formData: F
-  ) =>
-    | Observable<Partial<M>>
-    | Promise<Partial<M>>;
+  ) => Observable<Partial<M>> | Promise<Partial<M>>;
 
   getFormSelector: () => string;
 
   startObserve: (callback: (meta: Partial<M>) => void) => this;
 
   stopObserve: () => void;
+
+  getMeta(): Partial<M> | undefined;
+
+  getFieldMeta(field: F[number]["field"]): Partial<M>[F[number]["field"]] | undefined;
+
+  getFieldsMeta(fields: F[number]["field"][]): Partial<M>
 }

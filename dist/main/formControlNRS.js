@@ -11,6 +11,7 @@ var __assign = (this && this.__assign) || function () {
     return __assign.apply(this, arguments);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+var interfaces_1 = require("./interfaces");
 var rxjs_1 = require("rxjs");
 var FormControllerImpl = /** @class */ (function () {
     function FormControllerImpl(formSelector, validator, asyncValidator, fields, metaComparator) {
@@ -96,21 +97,82 @@ var FormControllerImpl = /** @class */ (function () {
             _this.safeCommitMeta(meta);
         });
     };
+    FormControllerImpl.prototype.setAsyncState = function (fields, state) {
+        var _this = this;
+        this.safeExecute(function (connector) {
+            var cloned = connector.getClonedState(_this.formSelector);
+            fields.forEach(function (field) {
+                var found = cloned.find(function (c) { return c.field === field; });
+                if (found) {
+                    found.asyncState = state;
+                }
+            });
+            _this.commitMutation(cloned, connector);
+        });
+    };
+    FormControllerImpl.prototype.getMeta = function () {
+        var _a;
+        return (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.value;
+    };
+    FormControllerImpl.prototype.getFieldMeta = function (field) {
+        var _a;
+        return (_a = this.getMeta()) === null || _a === void 0 ? void 0 : _a[field];
+    };
+    FormControllerImpl.prototype.getFieldsMeta = function (fields) {
+        var _this = this;
+        return fields.reduce(function (acc, next) {
+            var _a;
+            acc[next] = (_a = _this.getMeta()) === null || _a === void 0 ? void 0 : _a[next];
+            return acc;
+        }, {});
+    };
     FormControllerImpl.prototype.asyncValidatorExecutor = function (connector) {
         var _this = this;
         if (!this.asyncValidator) {
-            return function () { };
+            return;
         }
+        var comparatorMap = connector.getComparatorMap();
+        var specCompare = comparatorMap === null || comparatorMap === void 0 ? void 0 : comparatorMap[this.formSelector];
+        var compare = specCompare ? specCompare : connector.comparator;
         var subscription = connector
             .getDataSource()
-            .pipe((0, rxjs_1.distinctUntilChanged)(connector.comparator), (0, rxjs_1.switchMap)(function (formData) {
-            var async$ = _this.asyncValidator(formData);
-            if (async$ instanceof Promise) {
-                return (0, rxjs_1.from)(async$);
+            .pipe((0, rxjs_1.map)(function (states) { return states[_this.formSelector]; }), (0, rxjs_1.map)(function (formData) {
+            return formData.filter(function (_a) {
+                var isAsync = _a.isAsync;
+                return isAsync;
+            });
+        }), (0, rxjs_1.distinctUntilChanged)(compare), (0, rxjs_1.switchMap)(function (asyncFormData) {
+            var asyncFields = asyncFormData.map(function (_a) {
+                var field = _a.field;
+                return field;
+            });
+            var syncMeta = _this.getFieldsMeta(asyncFields);
+            if (!asyncFormData.length) {
+                return (0, rxjs_1.of)(syncMeta);
             }
-            return async$;
+            _this.setAsyncState(asyncFields, interfaces_1.AsyncState.PENDING);
+            var async$ = _this.asyncValidator(asyncFormData);
+            var reduced$ = async$ instanceof Promise ? (0, rxjs_1.from)(async$) : async$;
+            return reduced$.pipe((0, rxjs_1.map)(function (meta) { return ({ success: true, meta: meta }); }), (0, rxjs_1.catchError)(function () {
+                _this.setAsyncState(asyncFields, interfaces_1.AsyncState.ERROR);
+                return (0, rxjs_1.of)({
+                    success: false,
+                    meta: syncMeta,
+                });
+            }), (0, rxjs_1.tap)(function (_a) {
+                var success = _a.success;
+                if (success) {
+                    _this.setAsyncState(asyncFields, interfaces_1.AsyncState.DONE);
+                }
+            }), (0, rxjs_1.map)(function (_a) {
+                var meta = _a.meta, success = _a.success;
+                if (!success) {
+                    return syncMeta;
+                }
+                return __assign(__assign({}, syncMeta), meta);
+            }));
         }))
-            .subscribe(function (meta) { return _this.safeCommitMeta(meta); });
+            .subscribe(function (meta) { return meta && _this.safeCommitMeta(meta); });
         return function () { return subscription.unsubscribe(); };
     };
     FormControllerImpl.prototype.getFormSelector = function () {
@@ -180,7 +242,7 @@ var FormControllerImpl = /** @class */ (function () {
                 found.hovered = defaultDatum.hovered;
                 found.touched = defaultDatum.touched;
                 found.value = defaultDatum.value;
-                return;
+                return _this;
             }
             _this.removeDataByFields([field], data);
         });
