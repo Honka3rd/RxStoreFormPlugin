@@ -14,12 +14,28 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var interfaces_1 = require("./interfaces");
 var rxjs_1 = require("rxjs");
 var FormControllerImpl = /** @class */ (function () {
-    function FormControllerImpl(formSelector, validator, asyncValidator, fields, metaComparator) {
+    function FormControllerImpl(formSelector, validator, asyncValidator, fields, metaComparator, metaComparatorMap, cloneFunction, cloneFunctionMap) {
+        var _this = this;
         this.formSelector = formSelector;
         this.validator = validator;
         this.asyncValidator = asyncValidator;
         this.fields = fields;
         this.metaComparator = metaComparator;
+        this.metaComparatorMap = metaComparatorMap;
+        this.cloneFunction = cloneFunction;
+        this.cloneFunctionMap = cloneFunctionMap;
+        this.getAsyncFields = function (connector) {
+            return connector
+                .getState(_this.formSelector)
+                .filter(function (_a) {
+                var type = _a.type;
+                return type === interfaces_1.DatumType.ASYNC;
+            })
+                .map(function (_a) {
+                var field = _a.field;
+                return field;
+            });
+        };
     }
     FormControllerImpl.prototype.reportNoneConnectedError = function () {
         throw Error("initiator method is not called");
@@ -78,7 +94,7 @@ var FormControllerImpl = /** @class */ (function () {
     };
     FormControllerImpl.prototype.appendDataByFields = function (fields, data) {
         fields.forEach(function (_a) {
-            var defaultValue = _a.defaultValue, field = _a.field;
+            var defaultValue = _a.defaultValue, field = _a.field, type = _a.type;
             data.push({
                 field: field,
                 touched: false,
@@ -87,6 +103,7 @@ var FormControllerImpl = /** @class */ (function () {
                 hovered: false,
                 focused: false,
                 value: defaultValue,
+                type: type ? type : interfaces_1.DatumType.SYNC,
             });
         });
     };
@@ -97,34 +114,18 @@ var FormControllerImpl = /** @class */ (function () {
             _this.safeCommitMeta(meta);
         });
     };
-    FormControllerImpl.prototype.setAsyncState = function (fields, state) {
-        var _this = this;
-        this.safeExecute(function (connector) {
-            var cloned = connector.getClonedState(_this.formSelector);
-            fields.forEach(function (field) {
-                var found = cloned.find(function (c) { return c.field === field; });
-                if (found) {
-                    found.asyncState = state;
-                }
-            });
-            _this.commitMutation(cloned, connector);
+    FormControllerImpl.prototype.getExcludedMeta = function (connector) {
+        var excluded = connector
+            .getState(this.formSelector)
+            .filter(function (_a) {
+            var type = _a.type;
+            return type === interfaces_1.DatumType.EXCLUDED;
+        })
+            .map(function (_a) {
+            var field = _a.field;
+            return field;
         });
-    };
-    FormControllerImpl.prototype.getMeta = function () {
-        var _a;
-        return (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.value;
-    };
-    FormControllerImpl.prototype.getFieldMeta = function (field) {
-        var _a;
-        return (_a = this.getMeta()) === null || _a === void 0 ? void 0 : _a[field];
-    };
-    FormControllerImpl.prototype.getFieldsMeta = function (fields) {
-        var _this = this;
-        return fields.reduce(function (acc, next) {
-            var _a;
-            acc[next] = (_a = _this.getMeta()) === null || _a === void 0 ? void 0 : _a[next];
-            return acc;
-        }, {});
+        return this.getFieldsMeta(excluded);
     };
     FormControllerImpl.prototype.asyncValidatorExecutor = function (connector) {
         var _this = this;
@@ -136,46 +137,91 @@ var FormControllerImpl = /** @class */ (function () {
         var compare = specCompare ? specCompare : connector.comparator;
         var subscription = connector
             .getDataSource()
-            .pipe((0, rxjs_1.map)(function (states) { return states[_this.formSelector]; }), (0, rxjs_1.map)(function (formData) {
+            .pipe((0, rxjs_1.map)(function (states) { return states[_this.formSelector]; }), (0, rxjs_1.distinctUntilChanged)(compare), (0, rxjs_1.map)(function (formData) {
             return formData.filter(function (_a) {
-                var isAsync = _a.isAsync;
-                return isAsync;
+                var type = _a.type;
+                return type === interfaces_1.DatumType.ASYNC;
             });
-        }), (0, rxjs_1.distinctUntilChanged)(compare), (0, rxjs_1.switchMap)(function (asyncFormData) {
-            var asyncFields = asyncFormData.map(function (_a) {
-                var field = _a.field;
-                return field;
-            });
-            var syncMeta = _this.getFieldsMeta(asyncFields);
+        }), (0, rxjs_1.switchMap)(function (asyncFormData) {
             if (!asyncFormData.length) {
-                return (0, rxjs_1.of)(syncMeta);
+                return (0, rxjs_1.of)(_this.getMeta());
             }
-            _this.setAsyncState(asyncFields, interfaces_1.AsyncState.PENDING);
+            _this.setAsyncState(interfaces_1.AsyncState.PENDING);
             var async$ = _this.asyncValidator(asyncFormData);
             var reduced$ = async$ instanceof Promise ? (0, rxjs_1.from)(async$) : async$;
-            return reduced$.pipe((0, rxjs_1.map)(function (meta) { return ({ success: true, meta: meta }); }), (0, rxjs_1.catchError)(function () {
-                _this.setAsyncState(asyncFields, interfaces_1.AsyncState.ERROR);
+            return reduced$.pipe((0, rxjs_1.catchError)(function () {
                 return (0, rxjs_1.of)({
                     success: false,
-                    meta: syncMeta,
+                    meta: _this.getMeta(),
                 });
+            }), (0, rxjs_1.map)(function (meta) {
+                if ("success" in meta) {
+                    return meta;
+                }
+                return { success: true, meta: meta };
             }), (0, rxjs_1.tap)(function (_a) {
                 var success = _a.success;
                 if (success) {
-                    _this.setAsyncState(asyncFields, interfaces_1.AsyncState.DONE);
+                    _this.setAsyncState(interfaces_1.AsyncState.DONE);
+                    return;
                 }
+                _this.setAsyncState(interfaces_1.AsyncState.ERROR);
             }), (0, rxjs_1.map)(function (_a) {
                 var meta = _a.meta, success = _a.success;
                 if (!success) {
-                    return syncMeta;
+                    return meta;
                 }
-                return __assign(__assign({}, syncMeta), meta);
+                return __assign(__assign(__assign({}, _this.getMeta()), meta), _this.getExcludedMeta(connector));
             }));
         }))
             .subscribe(function (meta) { return meta && _this.safeCommitMeta(meta); });
         return function () { return subscription.unsubscribe(); };
     };
-    FormControllerImpl.prototype.getFormSelector = function () {
+    FormControllerImpl.prototype.setAsyncState = function (state) {
+        var _this = this;
+        this.safeExecute(function (connector) {
+            var cloned = connector.getClonedState(_this.formSelector);
+            _this.getAsyncFields(connector).forEach(function (field) {
+                var found = cloned.find(function (c) { return c.field === field; });
+                if (found) {
+                    found.asyncState = state;
+                }
+            });
+            _this.commitMutation(cloned, connector);
+        });
+    };
+    FormControllerImpl.prototype.getMeta = function () {
+        var _a;
+        return __assign({}, (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.value);
+    };
+    FormControllerImpl.prototype.getClonedMetaByField = function (field) {
+        var _a;
+        var meta = this.getMeta();
+        var clone = ((_a = this.cloneFunctionMap) === null || _a === void 0 ? void 0 : _a[field])
+            ? this.cloneFunctionMap[field]
+            : this.cloneFunction;
+        var target = meta[field];
+        if (clone && target) {
+            return clone(target);
+        }
+        return target;
+    };
+    FormControllerImpl.prototype.getFieldMeta = function (field) {
+        var _a;
+        return (_a = this.getMeta()) === null || _a === void 0 ? void 0 : _a[field];
+    };
+    FormControllerImpl.prototype.getFieldsMeta = function (fields) {
+        var _this = this;
+        return fields.reduce(function (acc, next) {
+            var _a;
+            var meta = (_a = _this.getMeta()) === null || _a === void 0 ? void 0 : _a[next];
+            if (meta !== undefined) {
+                acc[next] = meta;
+            }
+            return acc;
+        }, {});
+    };
+    FormControllerImpl.prototype.selector = function () {
         return this.formSelector;
     };
     FormControllerImpl.prototype.observeMeta = function (callback) {
@@ -183,20 +229,21 @@ var FormControllerImpl = /** @class */ (function () {
         var subscription = (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.pipe((0, rxjs_1.distinctUntilChanged)(this.metaComparator)).subscribe(callback);
         return function () { return subscription === null || subscription === void 0 ? void 0 : subscription.unsubscribe(); };
     };
-    FormControllerImpl.prototype.startObserve = function (callback) {
-        var _this = this;
-        this.safeExecute(function (connector) {
-            _this.unobserve = _this.validatorExecutor(connector);
-            _this.unobserveAsync = _this.asyncValidatorExecutor(connector);
-            _this.unobserveMeta = _this.observeMeta(callback);
-        });
-        return this;
+    FormControllerImpl.prototype.observeMetaByField = function (field, callback) {
+        var _a, _b;
+        var subscription = (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.pipe((0, rxjs_1.map)(function (meta) { return meta[field]; }), (0, rxjs_1.distinctUntilChanged)((_b = this.metaComparatorMap) === null || _b === void 0 ? void 0 : _b[field])).subscribe(callback);
+        return function () { return subscription === null || subscription === void 0 ? void 0 : subscription.unsubscribe(); };
     };
-    FormControllerImpl.prototype.stopObserve = function () {
-        var _a, _b, _c;
-        (_a = this.unobserve) === null || _a === void 0 ? void 0 : _a.call(this);
-        (_b = this.unobserveAsync) === null || _b === void 0 ? void 0 : _b.call(this);
-        (_c = this.unobserveMeta) === null || _c === void 0 ? void 0 : _c.call(this);
+    FormControllerImpl.prototype.startValidation = function () {
+        var _this = this;
+        return this.safeExecute(function (connector) {
+            var stopSyncValidation = _this.validatorExecutor(connector);
+            var stopAsyncValidation = _this.asyncValidatorExecutor(connector);
+            return {
+                stopSyncValidation: stopSyncValidation,
+                stopAsyncValidation: stopAsyncValidation,
+            };
+        });
     };
     FormControllerImpl.prototype.initiator = function (connector) {
         if (connector && !this.connector) {
@@ -205,7 +252,7 @@ var FormControllerImpl = /** @class */ (function () {
         }
         if (this.fields) {
             return this.fields.map(function (_a) {
-                var field = _a.field, defaultValue = _a.defaultValue;
+                var field = _a.field, defaultValue = _a.defaultValue, type = _a.type;
                 return ({
                     field: field,
                     touched: false,
@@ -214,6 +261,7 @@ var FormControllerImpl = /** @class */ (function () {
                     hovered: false,
                     focused: false,
                     value: defaultValue,
+                    type: type ? type : interfaces_1.DatumType.SYNC,
                 });
             });
         }
@@ -228,6 +276,12 @@ var FormControllerImpl = /** @class */ (function () {
     FormControllerImpl.prototype.hoverFormField = function (field, hoverOrNot) {
         this.safeCommitMutation(field, function (found) {
             found.hovered = hoverOrNot;
+        });
+        return this;
+    };
+    FormControllerImpl.prototype.changeFieldType = function (field, type) {
+        this.safeCommitMutation(field, function (found) {
+            found.type = type;
         });
         return this;
     };
@@ -280,54 +334,37 @@ var FormControllerImpl = /** @class */ (function () {
         });
         return this;
     };
-    FormControllerImpl.prototype.createFormDatum = function (fields) {
+    FormControllerImpl.prototype.appendFormData = function (fields) {
         var _this = this;
-        return this.safeExecute(function (connector) {
-            return _this.safeClone(function (data) {
-                _this.appendDataByFields(fields, data);
-                return data;
-            });
-        });
-    };
-    FormControllerImpl.prototype.fieldsDiff = function (fields) {
-        var _this = this;
-        var _a;
-        var created = [];
-        var removed = [];
-        fields.forEach(function (datum) {
-            var _a;
-            if (!Boolean((_a = _this.fields) === null || _a === void 0 ? void 0 : _a.find(function (f) { return f.field === datum.field; }))) {
-                created.push(datum);
-            }
-        });
-        (_a = this.fields) === null || _a === void 0 ? void 0 : _a.forEach(function (datum) {
-            if (!Boolean(fields === null || fields === void 0 ? void 0 : fields.find(function (f) { return f.field === datum.field; }))) {
-                removed.push(datum.field);
-            }
-        });
-        return {
-            created: created,
-            removed: removed,
-        };
-    };
-    FormControllerImpl.prototype.updateFormFields = function (fields) {
-        var _this = this;
-        var _a = this.fieldsDiff(fields), created = _a.created, removed = _a.removed;
-        var createdData = this.createFormDatum(created);
         this.safeExecute(function (connector) {
-            var formData = connector.getClonedState(_this.formSelector);
-            removed.forEach(function (field) {
-                var delIndex = formData.findIndex(function (f) { return f.field === field; });
-                if (delIndex > -1) {
-                    formData.splice(formData.findIndex(function (f) { return f.field === field; }), 1);
-                }
-            });
-            createdData === null || createdData === void 0 ? void 0 : createdData.forEach(function (datum) {
-                formData.push(datum);
-            });
-            _this.commitMutation(formData, connector);
+            var data = connector.getClonedState(_this.formSelector);
+            _this.appendDataByFields(fields, data);
+            _this.commitMutation(data, connector);
         });
-        return this;
+    };
+    FormControllerImpl.prototype.removeFormData = function (fields) {
+        var _this = this;
+        this.safeExecute(function (connector) {
+            var data = connector.getClonedState(_this.formSelector);
+            _this.removeDataByFields(fields, data);
+            _this.commitMutation(data, connector);
+        });
+    };
+    FormControllerImpl.prototype.setMetadata = function (meta) {
+        var _this = this;
+        this.safeExecute(function () {
+            var _a;
+            (_a = _this.metadata$) === null || _a === void 0 ? void 0 : _a.next(__assign(__assign({}, _this.metadata$.value), meta));
+        });
+    };
+    FormControllerImpl.prototype.setMetaByField = function (field, metaOne) {
+        var _this = this;
+        this.safeExecute(function () {
+            var _a;
+            var meta = _this.getMeta();
+            meta[field] = metaOne;
+            (_a = _this.metadata$) === null || _a === void 0 ? void 0 : _a.next(meta);
+        });
     };
     return FormControllerImpl;
 }());
