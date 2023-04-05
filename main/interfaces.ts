@@ -1,9 +1,5 @@
-import { RxNStore, Subscribable } from "rx-store-types";
+import { RxStore, Subscribable, Any } from "rx-store-types";
 import { Observable } from "rxjs";
-
-export type Any = {
-  [K: string]: any;
-};
 
 export type FormControlBasicMetadata = {
   errors: Any;
@@ -73,7 +69,7 @@ export interface FormController<
     hoverOrNot: boolean
   ) => this;
 
-  initiator: (connector: RxNStore<Any> & Subscribable<Any>) => F;
+  initiator: (connector: RxStore<Any> & Subscribable<Any>) => F;
 
   validator: (formData: F) => Partial<M>;
 

@@ -1,8 +1,14 @@
-import { RxNStore, Subscribable } from "rx-store-types";
+import {
+  RxNStore,
+  RxStore,
+  Subscribable,
+  Plugin,
+  Any,
+  Initiator,
+} from "rx-store-types";
 import {
   FormController,
   FormControlData,
-  Any,
   FormControlBasicDatum,
   FormControlBasicMetadata,
   AsyncState,
@@ -25,7 +31,7 @@ class FormControllerImpl<
   F extends FormControlData,
   M extends Record<F[number]["field"], FormControlBasicMetadata>,
   S extends string
-> implements FormController<F, M>
+> implements FormController<F, M>, Plugin<S, Record<S, () => F>>
 {
   private connector?: RxNStore<Any> & Subscribable<Any>;
   private metadata$?: BehaviorSubject<Partial<M>>;
@@ -233,6 +239,43 @@ class FormControllerImpl<
     return () => subscription.unsubscribe();
   }
 
+  selector() {
+    return this.formSelector;
+  }
+
+  initiator(connector?: RxStore<Any> & Subscribable<Any>) {
+    if (connector && !this.connector) {
+      this.connector = connector as RxNStore<Any> & Subscribable<Any>;
+      this.metadata$ = new BehaviorSubject<Partial<M>>(
+        this.validator(connector.getState(this.formSelector))
+      );
+    }
+
+    if (this.fields) {
+      return this.fields.map(({ field, defaultValue, type }) => ({
+        field,
+        touched: false,
+        empty: true,
+        changed: false,
+        hovered: false,
+        focused: false,
+        value: defaultValue,
+        type: type ? type : DatumType.SYNC,
+      })) as F;
+    }
+    return [] as unknown as F;
+  }
+
+  chain<I extends Initiator<string>[]>(...initiators: I) {
+    this.safeExecute((connector) => {
+      initiators.forEach((initiator) => {
+        initiator(connector as unknown as RxStore<Any> & Subscribable<Any>);
+      });
+    });
+
+    return this;
+  }
+
   private setAsyncState(state: AsyncState) {
     this.safeExecute((connector) => {
       const cloned = connector.getClonedState(this.formSelector);
@@ -260,6 +303,11 @@ class FormControllerImpl<
       return clone(target);
     }
 
+    const defaultClone = this.connector?.cloneFunction;
+    if (defaultClone) {
+      return defaultClone(target);
+    }
+
     return target;
   }
 
@@ -275,10 +323,6 @@ class FormControllerImpl<
       }
       return acc;
     }, {} as Partial<M>);
-  }
-
-  selector() {
-    return this.formSelector;
   }
 
   observeMeta(callback: (meta: Partial<M>) => void) {
@@ -316,29 +360,6 @@ class FormControllerImpl<
         stopAsyncValidation,
       };
     });
-  }
-
-  initiator(connector?: RxNStore<Any> & Subscribable<Any>) {
-    if (connector && !this.connector) {
-      this.connector = connector;
-      this.metadata$ = new BehaviorSubject<Partial<M>>(
-        this.validator(connector.getState(this.formSelector))
-      );
-    }
-
-    if (this.fields) {
-      return this.fields.map(({ field, defaultValue, type }) => ({
-        field,
-        touched: false,
-        empty: true,
-        changed: false,
-        hovered: false,
-        focused: false,
-        value: defaultValue,
-        type: type ? type : DatumType.SYNC,
-      })) as F;
-    }
-    return [] as unknown as F;
   }
 
   changeFormDatum<N extends number>(
