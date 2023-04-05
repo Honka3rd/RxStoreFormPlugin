@@ -7,6 +7,7 @@ import {
   FormControlBasicMetadata,
   AsyncState,
   FormStubs,
+  DatumType,
 } from "./interfaces";
 import {
   Observable,
@@ -28,9 +29,6 @@ class FormControllerImpl<
 {
   private connector?: RxNStore<Any> & Subscribable<Any>;
   private metadata$?: BehaviorSubject<Partial<M>>;
-  private unobserve?: () => void;
-  private unobserveAsync?: () => void;
-  private unobserveMeta?: () => void;
 
   constructor(
     private formSelector: S,
@@ -39,7 +37,17 @@ class FormControllerImpl<
       formData: F
     ) => Observable<Partial<M>> | Promise<Partial<M>>,
     private fields?: FormStubs<F>,
-    private metaComparator?: (meta1: Partial<M>, meta2: Partial<M>) => boolean
+    private metaComparator?: (meta1: Partial<M>, meta2: Partial<M>) => boolean,
+    private metaComparatorMap?: {
+      [K in keyof Partial<M>]: (
+        m1: Partial<M>[K],
+        m2: Partial<M>[K]
+      ) => boolean;
+    },
+    private cloneFunction?: (meta: Partial<M>) => Partial<M>,
+    private cloneFunctionMap?: {
+      [K in keyof Partial<M>]: (metaOne: Partial<M>[K]) => Partial<M>[K];
+    }
   ) {}
 
   private reportNoneConnectedError() {
@@ -117,7 +125,7 @@ class FormControllerImpl<
   }
 
   private appendDataByFields(fields: FormStubs<F>, data: F) {
-    fields.forEach(({ defaultValue, field }) => {
+    fields.forEach(({ defaultValue, field, type }) => {
       data.push({
         field,
         touched: false,
@@ -126,6 +134,7 @@ class FormControllerImpl<
         hovered: false,
         focused: false,
         value: defaultValue,
+        type: type ? type : DatumType.SYNC,
       });
     });
   }
@@ -139,33 +148,22 @@ class FormControllerImpl<
     });
   }
 
-  private setAsyncState(fields: F[number]["field"][], state: AsyncState) {
-    this.safeExecute((connector) => {
-      const cloned = connector.getClonedState(this.formSelector);
-      fields.forEach((field) => {
-        const found = cloned.find((c) => c.field === field);
-        if (found) {
-          found.asyncState = state;
-        }
-      });
-      this.commitMutation(cloned, connector);
-    });
+  private getExcludedMeta(
+    connector: RxNStore<Record<S, () => F>> & Subscribable<Record<S, () => F>>
+  ) {
+    const excluded = connector
+      .getState(this.formSelector)
+      .filter(({ type }) => type === DatumType.EXCLUDED)
+      .map(({ field }) => field);
+    return this.getFieldsMeta(excluded);
   }
 
-  getMeta() {
-    return this.metadata$?.value;
-  }
-
-  getFieldMeta(field: F[number]["field"]) {
-    return this.getMeta()?.[field];
-  }
-
-  getFieldsMeta(fields: F[number]["field"][]) {
-    return fields.reduce((acc, next) => {
-      acc[next] = this.getMeta()?.[next];
-      return acc;
-    }, {} as Partial<M>);
-  }
+  private getAsyncFields = (connector: RxNStore<Record<S, () => F>>) => {
+    return connector
+      .getState(this.formSelector)
+      .filter(({ type }) => type === DatumType.ASYNC)
+      .map(({ field }) => field);
+  };
 
   private asyncValidatorExecutor(
     connector: RxNStore<Record<S, () => F>> & Subscribable<Record<S, () => F>>
@@ -180,31 +178,29 @@ class FormControllerImpl<
       .getDataSource()
       .pipe(
         map((states) => states[this.formSelector]),
+        distinctUntilChanged(compare),
         map(
           (formData) =>
-            formData.filter(({ isAsync }) => isAsync) as {
+            formData.filter(({ type }) => type === DatumType.ASYNC) as {
               [K in keyof Record<S, () => F>]: ReturnType<
                 Record<S, () => F>[K]
               >;
             }[S]
         ),
-        distinctUntilChanged(compare),
-        switchMap((asyncFormData) => {
-          const asyncFields = asyncFormData.map(({ field }) => field);
-          const syncMeta = this.getFieldsMeta(asyncFields);
 
+        switchMap((asyncFormData) => {
           if (!asyncFormData.length) {
-            return of(syncMeta);
+            return of(this.getMeta());
           }
 
-          this.setAsyncState(asyncFields, AsyncState.PENDING);
+          this.setAsyncState(AsyncState.PENDING);
           const async$ = this.asyncValidator!(asyncFormData);
           const reduced$ = async$ instanceof Promise ? from(async$) : async$;
           return reduced$.pipe(
             catchError(() => {
               return of({
                 success: false,
-                meta: syncMeta,
+                meta: this.getMeta(),
               });
             }),
             map((meta) => {
@@ -215,18 +211,19 @@ class FormControllerImpl<
             }),
             tap(({ success }) => {
               if (success) {
-                this.setAsyncState(asyncFields, AsyncState.DONE);
+                this.setAsyncState(AsyncState.DONE);
                 return;
               }
-              this.setAsyncState(asyncFields, AsyncState.ERROR);
+              this.setAsyncState(AsyncState.ERROR);
             }),
             map(({ meta, success }) => {
               if (!success) {
-                return syncMeta;
+                return meta;
               }
               return {
-                ...syncMeta,
+                ...this.getMeta(),
                 ...meta,
+                ...this.getExcludedMeta(connector),
               };
             })
           );
@@ -236,36 +233,89 @@ class FormControllerImpl<
     return () => subscription.unsubscribe();
   }
 
-  getFormSelector() {
+  private setAsyncState(state: AsyncState) {
+    this.safeExecute((connector) => {
+      const cloned = connector.getClonedState(this.formSelector);
+      this.getAsyncFields(connector).forEach((field) => {
+        const found = cloned.find((c) => c.field === field);
+        if (found) {
+          found.asyncState = state;
+        }
+      });
+      this.commitMutation(cloned, connector);
+    });
+  }
+
+  getMeta() {
+    return { ...this.metadata$?.value } as Partial<M>;
+  }
+
+  getClonedMetaByField(field: keyof Partial<M>) {
+    const meta = this.getMeta();
+    const clone = this.cloneFunctionMap?.[field]
+      ? this.cloneFunctionMap[field]
+      : this.cloneFunction;
+    const target = meta[field];
+    if (clone && target) {
+      return clone(target);
+    }
+
+    return target;
+  }
+
+  getFieldMeta(field: F[number]["field"]) {
+    return this.getMeta()?.[field];
+  }
+
+  getFieldsMeta(fields: F[number]["field"][]) {
+    return fields.reduce((acc, next) => {
+      const meta = this.getMeta()?.[next];
+      if (meta !== undefined) {
+        acc[next] = meta;
+      }
+      return acc;
+    }, {} as Partial<M>);
+  }
+
+  selector() {
     return this.formSelector;
   }
 
-  private observeMeta(callback: (meta: Partial<M>) => void) {
+  observeMeta(callback: (meta: Partial<M>) => void) {
     const subscription = this.metadata$
       ?.pipe(distinctUntilChanged(this.metaComparator))
       .subscribe(callback);
     return () => subscription?.unsubscribe();
   }
 
-  startObserve(callback: (meta: Partial<M>) => void) {
-    this.safeExecute((connector) => {
-      this.unobserve = this.validatorExecutor(
-        connector as RxNStore<Record<S, () => F>> &
-          Subscribable<Record<S, () => F>>
-      );
-      this.unobserveAsync = this.asyncValidatorExecutor(
-        connector as RxNStore<Record<S, () => F>> &
-          Subscribable<Record<S, () => F>>
-      );
-      this.unobserveMeta = this.observeMeta(callback);
-    });
-    return this;
+  observeMetaByField<K extends keyof M>(
+    field: K,
+    callback: (metaOne: Partial<M>[K]) => void
+  ) {
+    const subscription = this.metadata$
+      ?.pipe(
+        map((meta) => meta[field]),
+        distinctUntilChanged(this.metaComparatorMap?.[field])
+      )
+      .subscribe(callback);
+    return () => subscription?.unsubscribe();
   }
 
-  stopObserve() {
-    this.unobserve?.();
-    this.unobserveAsync?.();
-    this.unobserveMeta?.();
+  startValidation() {
+    return this.safeExecute((connector) => {
+      const stopSyncValidation = this.validatorExecutor(
+        connector as RxNStore<Record<S, () => F>> &
+          Subscribable<Record<S, () => F>>
+      );
+      const stopAsyncValidation = this.asyncValidatorExecutor(
+        connector as RxNStore<Record<S, () => F>> &
+          Subscribable<Record<S, () => F>>
+      );
+      return {
+        stopSyncValidation,
+        stopAsyncValidation,
+      };
+    });
   }
 
   initiator(connector?: RxNStore<Any> & Subscribable<Any>) {
@@ -277,7 +327,7 @@ class FormControllerImpl<
     }
 
     if (this.fields) {
-      return this.fields.map(({ field, defaultValue }) => ({
+      return this.fields.map(({ field, defaultValue, type }) => ({
         field,
         touched: false,
         empty: true,
@@ -285,6 +335,7 @@ class FormControllerImpl<
         hovered: false,
         focused: false,
         value: defaultValue,
+        type: type ? type : DatumType.SYNC,
       })) as F;
     }
     return [] as unknown as F;
@@ -303,6 +354,13 @@ class FormControllerImpl<
   hoverFormField<N extends number>(field: F[N]["field"], hoverOrNot: boolean) {
     this.safeCommitMutation(field, (found) => {
       found.hovered = hoverOrNot;
+    });
+    return this;
+  }
+
+  changeFieldType<N extends number>(field: F[N]["field"], type: DatumType) {
+    this.safeCommitMutation(field, (found) => {
+      found.type = type;
     });
     return this;
   }
@@ -361,75 +419,34 @@ class FormControllerImpl<
     return this;
   }
 
-  private createFormDatum(
-    fields: Array<{
-      field: F[number]["field"];
-      defaultValue?: F[number]["value"];
-    }>
-  ) {
-    return this.safeExecute((connector) => {
-      return this.safeClone((data) => {
-        this.appendDataByFields(fields, data);
-        return data;
-      });
-    });
-  }
-
-  private fieldsDiff(
-    fields: Array<{
-      field: F[number]["field"];
-      defaultValue?: F[number]["value"];
-    }>
-  ) {
-    const created: Array<{
-      field: F[number]["field"];
-      defaultValue?: F[number]["value"];
-    }> = [];
-    const removed: F[number]["field"][] = [];
-    fields.forEach((datum) => {
-      if (!Boolean(this.fields?.find((f) => f.field === datum.field))) {
-        created.push(datum);
-      }
-    });
-
-    this.fields?.forEach((datum) => {
-      if (!Boolean(fields?.find((f) => f.field === datum.field))) {
-        removed.push(datum.field);
-      }
-    });
-    return {
-      created,
-      removed,
-    };
-  }
-
-  updateFormFields(
-    fields: Array<{
-      field: F[number]["field"];
-      defaultValue?: F[number]["value"];
-    }>
-  ) {
-    const { created, removed } = this.fieldsDiff(fields);
-    const createdData = this.createFormDatum(created);
-
+  appendFormData(fields: FormStubs<F>) {
     this.safeExecute((connector) => {
-      const formData = connector.getClonedState(this.formSelector);
-      removed.forEach((field) => {
-        const delIndex = formData.findIndex((f) => f.field === field);
-        if (delIndex > -1) {
-          formData.splice(
-            formData.findIndex((f) => f.field === field),
-            1
-          );
-        }
-      });
-      createdData?.forEach((datum) => {
-        formData.push(datum);
-      });
-      this.commitMutation(formData, connector);
+      const data = connector.getClonedState(this.formSelector);
+      this.appendDataByFields(fields, data);
+      this.commitMutation(data, connector);
     });
+  }
 
-    return this;
+  removeFormData(fields: Array<F[number]["field"]>) {
+    this.safeExecute((connector) => {
+      const data = connector.getClonedState(this.formSelector);
+      this.removeDataByFields(fields, data);
+      this.commitMutation(data, connector);
+    });
+  }
+
+  setMetadata(meta: Partial<M>) {
+    this.safeExecute(() => {
+      this.metadata$?.next({ ...this.metadata$.value, ...meta });
+    });
+  }
+
+  setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]) {
+    this.safeExecute(() => {
+      const meta = this.getMeta();
+      meta[field] = metaOne;
+      this.metadata$?.next(meta);
+    });
   }
 }
 

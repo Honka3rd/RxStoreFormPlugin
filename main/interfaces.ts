@@ -17,6 +17,12 @@ export enum AsyncState {
   ERROR,
 }
 
+export enum DatumType {
+  EXCLUDED,
+  ASYNC,
+  SYNC,
+}
+
 export type FormControlBasicDatum = {
   field: string;
   value: any;
@@ -25,8 +31,8 @@ export type FormControlBasicDatum = {
   changed: boolean;
   focused: boolean;
   hovered: boolean;
+  type: DatumType;
   asyncState?: AsyncState;
-  isAsync?: boolean;
 };
 
 export type FormControlData = FormControlBasicDatum[];
@@ -34,8 +40,8 @@ export type FormControlData = FormControlBasicDatum[];
 export type FormStubs<F extends FormControlBasicDatum[]> = Array<{
   field: F[number]["field"];
   defaultValue?: F[number]["value"];
-  isAsync?: boolean;
-}>
+  type?: DatumType;
+}>;
 
 export interface FormController<
   F extends FormControlData,
@@ -47,13 +53,6 @@ export interface FormController<
   ) => this;
 
   resetFormDatum: <N extends number>(field: F[N]["field"]) => this;
-
-  updateFormFields: (
-    fields: Array<{
-      field: F[number]["field"];
-      defaultValue?: F[number]["value"];
-    }>
-  ) => this;
 
   resetFormAll: () => this;
 
@@ -82,15 +81,20 @@ export interface FormController<
     formData: F
   ) => Observable<Partial<M>> | Promise<Partial<M>>;
 
-  getFormSelector: () => string;
+  selector: () => string;
 
-  startObserve: (callback: (meta: Partial<M>) => void) => this;
-
-  stopObserve: () => void;
+  startValidation: (callback: (meta: Partial<M>) => void) =>
+    | {
+        stopSyncValidation: () => void;
+        stopAsyncValidation?: (() => void);
+      }
+    | undefined;
 
   getMeta(): Partial<M> | undefined;
 
-  getFieldMeta(field: F[number]["field"]): Partial<M>[F[number]["field"]] | undefined;
+  getFieldMeta(
+    field: F[number]["field"]
+  ): Partial<M>[F[number]["field"]] | undefined;
 
-  getFieldsMeta(fields: F[number]["field"][]): Partial<M>
+  getFieldsMeta(fields: F[number]["field"][]): Partial<M>;
 }
