@@ -1,4 +1,4 @@
-import { RxStore, Subscribable, Any } from "rx-store-types";
+import { RxStore, Subscribable, Any, Initiator } from "rx-store-types";
 import { Observable } from "rxjs";
 
 export type FormControlBasicMetadata = {
@@ -41,7 +41,8 @@ export type FormStubs<F extends FormControlBasicDatum[]> = Array<{
 
 export interface FormController<
   F extends FormControlData,
-  M extends Record<F[number]["field"], FormControlBasicMetadata>
+  M extends Record<F[number]["field"], FormControlBasicMetadata>,
+  S extends string
 > {
   changeFormDatum: <N extends number>(
     field: F[N]["field"],
@@ -69,7 +70,7 @@ export interface FormController<
     hoverOrNot: boolean
   ) => this;
 
-  initiator: (connector: RxStore<Any> & Subscribable<Any>) => F;
+  initiator: Initiator<S, F>
 
   validator: (formData: F) => Partial<M>;
 
@@ -82,7 +83,7 @@ export interface FormController<
   startValidation: (callback: (meta: Partial<M>) => void) =>
     | {
         stopSyncValidation: () => void;
-        stopAsyncValidation?: (() => void);
+        stopAsyncValidation?: () => void;
       }
     | undefined;
 

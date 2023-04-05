@@ -31,7 +31,7 @@ class FormControllerImpl<
   F extends FormControlData,
   M extends Record<F[number]["field"], FormControlBasicMetadata>,
   S extends string
-> implements FormController<F, M>, Plugin<S, Record<S, () => F>>
+> implements FormController<F, M, S>, Plugin<S>
 {
   private connector?: RxNStore<Any> & Subscribable<Any>;
   private metadata$?: BehaviorSubject<Partial<M>>;
@@ -54,7 +54,9 @@ class FormControllerImpl<
     private cloneFunctionMap?: {
       [K in keyof Partial<M>]: (metaOne: Partial<M>[K]) => Partial<M>[K];
     }
-  ) {}
+  ) {
+    this.initiator
+  }
 
   private reportNoneConnectedError() {
     throw Error("initiator method is not called");
@@ -243,8 +245,9 @@ class FormControllerImpl<
     return this.formSelector;
   }
 
-  initiator(connector?: RxStore<Any> & Subscribable<Any>) {
+  initiator: FormController<F, M, S>["initiator"] = (connector) => {
     if (connector && !this.connector) {
+      this.initiator.selector = this.formSelector;
       this.connector = connector as RxNStore<Any> & Subscribable<Any>;
       this.metadata$ = new BehaviorSubject<Partial<M>>(
         this.validator(connector.getState(this.formSelector))
@@ -270,6 +273,7 @@ class FormControllerImpl<
     this.safeExecute((connector) => {
       initiators.forEach((initiator) => {
         initiator(connector as unknown as RxStore<Any> & Subscribable<Any>);
+        initiator.selector = this.selector();
       });
     });
 
