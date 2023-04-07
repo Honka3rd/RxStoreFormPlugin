@@ -1,7 +1,7 @@
-import { RxNStore, Subscribable } from "rx-store-types";
-import { FormController, FormControlData, Any, FormControlBasicMetadata, FormStubs, DatumType } from "./interfaces";
+import { Plugin, Initiator } from "rx-store-types";
+import { FormController, FormControlData, FormControlBasicMetadata, FormStubs, DatumType } from "./interfaces";
 import { Observable } from "rxjs";
-declare class FormControllerImpl<F extends FormControlData, M extends Record<F[number]["field"], FormControlBasicMetadata>, S extends string> implements FormController<F, M> {
+declare class FormControllerImpl<F extends FormControlData, M extends Record<F[number]["field"], FormControlBasicMetadata>, S extends string> implements FormController<F, M, S>, Plugin<S> {
     private formSelector;
     validator: (formData: F) => Partial<M>;
     asyncValidator?: ((formData: F) => Observable<Partial<M>> | Promise<Partial<M>>) | undefined;
@@ -28,19 +28,20 @@ declare class FormControllerImpl<F extends FormControlData, M extends Record<F[n
     private getExcludedMeta;
     private getAsyncFields;
     private asyncValidatorExecutor;
+    selector(): S;
+    initiator: Initiator;
+    chain<P extends Plugin<string>[]>(...plugins: P): this;
     private setAsyncState;
     getMeta(): Partial<M>;
-    getClonedMetaByField(field: keyof Partial<M>): Partial<M> | Partial<M>[keyof M];
+    getClonedMetaByField(field: keyof Partial<M>): any;
     getFieldMeta(field: F[number]["field"]): Partial<M>[F[number]["field"]];
     getFieldsMeta(fields: F[number]["field"][]): Partial<M>;
-    selector(): S;
     observeMeta(callback: (meta: Partial<M>) => void): () => void | undefined;
     observeMetaByField<K extends keyof M>(field: K, callback: (metaOne: Partial<M>[K]) => void): () => void | undefined;
     startValidation(): {
         stopSyncValidation: () => void;
         stopAsyncValidation: (() => void) | undefined;
     } | undefined;
-    initiator(connector?: RxNStore<Any> & Subscribable<Any>): F;
     changeFormDatum<N extends number>(field: F[N]["field"], value: F[N]["value"]): this;
     hoverFormField<N extends number>(field: F[N]["field"], hoverOrNot: boolean): this;
     changeFieldType<N extends number>(field: F[N]["field"], type: DatumType): this;

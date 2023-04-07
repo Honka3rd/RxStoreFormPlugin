@@ -54,16 +54,14 @@ class FormControllerImpl<
     private cloneFunctionMap?: {
       [K in keyof Partial<M>]: (metaOne: Partial<M>[K]) => Partial<M>[K];
     }
-  ) {
-    this.initiator
-  }
+  ) {}
 
   private reportNoneConnectedError() {
     throw Error("initiator method is not called");
   }
 
   private safeExecute<R>(
-    callback: (connector: RxNStore<Record<S, () => F>>) => R
+    callback: (connector: RxNStore<Record<S, () => F>> & Subscribable<Any>) => R
   ) {
     const connector = this.connector as RxNStore<Record<S, () => F>> &
       Subscribable<Record<S, () => F>>;
@@ -245,9 +243,8 @@ class FormControllerImpl<
     return this.formSelector;
   }
 
-  initiator: FormController<F, M, S>["initiator"] = (connector) => {
+  initiator: Initiator = (connector) => {
     if (connector && !this.connector) {
-      this.initiator.selector = this.formSelector;
       this.connector = connector as RxNStore<Any> & Subscribable<Any>;
       this.metadata$ = new BehaviorSubject<Partial<M>>(
         this.validator(connector.getState(this.formSelector))
@@ -267,13 +264,12 @@ class FormControllerImpl<
       })) as F;
     }
     return [] as unknown as F;
-  }
+  };
 
-  chain<I extends Initiator<string>[]>(...initiators: I) {
+  chain<P extends Plugin<string>[]>(...plugins: P) {
     this.safeExecute((connector) => {
-      initiators.forEach((initiator) => {
-        initiator(connector as unknown as RxStore<Any> & Subscribable<Any>);
-        initiator.selector = this.selector();
+      Array.from(plugins).forEach((plugin) => {
+        plugin.initiator(connector as RxStore<Any> & Subscribable<Any>);
       });
     });
 
@@ -470,7 +466,7 @@ class FormControllerImpl<
     this.safeExecute(() => {
       const meta = this.getMeta();
       meta[field] = metaOne;
-      this.metadata$?.next(meta);
+      this.metadata$?.next({ ...meta });
     });
   }
 }

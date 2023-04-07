@@ -70,7 +70,7 @@ export interface FormController<
     hoverOrNot: boolean
   ) => this;
 
-  initiator: Initiator<S, F>
+  initiator: Initiator<F>
 
   validator: (formData: F) => Partial<M>;
 

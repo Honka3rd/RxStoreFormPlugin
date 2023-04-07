@@ -1,8 +1,5 @@
-import { RxNStore, Subscribable } from "rx-store-types";
+import { Any, Initiator } from "rx-store-types";
 import { Observable } from "rxjs";
-export type Any = {
-    [K: string]: any;
-};
 export type FormControlBasicMetadata = {
     errors: Any;
     info?: any;
@@ -35,7 +32,7 @@ export type FormStubs<F extends FormControlBasicDatum[]> = Array<{
     defaultValue?: F[number]["value"];
     type?: DatumType;
 }>;
-export interface FormController<F extends FormControlData, M extends Record<F[number]["field"], FormControlBasicMetadata>> {
+export interface FormController<F extends FormControlData, M extends Record<F[number]["field"], FormControlBasicMetadata>, S extends string> {
     changeFormDatum: <N extends number>(field: F[N]["field"], value: F[N]["value"]) => this;
     resetFormDatum: <N extends number>(field: F[N]["field"]) => this;
     resetFormAll: () => this;
@@ -43,13 +40,13 @@ export interface FormController<F extends FormControlData, M extends Record<F[nu
     emptyFormField: <N extends number>(field: F[N]["field"]) => this;
     focusFormField: <N extends number>(field: F[N]["field"], focusOrNot: boolean) => this;
     hoverFormField: <N extends number>(field: F[N]["field"], hoverOrNot: boolean) => this;
-    initiator: (connector: RxNStore<Any> & Subscribable<Any>) => F;
+    initiator: Initiator<F>;
     validator: (formData: F) => Partial<M>;
     asyncValidator?: (formData: F) => Observable<Partial<M>> | Promise<Partial<M>>;
     selector: () => string;
     startValidation: (callback: (meta: Partial<M>) => void) => {
         stopSyncValidation: () => void;
-        stopAsyncValidation?: (() => void);
+        stopAsyncValidation?: () => void;
     } | undefined;
     getMeta(): Partial<M> | undefined;
     getFieldMeta(field: F[number]["field"]): Partial<M>[F[number]["field"]] | undefined;

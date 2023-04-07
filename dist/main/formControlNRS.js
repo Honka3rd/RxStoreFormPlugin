@@ -36,6 +36,28 @@ var FormControllerImpl = /** @class */ (function () {
                 return field;
             });
         };
+        this.initiator = function (connector) {
+            if (connector && !_this.connector) {
+                _this.connector = connector;
+                _this.metadata$ = new rxjs_1.BehaviorSubject(_this.validator(connector.getState(_this.formSelector)));
+            }
+            if (_this.fields) {
+                return _this.fields.map(function (_a) {
+                    var field = _a.field, defaultValue = _a.defaultValue, type = _a.type;
+                    return ({
+                        field: field,
+                        touched: false,
+                        empty: true,
+                        changed: false,
+                        hovered: false,
+                        focused: false,
+                        value: defaultValue,
+                        type: type ? type : interfaces_1.DatumType.SYNC,
+                    });
+                });
+            }
+            return [];
+        };
     }
     FormControllerImpl.prototype.reportNoneConnectedError = function () {
         throw Error("initiator method is not called");
@@ -177,6 +199,21 @@ var FormControllerImpl = /** @class */ (function () {
             .subscribe(function (meta) { return meta && _this.safeCommitMeta(meta); });
         return function () { return subscription.unsubscribe(); };
     };
+    FormControllerImpl.prototype.selector = function () {
+        return this.formSelector;
+    };
+    FormControllerImpl.prototype.chain = function () {
+        var plugins = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            plugins[_i] = arguments[_i];
+        }
+        this.safeExecute(function (connector) {
+            Array.from(plugins).forEach(function (plugin) {
+                plugin.initiator(connector);
+            });
+        });
+        return this;
+    };
     FormControllerImpl.prototype.setAsyncState = function (state) {
         var _this = this;
         this.safeExecute(function (connector) {
@@ -195,7 +232,7 @@ var FormControllerImpl = /** @class */ (function () {
         return __assign({}, (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.value);
     };
     FormControllerImpl.prototype.getClonedMetaByField = function (field) {
-        var _a;
+        var _a, _b;
         var meta = this.getMeta();
         var clone = ((_a = this.cloneFunctionMap) === null || _a === void 0 ? void 0 : _a[field])
             ? this.cloneFunctionMap[field]
@@ -203,6 +240,10 @@ var FormControllerImpl = /** @class */ (function () {
         var target = meta[field];
         if (clone && target) {
             return clone(target);
+        }
+        var defaultClone = (_b = this.connector) === null || _b === void 0 ? void 0 : _b.cloneFunction;
+        if (defaultClone) {
+            return defaultClone(target);
         }
         return target;
     };
@@ -220,9 +261,6 @@ var FormControllerImpl = /** @class */ (function () {
             }
             return acc;
         }, {});
-    };
-    FormControllerImpl.prototype.selector = function () {
-        return this.formSelector;
     };
     FormControllerImpl.prototype.observeMeta = function (callback) {
         var _a;
@@ -244,28 +282,6 @@ var FormControllerImpl = /** @class */ (function () {
                 stopAsyncValidation: stopAsyncValidation,
             };
         });
-    };
-    FormControllerImpl.prototype.initiator = function (connector) {
-        if (connector && !this.connector) {
-            this.connector = connector;
-            this.metadata$ = new rxjs_1.BehaviorSubject(this.validator(connector.getState(this.formSelector)));
-        }
-        if (this.fields) {
-            return this.fields.map(function (_a) {
-                var field = _a.field, defaultValue = _a.defaultValue, type = _a.type;
-                return ({
-                    field: field,
-                    touched: false,
-                    empty: true,
-                    changed: false,
-                    hovered: false,
-                    focused: false,
-                    value: defaultValue,
-                    type: type ? type : interfaces_1.DatumType.SYNC,
-                });
-            });
-        }
-        return [];
     };
     FormControllerImpl.prototype.changeFormDatum = function (field, value) {
         this.safeCommitMutation(field, function (found) {
@@ -363,7 +379,7 @@ var FormControllerImpl = /** @class */ (function () {
             var _a;
             var meta = _this.getMeta();
             meta[field] = metaOne;
-            (_a = _this.metadata$) === null || _a === void 0 ? void 0 : _a.next(meta);
+            (_a = _this.metadata$) === null || _a === void 0 ? void 0 : _a.next(__assign({}, meta));
         });
     };
     return FormControllerImpl;
