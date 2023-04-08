@@ -2,7 +2,8 @@
   "name": "rx-store-form-plugin",
   "version": "1.0.1",
   "description": "a type safe form validation plugin based on Rx-Store-core",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "start": "node dist/index.js",
     "build": "npx tsc"
@@ -19,7 +20,8 @@
   "homepage": "https://github.com/Honka3rd/RxStoreFormPlugin#readme",
   "dependencies": {
     "immutable": "^4.2.2",
-    "rx-store-types": "^1.2.5",
+    "rx-store-core": "^2.1.0",
+    "rx-store-types": "^1.3.0",
     "rxjs": "^7.8.0",
     "typescript": "5.0.2"
   }

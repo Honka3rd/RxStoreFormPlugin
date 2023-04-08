@@ -4,15 +4,25 @@ import { Observable } from "rxjs";
 declare class FormControllerImpl<F extends FormControlData, M extends Record<F[number]["field"], FormControlBasicMetadata>, S extends string> implements FormController<F, M, S>, Plugin<S> {
     private formSelector;
     validator: (formData: F) => Partial<M>;
-    asyncValidator?: ((formData: F) => Observable<Partial<M>> | Promise<Partial<M>>) | undefined;
+    private connector?;
+    private metadata$?;
+    asyncValidator?: (formData: F) => Observable<Partial<M>> | Promise<Partial<M>>;
     private fields?;
     private metaComparator?;
     private metaComparatorMap?;
     private cloneFunction?;
     private cloneFunctionMap?;
-    private connector?;
-    private metadata$?;
-    constructor(formSelector: S, validator: (formData: F) => Partial<M>, asyncValidator?: ((formData: F) => Observable<Partial<M>> | Promise<Partial<M>>) | undefined, fields?: FormStubs<F> | undefined, metaComparator?: ((meta1: Partial<M>, meta2: Partial<M>) => boolean) | undefined, metaComparatorMap?: (Partial<M> extends infer T ? { [K in keyof T]: (m1: Partial<M>[K], m2: Partial<M>[K]) => boolean; } : never) | undefined, cloneFunction?: ((meta: Partial<M>) => Partial<M>) | undefined, cloneFunctionMap?: (Partial<M> extends infer T ? { [K in keyof T]: (metaOne: Partial<M>[K]) => Partial<M>[K]; } : never) | undefined);
+    constructor(formSelector: S, validator: (formData: F) => Partial<M>);
+    setAsyncValidator(asyncValidator: (formData: F) => Observable<Partial<M>> | Promise<Partial<M>>): void;
+    setFields(fields: FormStubs<F>): void;
+    setMetaComparator(metaComparator: (meta1: Partial<M>, meta2: Partial<M>) => boolean): void;
+    setMetaComparatorMap(metaComparatorMap: {
+        [K in keyof Partial<M>]: (m1: Partial<M>[K], m2: Partial<M>[K]) => boolean;
+    }): void;
+    setMetaCloneFunction(cloneFunction: (meta: Partial<M>) => Partial<M>): void;
+    setMetaCloneFunctionMap(cloneFunctionMap: {
+        [K in keyof Partial<M>]: (metaOne: Partial<M>[K]) => Partial<M>[K];
+    }): void;
     private reportNoneConnectedError;
     private safeExecute;
     private shallowCloneFormData;
@@ -27,13 +37,13 @@ declare class FormControllerImpl<F extends FormControlData, M extends Record<F[n
     private validatorExecutor;
     private getExcludedMeta;
     private getAsyncFields;
+    private setAsyncState;
     private asyncValidatorExecutor;
     selector(): S;
     initiator: Initiator;
     chain<P extends Plugin<string>[]>(...plugins: P): this;
-    private setAsyncState;
     getMeta(): Partial<M>;
-    getClonedMetaByField(field: keyof Partial<M>): any;
+    getClonedMetaByField<CF extends keyof Partial<M>>(field: CF): Partial<M>[CF];
     getFieldMeta(field: F[number]["field"]): Partial<M>[F[number]["field"]];
     getFieldsMeta(fields: F[number]["field"][]): Partial<M>;
     observeMeta(callback: (meta: Partial<M>) => void): () => void | undefined;
@@ -50,9 +60,9 @@ declare class FormControllerImpl<F extends FormControlData, M extends Record<F[n
     touchFormField<N extends number>(field: F[N]["field"], touchOrNot: boolean): this;
     emptyFormField<N extends number>(field: F[N]["field"]): this;
     focusFormField<N extends number>(field: F[N]["field"], focusOrNot: boolean): this;
-    appendFormData(fields: FormStubs<F>): void;
-    removeFormData(fields: Array<F[number]["field"]>): void;
-    setMetadata(meta: Partial<M>): void;
-    setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): void;
+    appendFormData(fields: FormStubs<F>): this;
+    removeFormData(fields: Array<F[number]["field"]>): this;
+    setMetadata(meta: Partial<M>): this;
+    setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this;
 }
 export default FormControllerImpl;
