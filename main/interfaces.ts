@@ -1,4 +1,5 @@
 import { Any, Initiator } from "rx-store-types";
+import { List, Map } from "immutable";
 import { Observable } from "rxjs";
 
 export type FormControlBasicMetadata = {
@@ -154,3 +155,85 @@ export type NormalFormPluginBuilderParams<
   formSelector: S;
   validator: (formData: F) => Partial<M>;
 };
+
+export type FormStub = {
+  field: string;
+  defaultValue?: string | number | boolean | FileList;
+  type?: DatumType;
+};
+
+type K<T> = keyof T;
+
+type V<T> = T[keyof T];
+
+type PK<T> = keyof Partial<T>;
+
+type PV<T> = Partial<T>[keyof Partial<T>];
+
+export type ImmutableFormStubs = List<Map<K<FormStub>, V<FormStub>>>;
+
+export interface ImmutableFormController<
+  F extends FormControlData,
+  M extends Record<F[number]["field"], FormControlBasicMetadata>,
+  S extends string
+> {
+  setAsyncValidator(
+    asyncValidator: (
+      formData: F
+    ) => Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>
+  ): void;
+
+  setFields(fields: FormStubs<F>): void;
+
+  changeFormDatum: <N extends number>(
+    field: F[N]["field"],
+    touchOrNot: boolean
+  ) => this;
+
+  touchFormField: <N extends number>(
+    field: F[N]["field"],
+    touchOrNot: boolean
+  ) => this;
+
+  emptyFormField: <N extends number>(field: F[N]["field"]) => this;
+
+  focusFormField: <N extends number>(
+    field: F[N]["field"],
+    focusOrNot: boolean
+  ) => this;
+
+  hoverFormField: <N extends number>(
+    field: F[N]["field"],
+    hoverOrNot: boolean
+  ) => this;
+
+  initiator: Initiator<F>;
+
+  validator: (formData: F) => Map<K<M>, V<M>>;
+
+  asyncValidator?: (
+    formData: F
+  ) => Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>;
+
+  startValidation: (
+    callback: (meta: Map<K<M>, V<M>>) => void
+  ) => (() => void) | undefined;
+
+  getMeta(): Map<PK<M>, PV<M>> | undefined;
+
+  getFieldMeta<N extends number = number>(
+    field: F[N]["field"]
+  ): Map<K<M[F[N]["field"]]>, V<M[F[N]["field"]]>> | undefined;
+
+  getFieldsMeta(
+    fields: F[number]["field"][]
+  ): Map<
+    F[number]["field"],
+    Map<K<M[F[number]["field"]]>, V<M[F[number]["field"]]>>
+  >;
+
+  changeFieldType<N extends number>(
+    field: F[N]["field"],
+    type: DatumType
+  ): this;
+}
