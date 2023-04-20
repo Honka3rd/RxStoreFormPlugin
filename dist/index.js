@@ -34,7 +34,11 @@ var NRFormBuilder = /** @class */ (function () {
         this.NRF.setMetaCloneFunctionMap(cloneFunctionMap);
         return this;
     };
-    NRFormBuilder.prototype.build = function () {
+    NRFormBuilder.prototype.setDefaultMeta = function (meta) {
+        this.NRF.setDefaultMeta(meta);
+        return this;
+    };
+    NRFormBuilder.prototype.getInstance = function () {
         return this.NRF;
     };
     return NRFormBuilder;

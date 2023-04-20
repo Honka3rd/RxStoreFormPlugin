@@ -1,10 +1,16 @@
-import { Any, Initiator } from "rx-store-types";
+import { Any, Comparator, Initiator } from "rx-store-types";
 import { Observable } from "rxjs";
 
 export type FormControlBasicMetadata = {
   errors: Any;
   info?: any;
   warn?: any;
+};
+
+export type FormControlMetadata<E extends Any, I = any, W = any> = {
+  errors: E;
+  info?: I;
+  warn?: W;
 };
 
 export enum AsyncState {
@@ -31,6 +37,30 @@ export type FormControlBasicDatum = {
   asyncState?: AsyncState;
 };
 
+export type FormControlDatum<F, T> = {
+  field: F;
+  value: T;
+  touched: boolean;
+  empty: boolean;
+  changed: boolean;
+  focused: boolean;
+  hovered: boolean;
+  type: DatumType;
+  asyncState?: AsyncState;
+};
+
+export type FormControlStrDatum<F> = {
+  field: F;
+  value: string;
+  touched: boolean;
+  empty: boolean;
+  changed: boolean;
+  focused: boolean;
+  hovered: boolean;
+  type: DatumType;
+  asyncState?: AsyncState;
+};
+
 export type FormControlData = FormControlBasicDatum[];
 
 export type FormStubs<F extends FormControlBasicDatum[]> = Array<{
@@ -41,12 +71,13 @@ export type FormStubs<F extends FormControlBasicDatum[]> = Array<{
 
 export interface FormController<
   F extends FormControlData,
-  M extends Record<F[number]["field"], FormControlBasicMetadata>,
+  M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
   S extends string
 > {
   setAsyncValidator(
     asyncValidator: (
-      formData: F
+      formData: F,
+      metadata: Partial<M>
     ) => Observable<Partial<M>> | Promise<Partial<M>>
   ): void;
 
@@ -66,7 +97,9 @@ export interface FormController<
     [K in keyof Partial<M>]: (metaOne: Partial<M>[K]) => Partial<M>[K];
   }): void;
 
-  changeFormDatum: <N extends number>(
+  setDefaultMeta(meta: Partial<M>): void;
+
+  changeFormValue: <N extends number>(
     field: F[N]["field"],
     value: F[N]["value"]
   ) => this;
@@ -90,20 +123,16 @@ export interface FormController<
 
   initiator: Initiator<F>;
 
-  validator: (formData: F) => Partial<M>;
+  validator: (formData: F, metadata: Partial<M>) => Partial<M>;
 
   asyncValidator?: (
-    formData: F
+    formData: F,
+    metadata: Partial<M>
   ) => Observable<Partial<M>> | Promise<Partial<M>>;
 
   selector: () => S;
 
-  startValidation: (callback: (meta: Partial<M>) => void) =>
-    | {
-        stopSyncValidation: () => void;
-        stopAsyncValidation?: () => void;
-      }
-    | undefined;
+  startValidation: () => (() => void) | undefined;
 
   getMeta(): Partial<M> | undefined;
 
@@ -144,13 +173,43 @@ export interface FormController<
     field: K,
     callback: (metaOne: Partial<M>[K]) => void
   ): () => void | undefined;
+
+  observeFormDatum<CompareAt extends number = number>(
+    field: F[CompareAt]["field"],
+    observer: (result: ReturnType<Record<S, () => F>[S]>[CompareAt]) => void,
+    comparator?: Comparator<ReturnType<Record<S, () => F>[S]>[CompareAt]>
+  ): () => void;
+
+  observeFormValue<CompareAt extends number = number>(
+    field: F[CompareAt]["field"],
+    observer: (
+      result: ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]
+    ) => void,
+    comparator?: Comparator<
+      ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]
+    >
+  ): () => void;
+
+  observeFormData<CompareAts extends readonly number[] = number[]>(
+    fields: F[CompareAts[number]]["field"][],
+    observer: (result: F[CompareAts[number]][]) => void,
+    comparator?: Comparator<F[CompareAts[number]][]>
+  ): () => void;
+
+  getDatum<At extends number = number>(
+    field: F[At]["field"]
+  ): FormControlBasicDatum | undefined;
+
+  getDatumValue<At extends number = number>(
+    field: F[At]["field"]
+  ): F[At]["value"] | undefined;
 }
 
 export type NormalFormPluginBuilderParams<
   F extends FormControlData,
-  M extends Record<F[number]["field"], FormControlBasicMetadata>,
+  M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
   S extends string
 > = {
   formSelector: S;
-  validator: (formData: F) => Partial<M>;
+  validator: (formData: F, metadata: Partial<M>) => Partial<M>;
 };

@@ -1,19 +1,18 @@
-import { Plugin, Initiator } from "rx-store-types";
-import { FormController, FormControlData, FormControlBasicMetadata, FormStubs, DatumType } from "./interfaces";
+import { Plugin, Initiator, PluginImpl, Comparator } from "rx-store-types";
+import { FormController, FormControlData, FormControlBasicDatum, FormControlBasicMetadata, FormStubs, DatumType } from "./interfaces";
 import { Observable } from "rxjs";
-declare class FormControllerImpl<F extends FormControlData, M extends Record<F[number]["field"], FormControlBasicMetadata>, S extends string> implements FormController<F, M, S>, Plugin<S> {
-    private formSelector;
-    validator: (formData: F) => Partial<M>;
-    private connector?;
+declare class FormControllerImpl<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> extends PluginImpl<S, F> implements FormController<F, M, S> {
+    validator: (formData: F, metadata: Partial<M>) => Partial<M>;
     private metadata$?;
-    asyncValidator?: (formData: F) => Observable<Partial<M>> | Promise<Partial<M>>;
+    asyncValidator?: (formData: F, metadata: Partial<M>) => Observable<Partial<M>> | Promise<Partial<M>>;
     private fields?;
     private metaComparator?;
     private metaComparatorMap?;
     private cloneFunction?;
     private cloneFunctionMap?;
-    constructor(formSelector: S, validator: (formData: F) => Partial<M>);
-    setAsyncValidator(asyncValidator: (formData: F) => Observable<Partial<M>> | Promise<Partial<M>>): void;
+    private defaultMeta?;
+    constructor(id: S, validator: (formData: F, metadata: Partial<M>) => Partial<M>);
+    setAsyncValidator(asyncValidator: (formData: F, metadata: Partial<M>) => Observable<Partial<M>> | Promise<Partial<M>>): void;
     setFields(fields: FormStubs<F>): void;
     setMetaComparator(metaComparator: (meta1: Partial<M>, meta2: Partial<M>) => boolean): void;
     setMetaComparatorMap(metaComparatorMap: {
@@ -23,8 +22,7 @@ declare class FormControllerImpl<F extends FormControlData, M extends Record<F[n
     setMetaCloneFunctionMap(cloneFunctionMap: {
         [K in keyof Partial<M>]: (metaOne: Partial<M>[K]) => Partial<M>[K];
     }): void;
-    private reportNoneConnectedError;
-    private safeExecute;
+    setDefaultMeta(meta: Partial<M>): void;
     private shallowCloneFormData;
     private safeClone;
     private findDatumByField;
@@ -39,20 +37,21 @@ declare class FormControllerImpl<F extends FormControlData, M extends Record<F[n
     private getAsyncFields;
     private setAsyncState;
     private asyncValidatorExecutor;
-    selector(): S;
-    initiator: Initiator;
+    initiator: Initiator<F>;
     chain<P extends Plugin<string>[]>(...plugins: P): this;
     getMeta(): Partial<M>;
+    getDatum<At extends number = number>(field: F[At]["field"]): FormControlBasicDatum | undefined;
+    getDatumValue<At extends number = number>(field: F[At]["field"]): F[At]["value"] | undefined;
     getClonedMetaByField<CF extends keyof Partial<M>>(field: CF): Partial<M>[CF];
-    getFieldMeta(field: F[number]["field"]): Partial<M>[F[number]["field"]];
-    getFieldsMeta(fields: F[number]["field"][]): Partial<M>;
+    getFieldMeta<At extends number = number>(field: F[At]["field"]): Partial<M>[F[At]["field"]];
+    getFieldsMeta<At extends number = number>(fields: F[At]["field"][]): Partial<M>;
     observeMeta(callback: (meta: Partial<M>) => void): () => void | undefined;
     observeMetaByField<K extends keyof M>(field: K, callback: (metaOne: Partial<M>[K]) => void): () => void | undefined;
-    startValidation(): {
-        stopSyncValidation: () => void;
-        stopAsyncValidation: (() => void) | undefined;
-    } | undefined;
-    changeFormDatum<N extends number>(field: F[N]["field"], value: F[N]["value"]): this;
+    observeFormDatum<CompareAt extends number = number>(field: F[CompareAt]["field"], observer: (result: ReturnType<Record<S, () => F>[S]>[CompareAt]) => void, comparator?: Comparator<ReturnType<Record<S, () => F>[S]>[CompareAt]>): () => void;
+    observeFormValue<CompareAt extends number = number>(field: F[CompareAt]["field"], observer: (result: ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]) => void, comparator?: Comparator<ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]>): () => void;
+    observeFormData<CompareAts extends Readonly<number[]> = number[]>(fields: F[CompareAts[number]]["field"][], observer: (result: F[CompareAts[number]][]) => void, comparator?: Comparator<F[CompareAts[number]][]>): () => void;
+    startValidation(): (() => void) | undefined;
+    changeFormValue<N extends number>(field: F[N]["field"], value: F[N]["value"]): this;
     hoverFormField<N extends number>(field: F[N]["field"], hoverOrNot: boolean): this;
     changeFieldType<N extends number>(field: F[N]["field"], type: DatumType): this;
     resetFormDatum<N extends number>(field: F[N]["field"]): this;

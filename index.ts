@@ -2,24 +2,28 @@ import { Plugin } from "rx-store-types";
 import {
   FormControlBasicMetadata,
   FormControlData,
+  FormControlDatum,
+  FormControlMetadata,
+  FormControlStrDatum,
   FormController,
   FormStubs,
   NormalFormPluginBuilderParams,
 } from "./main/interfaces";
 import FormControllerImpl from "./main/formControlNRS";
 import { Observable } from "rxjs";
+import { NRS } from "rx-store-core";
 
 class NRFormBuilder<
   F extends FormControlData,
-  M extends Record<F[number]["field"], FormControlBasicMetadata>,
-  S extends string
+  M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
+  S extends string = string
 > {
   private NRF: FormController<F, M, S> & Plugin<S>;
   constructor({
     formSelector,
     validator,
   }: NormalFormPluginBuilderParams<F, M, S>) {
-    this.NRF = new FormControllerImpl(formSelector, validator);
+    this.NRF = new FormControllerImpl<F, M, S>(formSelector, validator);
   }
 
   setAsyncValidator(
@@ -62,7 +66,12 @@ class NRFormBuilder<
     return this;
   }
 
-  build() {
+  setDefaultMeta(meta: Partial<M>) {
+    this.NRF.setDefaultMeta(meta);
+    return this;
+  }
+
+  getInstance() {
     return this.NRF;
   }
 }

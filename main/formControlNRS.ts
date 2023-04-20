@@ -5,6 +5,8 @@ import {
   Plugin,
   Any,
   Initiator,
+  PluginImpl,
+  Comparator,
 } from "rx-store-types";
 import { bound } from "rx-store-core";
 import {
@@ -29,15 +31,17 @@ import {
 } from "rxjs";
 
 class FormControllerImpl<
-  F extends FormControlData,
-  M extends Record<F[number]["field"], FormControlBasicMetadata>,
-  S extends string
-> implements FormController<F, M, S>, Plugin<S>
+    F extends FormControlData,
+    M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
+    S extends string
+  >
+  extends PluginImpl<S, F>
+  implements FormController<F, M, S>
 {
-  private connector?: RxNStore<Any> & Subscribable<Any>;
   private metadata$?: BehaviorSubject<Partial<M>>;
   public asyncValidator?: (
-    formData: F
+    formData: F,
+    metadata: Partial<M>
   ) => Observable<Partial<M>> | Promise<Partial<M>>;
   private fields?: FormStubs<F>;
   private metaComparator?: (meta1: Partial<M>, meta2: Partial<M>) => boolean;
@@ -49,14 +53,19 @@ class FormControllerImpl<
     [K in keyof Partial<M>]: (metaOne: Partial<M>[K]) => Partial<M>[K];
   };
 
+  private defaultMeta?: Partial<M>;
+
   constructor(
-    private formSelector: S,
-    public validator: (formData: F) => Partial<M>
-  ) {}
+    id: S,
+    public validator: (formData: F, metadata: Partial<M>) => Partial<M>
+  ) {
+    super(id);
+  }
 
   setAsyncValidator(
     asyncValidator: (
-      formData: F
+      formData: F,
+      metadata: Partial<M>
     ) => Observable<Partial<M>> | Promise<Partial<M>>
   ) {
     if (!this.asyncValidator) {
@@ -100,24 +109,16 @@ class FormControllerImpl<
     }
   }
 
-  private reportNoneConnectedError() {
-    throw Error("initiator method is not called");
-  }
-
-  private safeExecute<R>(
-    callback: (connector: RxNStore<Record<S, () => F>> & Subscribable<Any>) => R
-  ) {
-    const connector = this.connector as RxNStore<Record<S, () => F>> &
-      Subscribable<Record<S, () => F>>;
-    if (connector) {
-      return callback(connector);
+  setDefaultMeta(meta: Partial<M>) {
+    if (!this.defaultMeta) {
+      this.defaultMeta = meta;
     }
-    this.reportNoneConnectedError();
   }
 
   private shallowCloneFormData() {
     return this.safeExecute((connector) => {
-      return connector.getClonedState(this.formSelector) as F;
+      const casted = connector as unknown as RxNStore<Record<S, () => F>>;
+      return casted.getClonedState(this.id) as F;
     });
   }
 
@@ -144,7 +145,7 @@ class FormControllerImpl<
   }
 
   private commitMutation(data: F, connector: RxNStore<Record<S, () => F>>) {
-    connector.setState({ [this.formSelector]: data } as {});
+    connector.setState({ [this.id]: data } as {});
   }
 
   private safeCommitMutation<N extends number>(
@@ -154,8 +155,11 @@ class FormControllerImpl<
     this.safeExecute((connector) => {
       this.safeClone((data) => {
         this.findFromClonedAndExecute(field, data, (found: F[N]) => {
-          callback({ ...found }, data);
-          this.commitMutation(data, connector);
+          const cloned = { ...found };
+          data.splice(data.indexOf(found), 1, cloned);
+          callback(cloned, data);
+          const casted = connector as unknown as RxNStore<Record<S, () => F>>;
+          this.commitMutation(data, casted);
         });
       });
     });
@@ -192,8 +196,8 @@ class FormControllerImpl<
   private validatorExecutor(
     connector: RxNStore<Record<S, () => F>> & Subscribable<Record<S, () => F>>
   ) {
-    return connector.observe(this.formSelector, (formData) => {
-      const meta = this.validator(formData);
+    return connector.observe(this.id, (formData) => {
+      const meta = this.validator(formData, this.getMeta());
       this.safeCommitMeta(meta);
     });
   }
@@ -202,7 +206,7 @@ class FormControllerImpl<
     connector: RxNStore<Record<S, () => F>> & Subscribable<Record<S, () => F>>
   ) {
     const excluded = connector
-      .getState(this.formSelector)
+      .getState(this.id)
       .filter(({ type }) => type === DatumType.EXCLUDED)
       .map(({ field }) => field);
     return this.getFieldsMeta(excluded);
@@ -210,21 +214,22 @@ class FormControllerImpl<
 
   private getAsyncFields = (connector: RxNStore<Record<S, () => F>>) => {
     return connector
-      .getState(this.formSelector)
+      .getState(this.id)
       .filter(({ type }) => type === DatumType.ASYNC)
       .map(({ field }) => field);
   };
 
   private setAsyncState(state: AsyncState) {
     this.safeExecute((connector) => {
-      const cloned = connector.getClonedState(this.formSelector);
-      this.getAsyncFields(connector).forEach((field) => {
+      const casted = connector as unknown as RxNStore<Record<S, () => F>>;
+      const cloned = casted.getClonedState(this.id);
+      this.getAsyncFields(casted).forEach((field) => {
         const found = cloned.find((c) => c.field === field);
         if (found) {
           found.asyncState = state;
         }
       });
-      this.commitMutation(cloned, connector);
+      this.commitMutation(cloned, casted);
     });
   }
 
@@ -235,12 +240,12 @@ class FormControllerImpl<
       return;
     }
     const comparatorMap = connector.getComparatorMap();
-    const specCompare = comparatorMap?.[this.formSelector];
+    const specCompare = comparatorMap?.[this.id];
     const compare = specCompare ? specCompare : connector.comparator;
     const subscription = connector
       .getDataSource()
       .pipe(
-        map((states) => states[this.formSelector]),
+        map((states) => states[this.id]),
         distinctUntilChanged(compare),
         map(
           (formData) =>
@@ -252,12 +257,13 @@ class FormControllerImpl<
         ),
 
         switchMap((asyncFormData) => {
+          const oldMeta = this.getMeta();
           if (!asyncFormData.length) {
-            return of(this.getMeta());
+            return of(oldMeta);
           }
 
           this.setAsyncState(AsyncState.PENDING);
-          const async$ = this.asyncValidator!(asyncFormData);
+          const async$ = this.asyncValidator!(asyncFormData, oldMeta);
           const reduced$ = async$ instanceof Promise ? from(async$) : async$;
           return reduced$.pipe(
             catchError(() => {
@@ -296,17 +302,16 @@ class FormControllerImpl<
     return () => subscription.unsubscribe();
   }
 
-  @bound
-  selector() {
-    return this.formSelector;
-  }
-
-  initiator: Initiator = (connector) => {
+  initiator: Initiator<F> = (connector) => {
     if (connector && !this.connector) {
       this.connector = connector as RxNStore<Any> & Subscribable<Any>;
       this.metadata$ = new BehaviorSubject<Partial<M>>(
-        this.validator(connector.getState(this.formSelector))
+        this.validator(
+          connector.getState(this.id),
+          this.defaultMeta ? this.defaultMeta : this.getMeta()
+        )
       );
+      return;
     }
 
     if (this.fields) {
@@ -324,6 +329,7 @@ class FormControllerImpl<
     return [] as unknown as F;
   };
 
+  @bound
   chain<P extends Plugin<string>[]>(...plugins: P) {
     this.safeExecute((connector) => {
       Array.from(plugins).forEach((plugin) => {
@@ -340,6 +346,26 @@ class FormControllerImpl<
   }
 
   @bound
+  getDatum<At extends number = number>(field: F[At]["field"]) {
+    return this.safeExecute((connector) => {
+      const casted = connector as unknown as RxNStore<Record<S, () => F>>;
+      return this.findDatumByField(casted.getState(this.id), field);
+    });
+  }
+
+  @bound
+  getDatumValue<At extends number = number>(field: F[At]["field"]) {
+    return this.safeExecute((connector) => {
+      const casted = connector as unknown as RxNStore<Record<S, () => F>>;
+      const value = this.findDatumByField(
+        casted.getState(this.id),
+        field
+      )?.value;
+      return value as F[At]["value"];
+    });
+  }
+
+  @bound
   getClonedMetaByField<CF extends keyof Partial<M>>(field: CF) {
     const meta = this.getMeta();
     const clone = this.cloneFunctionMap?.[field]
@@ -349,22 +375,24 @@ class FormControllerImpl<
     if (clone && target) {
       return clone(target) as Partial<M>[CF];
     }
-
-    const defaultClone = this.connector?.cloneFunction;
+    const casted = this.connector as unknown as RxNStore<Record<S, () => F>>;
+    const defaultClone = casted?.cloneFunction;
     if (defaultClone) {
-      return defaultClone(target) as Partial<M>[CF];
+      return defaultClone(
+        target as ReturnType<Record<S, () => F>[S]>
+      ) as Partial<M>[CF];
     }
 
     return target;
   }
 
   @bound
-  getFieldMeta(field: F[number]["field"]) {
+  getFieldMeta<At extends number = number>(field: F[At]["field"]) {
     return this.getMeta()?.[field];
   }
 
   @bound
-  getFieldsMeta(fields: F[number]["field"][]) {
+  getFieldsMeta<At extends number = number>(fields: F[At]["field"][]) {
     return fields.reduce((acc, next) => {
       const meta = this.getMeta()?.[next];
       if (meta !== undefined) {
@@ -397,6 +425,81 @@ class FormControllerImpl<
   }
 
   @bound
+  observeFormDatum<CompareAt extends number = number>(
+    field: F[CompareAt]["field"],
+    observer: (result: ReturnType<Record<S, () => F>[S]>[CompareAt]) => void,
+    comparator?: Comparator<ReturnType<Record<S, () => F>[S]>[CompareAt]>
+  ) {
+    const casted = this.connector as unknown as RxNStore<Record<S, () => F>>;
+    if (casted) {
+      const subscription = casted
+        .getDataSource()
+        .pipe(
+          map((states) => states[this.id]),
+          map((form) => this.findDatumByField(form, field)!),
+          distinctUntilChanged(comparator)
+        )
+        .subscribe(observer);
+      return () => subscription.unsubscribe();
+    }
+    return () => {};
+  }
+
+  @bound
+  observeFormValue<CompareAt extends number = number>(
+    field: F[CompareAt]["field"],
+    observer: (
+      result: ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]
+    ) => void,
+    comparator?: Comparator<
+      ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]
+    >
+  ) {
+    const casted = this.connector as unknown as RxNStore<Record<S, () => F>>;
+    if (casted) {
+      const subscription = casted
+        .getDataSource()
+        .pipe(
+          map((states) => states[this.id]),
+          map((form) => this.findDatumByField(form, field)!.value),
+          distinctUntilChanged(comparator)
+        )
+        .subscribe(observer);
+      return () => subscription.unsubscribe();
+    }
+    return () => {};
+  }
+
+  @bound
+  observeFormData<CompareAts extends Readonly<number[]> = number[]>(
+    fields: F[CompareAts[number]]["field"][],
+    observer: (result: F[CompareAts[number]][]) => void,
+    comparator?: Comparator<F[CompareAts[number]][]>
+  ) {
+    const casted = this.connector as unknown as RxNStore<Record<S, () => F>>;
+    if (casted) {
+      const subscription = casted
+        .getDataSource()
+        .pipe(
+          map((states) => states[this.id]),
+          map((form) =>
+            form.reduce((acc, next, i) => {
+              const found = fields.find((field) => next.field === field);
+              if (found) {
+                acc.push(next);
+              }
+              return acc;
+            }, [] as F[CompareAts[number]][])
+          ),
+          distinctUntilChanged(comparator)
+        )
+        .subscribe(observer);
+      return () => subscription.unsubscribe();
+    }
+    return () => {};
+  }
+
+  @bound
   startValidation() {
     return this.safeExecute((connector) => {
       const stopSyncValidation = this.validatorExecutor(
@@ -407,15 +510,15 @@ class FormControllerImpl<
         connector as RxNStore<Record<S, () => F>> &
           Subscribable<Record<S, () => F>>
       );
-      return {
-        stopSyncValidation,
-        stopAsyncValidation,
+      return () => {
+        stopSyncValidation();
+        stopAsyncValidation?.();
       };
     });
   }
 
   @bound
-  changeFormDatum<N extends number>(
+  changeFormValue<N extends number>(
     field: F[N]["field"],
     value: F[N]["value"]
   ) {
@@ -444,7 +547,7 @@ class FormControllerImpl<
   @bound
   resetFormDatum<N extends number>(field: F[N]["field"]) {
     this.safeCommitMutation(field, (found, data) => {
-      const defaultDatum = this.findDatumByField(this.initiator(), field);
+      const defaultDatum = this.findDatumByField(this.initiator()!, field);
       if (defaultDatum) {
         found.changed = defaultDatum.changed;
         found.empty = defaultDatum.empty;
@@ -462,7 +565,7 @@ class FormControllerImpl<
   @bound
   resetFormAll() {
     this.safeExecute((connector) => {
-      connector.reset(this.formSelector);
+      connector.reset(this.id);
     });
     return this;
   }
@@ -478,7 +581,7 @@ class FormControllerImpl<
   @bound
   emptyFormField<N extends number>(field: F[N]["field"]) {
     this.safeCommitMutation(field, (found, data) => {
-      const defaultDatum = this.findDatumByField(this.initiator(), field);
+      const defaultDatum = this.findDatumByField(this.initiator()!, field);
       if (defaultDatum) {
         found.empty = true;
         found.value = defaultDatum.value;
@@ -503,9 +606,10 @@ class FormControllerImpl<
   @bound
   appendFormData(fields: FormStubs<F>) {
     this.safeExecute((connector) => {
-      const data = connector.getClonedState(this.formSelector);
+      const casted = connector as unknown as RxNStore<Record<S, () => F>>;
+      const data = casted.getClonedState(this.id);
       this.appendDataByFields(fields, data);
-      this.commitMutation(data, connector);
+      this.commitMutation(data, casted);
     });
     return this;
   }
@@ -513,9 +617,10 @@ class FormControllerImpl<
   @bound
   removeFormData(fields: Array<F[number]["field"]>) {
     this.safeExecute((connector) => {
-      const data = connector.getClonedState(this.formSelector);
+      const casted = connector as unknown as RxNStore<Record<S, () => F>>;
+      const data = casted.getClonedState(this.id);
       this.removeDataByFields(fields, data);
-      this.commitMutation(data, connector);
+      this.commitMutation(data, casted);
     });
     return this;
   }

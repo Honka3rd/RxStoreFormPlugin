@@ -1,4 +1,19 @@
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var __assign = (this && this.__assign) || function () {
     __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -46,21 +61,27 @@ var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, 
 };
 var _this = this;
 Object.defineProperty(exports, "__esModule", { value: true });
+var rx_store_types_1 = require("rx-store-types");
 var rx_store_core_1 = require("rx-store-core");
 var interfaces_1 = require("./interfaces");
 var rxjs_1 = require("rxjs");
 var FormControllerImpl = function () {
     var _a;
     var _instanceExtraInitializers = [];
-    var _selector_decorators;
+    var _chain_decorators;
     var _getMeta_decorators;
+    var _getDatum_decorators;
+    var _getDatumValue_decorators;
     var _getClonedMetaByField_decorators;
     var _getFieldMeta_decorators;
     var _getFieldsMeta_decorators;
     var _observeMeta_decorators;
     var _observeMetaByField_decorators;
+    var _observeFormDatum_decorators;
+    var _observeFormValue_decorators;
+    var _observeFormData_decorators;
     var _startValidation_decorators;
-    var _changeFormDatum_decorators;
+    var _changeFormValue_decorators;
     var _hoverFormField_decorators;
     var _changeFieldType_decorators;
     var _resetFormDatum_decorators;
@@ -72,14 +93,14 @@ var FormControllerImpl = function () {
     var _removeFormData_decorators;
     var _setMetadata_decorators;
     var _setMetaByField_decorators;
-    return _a = /** @class */ (function () {
-            function FormControllerImpl(formSelector, validator) {
-                var _this = this;
-                this.formSelector = (__runInitializers(this, _instanceExtraInitializers), formSelector);
-                this.validator = validator;
-                this.getAsyncFields = function (connector) {
+    return _a = /** @class */ (function (_super) {
+            __extends(FormControllerImpl, _super);
+            function FormControllerImpl(id, validator) {
+                var _this = _super.call(this, id) || this;
+                _this.validator = (__runInitializers(_this, _instanceExtraInitializers), validator);
+                _this.getAsyncFields = function (connector) {
                     return connector
-                        .getState(_this.formSelector)
+                        .getState(_this.id)
                         .filter(function (_a) {
                         var type = _a.type;
                         return type === interfaces_1.DatumType.ASYNC;
@@ -89,10 +110,11 @@ var FormControllerImpl = function () {
                         return field;
                     });
                 };
-                this.initiator = function (connector) {
+                _this.initiator = function (connector) {
                     if (connector && !_this.connector) {
                         _this.connector = connector;
-                        _this.metadata$ = new rxjs_1.BehaviorSubject(_this.validator(connector.getState(_this.formSelector)));
+                        _this.metadata$ = new rxjs_1.BehaviorSubject(_this.validator(connector.getState(_this.id), _this.defaultMeta ? _this.defaultMeta : _this.getMeta()));
+                        return;
                     }
                     if (_this.fields) {
                         return _this.fields.map(function (_a) {
@@ -111,6 +133,7 @@ var FormControllerImpl = function () {
                     }
                     return [];
                 };
+                return _this;
             }
             FormControllerImpl.prototype.setAsyncValidator = function (asyncValidator) {
                 if (!this.asyncValidator) {
@@ -142,20 +165,16 @@ var FormControllerImpl = function () {
                     this.cloneFunctionMap = cloneFunctionMap;
                 }
             };
-            FormControllerImpl.prototype.reportNoneConnectedError = function () {
-                throw Error("initiator method is not called");
-            };
-            FormControllerImpl.prototype.safeExecute = function (callback) {
-                var connector = this.connector;
-                if (connector) {
-                    return callback(connector);
+            FormControllerImpl.prototype.setDefaultMeta = function (meta) {
+                if (!this.defaultMeta) {
+                    this.defaultMeta = meta;
                 }
-                this.reportNoneConnectedError();
             };
             FormControllerImpl.prototype.shallowCloneFormData = function () {
                 var _this = this;
                 return this.safeExecute(function (connector) {
-                    return connector.getClonedState(_this.formSelector);
+                    var casted = connector;
+                    return casted.getClonedState(_this.id);
                 });
             };
             FormControllerImpl.prototype.safeClone = function (callback) {
@@ -175,15 +194,18 @@ var FormControllerImpl = function () {
             };
             FormControllerImpl.prototype.commitMutation = function (data, connector) {
                 var _a;
-                connector.setState((_a = {}, _a[this.formSelector] = data, _a));
+                connector.setState((_a = {}, _a[this.id] = data, _a));
             };
             FormControllerImpl.prototype.safeCommitMutation = function (field, callback) {
                 var _this = this;
                 this.safeExecute(function (connector) {
                     _this.safeClone(function (data) {
                         _this.findFromClonedAndExecute(field, data, function (found) {
-                            callback(__assign({}, found), data);
-                            _this.commitMutation(data, connector);
+                            var cloned = __assign({}, found);
+                            data.splice(data.indexOf(found), 1, cloned);
+                            callback(cloned, data);
+                            var casted = connector;
+                            _this.commitMutation(data, casted);
                         });
                     });
                 });
@@ -214,14 +236,14 @@ var FormControllerImpl = function () {
             };
             FormControllerImpl.prototype.validatorExecutor = function (connector) {
                 var _this = this;
-                return connector.observe(this.formSelector, function (formData) {
-                    var meta = _this.validator(formData);
+                return connector.observe(this.id, function (formData) {
+                    var meta = _this.validator(formData, _this.getMeta());
                     _this.safeCommitMeta(meta);
                 });
             };
             FormControllerImpl.prototype.getExcludedMeta = function (connector) {
                 var excluded = connector
-                    .getState(this.formSelector)
+                    .getState(this.id)
                     .filter(function (_a) {
                     var type = _a.type;
                     return type === interfaces_1.DatumType.EXCLUDED;
@@ -235,14 +257,15 @@ var FormControllerImpl = function () {
             FormControllerImpl.prototype.setAsyncState = function (state) {
                 var _this = this;
                 this.safeExecute(function (connector) {
-                    var cloned = connector.getClonedState(_this.formSelector);
-                    _this.getAsyncFields(connector).forEach(function (field) {
+                    var casted = connector;
+                    var cloned = casted.getClonedState(_this.id);
+                    _this.getAsyncFields(casted).forEach(function (field) {
                         var found = cloned.find(function (c) { return c.field === field; });
                         if (found) {
                             found.asyncState = state;
                         }
                     });
-                    _this.commitMutation(cloned, connector);
+                    _this.commitMutation(cloned, casted);
                 });
             };
             FormControllerImpl.prototype.asyncValidatorExecutor = function (connector) {
@@ -251,21 +274,22 @@ var FormControllerImpl = function () {
                     return;
                 }
                 var comparatorMap = connector.getComparatorMap();
-                var specCompare = comparatorMap === null || comparatorMap === void 0 ? void 0 : comparatorMap[this.formSelector];
+                var specCompare = comparatorMap === null || comparatorMap === void 0 ? void 0 : comparatorMap[this.id];
                 var compare = specCompare ? specCompare : connector.comparator;
                 var subscription = connector
                     .getDataSource()
-                    .pipe((0, rxjs_1.map)(function (states) { return states[_this.formSelector]; }), (0, rxjs_1.distinctUntilChanged)(compare), (0, rxjs_1.map)(function (formData) {
+                    .pipe((0, rxjs_1.map)(function (states) { return states[_this.id]; }), (0, rxjs_1.distinctUntilChanged)(compare), (0, rxjs_1.map)(function (formData) {
                     return formData.filter(function (_a) {
                         var type = _a.type;
                         return type === interfaces_1.DatumType.ASYNC;
                     });
                 }), (0, rxjs_1.switchMap)(function (asyncFormData) {
+                    var oldMeta = _this.getMeta();
                     if (!asyncFormData.length) {
-                        return (0, rxjs_1.of)(_this.getMeta());
+                        return (0, rxjs_1.of)(oldMeta);
                     }
                     _this.setAsyncState(interfaces_1.AsyncState.PENDING);
-                    var async$ = _this.asyncValidator(asyncFormData);
+                    var async$ = _this.asyncValidator(asyncFormData, oldMeta);
                     var reduced$ = async$ instanceof Promise ? (0, rxjs_1.from)(async$) : async$;
                     return reduced$.pipe((0, rxjs_1.catchError)(function () {
                         return (0, rxjs_1.of)({
@@ -295,9 +319,6 @@ var FormControllerImpl = function () {
                     .subscribe(function (meta) { return meta && _this.safeCommitMeta(meta); });
                 return function () { return subscription.unsubscribe(); };
             };
-            FormControllerImpl.prototype.selector = function () {
-                return this.formSelector;
-            };
             FormControllerImpl.prototype.chain = function () {
                 var plugins = [];
                 for (var _i = 0; _i < arguments.length; _i++) {
@@ -314,8 +335,24 @@ var FormControllerImpl = function () {
                 var _a;
                 return __assign({}, (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.value);
             };
+            FormControllerImpl.prototype.getDatum = function (field) {
+                var _this = this;
+                return this.safeExecute(function (connector) {
+                    var casted = connector;
+                    return _this.findDatumByField(casted.getState(_this.id), field);
+                });
+            };
+            FormControllerImpl.prototype.getDatumValue = function (field) {
+                var _this = this;
+                return this.safeExecute(function (connector) {
+                    var _a;
+                    var casted = connector;
+                    var value = (_a = _this.findDatumByField(casted.getState(_this.id), field)) === null || _a === void 0 ? void 0 : _a.value;
+                    return value;
+                });
+            };
             FormControllerImpl.prototype.getClonedMetaByField = function (field) {
-                var _a, _b;
+                var _a;
                 var meta = this.getMeta();
                 var clone = ((_a = this.cloneFunctionMap) === null || _a === void 0 ? void 0 : _a[field])
                     ? this.cloneFunctionMap[field]
@@ -324,7 +361,8 @@ var FormControllerImpl = function () {
                 if (clone && target) {
                     return clone(target);
                 }
-                var defaultClone = (_b = this.connector) === null || _b === void 0 ? void 0 : _b.cloneFunction;
+                var casted = this.connector;
+                var defaultClone = casted === null || casted === void 0 ? void 0 : casted.cloneFunction;
                 if (defaultClone) {
                     return defaultClone(target);
                 }
@@ -355,18 +393,62 @@ var FormControllerImpl = function () {
                 var subscription = (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.pipe((0, rxjs_1.map)(function (meta) { return meta[field]; }), (0, rxjs_1.distinctUntilChanged)((_b = this.metaComparatorMap) === null || _b === void 0 ? void 0 : _b[field])).subscribe(callback);
                 return function () { return subscription === null || subscription === void 0 ? void 0 : subscription.unsubscribe(); };
             };
+            FormControllerImpl.prototype.observeFormDatum = function (field, observer, comparator) {
+                var _this = this;
+                var casted = this.connector;
+                if (casted) {
+                    var subscription_1 = casted
+                        .getDataSource()
+                        .pipe((0, rxjs_1.map)(function (states) { return states[_this.id]; }), (0, rxjs_1.map)(function (form) { return _this.findDatumByField(form, field); }), (0, rxjs_1.distinctUntilChanged)(comparator))
+                        .subscribe(observer);
+                    return function () { return subscription_1.unsubscribe(); };
+                }
+                return function () { };
+            };
+            FormControllerImpl.prototype.observeFormValue = function (field, observer, comparator) {
+                var _this = this;
+                var casted = this.connector;
+                if (casted) {
+                    var subscription_2 = casted
+                        .getDataSource()
+                        .pipe((0, rxjs_1.map)(function (states) { return states[_this.id]; }), (0, rxjs_1.map)(function (form) { return _this.findDatumByField(form, field).value; }), (0, rxjs_1.distinctUntilChanged)(comparator))
+                        .subscribe(observer);
+                    return function () { return subscription_2.unsubscribe(); };
+                }
+                return function () { };
+            };
+            FormControllerImpl.prototype.observeFormData = function (fields, observer, comparator) {
+                var _this = this;
+                var casted = this.connector;
+                if (casted) {
+                    var subscription_3 = casted
+                        .getDataSource()
+                        .pipe((0, rxjs_1.map)(function (states) { return states[_this.id]; }), (0, rxjs_1.map)(function (form) {
+                        return form.reduce(function (acc, next, i) {
+                            var found = fields.find(function (field) { return next.field === field; });
+                            if (found) {
+                                acc.push(next);
+                            }
+                            return acc;
+                        }, []);
+                    }), (0, rxjs_1.distinctUntilChanged)(comparator))
+                        .subscribe(observer);
+                    return function () { return subscription_3.unsubscribe(); };
+                }
+                return function () { };
+            };
             FormControllerImpl.prototype.startValidation = function () {
                 var _this = this;
                 return this.safeExecute(function (connector) {
                     var stopSyncValidation = _this.validatorExecutor(connector);
                     var stopAsyncValidation = _this.asyncValidatorExecutor(connector);
-                    return {
-                        stopSyncValidation: stopSyncValidation,
-                        stopAsyncValidation: stopAsyncValidation,
+                    return function () {
+                        stopSyncValidation();
+                        stopAsyncValidation === null || stopAsyncValidation === void 0 ? void 0 : stopAsyncValidation();
                     };
                 });
             };
-            FormControllerImpl.prototype.changeFormDatum = function (field, value) {
+            FormControllerImpl.prototype.changeFormValue = function (field, value) {
                 this.safeCommitMutation(field, function (found) {
                     found.value = value;
                 });
@@ -404,7 +486,7 @@ var FormControllerImpl = function () {
             FormControllerImpl.prototype.resetFormAll = function () {
                 var _this = this;
                 this.safeExecute(function (connector) {
-                    connector.reset(_this.formSelector);
+                    connector.reset(_this.id);
                 });
                 return this;
             };
@@ -436,18 +518,20 @@ var FormControllerImpl = function () {
             FormControllerImpl.prototype.appendFormData = function (fields) {
                 var _this = this;
                 this.safeExecute(function (connector) {
-                    var data = connector.getClonedState(_this.formSelector);
+                    var casted = connector;
+                    var data = casted.getClonedState(_this.id);
                     _this.appendDataByFields(fields, data);
-                    _this.commitMutation(data, connector);
+                    _this.commitMutation(data, casted);
                 });
                 return this;
             };
             FormControllerImpl.prototype.removeFormData = function (fields) {
                 var _this = this;
                 this.safeExecute(function (connector) {
-                    var data = connector.getClonedState(_this.formSelector);
+                    var casted = connector;
+                    var data = casted.getClonedState(_this.id);
                     _this.removeDataByFields(fields, data);
-                    _this.commitMutation(data, connector);
+                    _this.commitMutation(data, casted);
                 });
                 return this;
             };
@@ -470,17 +554,22 @@ var FormControllerImpl = function () {
                 return this;
             };
             return FormControllerImpl;
-        }()),
+        }(rx_store_types_1.PluginImpl)),
         (function () {
-            _selector_decorators = [rx_store_core_1.bound];
+            _chain_decorators = [rx_store_core_1.bound];
             _getMeta_decorators = [rx_store_core_1.bound];
+            _getDatum_decorators = [rx_store_core_1.bound];
+            _getDatumValue_decorators = [rx_store_core_1.bound];
             _getClonedMetaByField_decorators = [rx_store_core_1.bound];
             _getFieldMeta_decorators = [rx_store_core_1.bound];
             _getFieldsMeta_decorators = [rx_store_core_1.bound];
             _observeMeta_decorators = [rx_store_core_1.bound];
             _observeMetaByField_decorators = [rx_store_core_1.bound];
+            _observeFormDatum_decorators = [rx_store_core_1.bound];
+            _observeFormValue_decorators = [rx_store_core_1.bound];
+            _observeFormData_decorators = [rx_store_core_1.bound];
             _startValidation_decorators = [rx_store_core_1.bound];
-            _changeFormDatum_decorators = [rx_store_core_1.bound];
+            _changeFormValue_decorators = [rx_store_core_1.bound];
             _hoverFormField_decorators = [rx_store_core_1.bound];
             _changeFieldType_decorators = [rx_store_core_1.bound];
             _resetFormDatum_decorators = [rx_store_core_1.bound];
@@ -492,15 +581,20 @@ var FormControllerImpl = function () {
             _removeFormData_decorators = [rx_store_core_1.bound];
             _setMetadata_decorators = [rx_store_core_1.bound];
             _setMetaByField_decorators = [rx_store_core_1.bound];
-            __esDecorate(_a, null, _selector_decorators, { kind: "method", name: "selector", static: false, private: false, access: { has: function (obj) { return "selector" in obj; }, get: function (obj) { return obj.selector; } } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _chain_decorators, { kind: "method", name: "chain", static: false, private: false, access: { has: function (obj) { return "chain" in obj; }, get: function (obj) { return obj.chain; } } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getMeta_decorators, { kind: "method", name: "getMeta", static: false, private: false, access: { has: function (obj) { return "getMeta" in obj; }, get: function (obj) { return obj.getMeta; } } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _getDatum_decorators, { kind: "method", name: "getDatum", static: false, private: false, access: { has: function (obj) { return "getDatum" in obj; }, get: function (obj) { return obj.getDatum; } } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _getDatumValue_decorators, { kind: "method", name: "getDatumValue", static: false, private: false, access: { has: function (obj) { return "getDatumValue" in obj; }, get: function (obj) { return obj.getDatumValue; } } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getClonedMetaByField_decorators, { kind: "method", name: "getClonedMetaByField", static: false, private: false, access: { has: function (obj) { return "getClonedMetaByField" in obj; }, get: function (obj) { return obj.getClonedMetaByField; } } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getFieldMeta_decorators, { kind: "method", name: "getFieldMeta", static: false, private: false, access: { has: function (obj) { return "getFieldMeta" in obj; }, get: function (obj) { return obj.getFieldMeta; } } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getFieldsMeta_decorators, { kind: "method", name: "getFieldsMeta", static: false, private: false, access: { has: function (obj) { return "getFieldsMeta" in obj; }, get: function (obj) { return obj.getFieldsMeta; } } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _observeMeta_decorators, { kind: "method", name: "observeMeta", static: false, private: false, access: { has: function (obj) { return "observeMeta" in obj; }, get: function (obj) { return obj.observeMeta; } } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _observeMetaByField_decorators, { kind: "method", name: "observeMetaByField", static: false, private: false, access: { has: function (obj) { return "observeMetaByField" in obj; }, get: function (obj) { return obj.observeMetaByField; } } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _observeFormDatum_decorators, { kind: "method", name: "observeFormDatum", static: false, private: false, access: { has: function (obj) { return "observeFormDatum" in obj; }, get: function (obj) { return obj.observeFormDatum; } } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _observeFormValue_decorators, { kind: "method", name: "observeFormValue", static: false, private: false, access: { has: function (obj) { return "observeFormValue" in obj; }, get: function (obj) { return obj.observeFormValue; } } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _observeFormData_decorators, { kind: "method", name: "observeFormData", static: false, private: false, access: { has: function (obj) { return "observeFormData" in obj; }, get: function (obj) { return obj.observeFormData; } } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _startValidation_decorators, { kind: "method", name: "startValidation", static: false, private: false, access: { has: function (obj) { return "startValidation" in obj; }, get: function (obj) { return obj.startValidation; } } }, null, _instanceExtraInitializers);
-            __esDecorate(_a, null, _changeFormDatum_decorators, { kind: "method", name: "changeFormDatum", static: false, private: false, access: { has: function (obj) { return "changeFormDatum" in obj; }, get: function (obj) { return obj.changeFormDatum; } } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _changeFormValue_decorators, { kind: "method", name: "changeFormValue", static: false, private: false, access: { has: function (obj) { return "changeFormValue" in obj; }, get: function (obj) { return obj.changeFormValue; } } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _hoverFormField_decorators, { kind: "method", name: "hoverFormField", static: false, private: false, access: { has: function (obj) { return "hoverFormField" in obj; }, get: function (obj) { return obj.hoverFormField; } } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _changeFieldType_decorators, { kind: "method", name: "changeFieldType", static: false, private: false, access: { has: function (obj) { return "changeFieldType" in obj; }, get: function (obj) { return obj.changeFieldType; } } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _resetFormDatum_decorators, { kind: "method", name: "resetFormDatum", static: false, private: false, access: { has: function (obj) { return "resetFormDatum" in obj; }, get: function (obj) { return obj.resetFormDatum; } } }, null, _instanceExtraInitializers);
