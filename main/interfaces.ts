@@ -108,10 +108,6 @@ export interface FormController<
 
   getMeta(): Partial<M> | undefined;
 
-  getFieldMeta(
-    field: F[number]["field"]
-  ): Partial<M>[F[number]["field"]] | undefined;
-
   getFieldsMeta(fields: F[number]["field"][]): Partial<M>;
 
   changeFieldType<N extends number>(
@@ -137,8 +133,6 @@ export interface FormController<
 
   getFieldMeta(field: F[number]["field"]): Partial<M>[F[number]["field"]];
 
-  getFieldsMeta(fields: F[number]["field"][]): Partial<M>;
-
   observeMeta(callback: (meta: Partial<M>) => void): () => void | undefined;
 
   observeMetaByField<K extends keyof M>(
@@ -162,13 +156,13 @@ export type FormStub = {
   type?: DatumType;
 };
 
-type K<T> = keyof T;
+export type K<T> = keyof T;
 
-type V<T> = T[keyof T];
+export type V<T> = T[keyof T];
 
-type PK<T> = keyof Partial<T>;
+export type PK<T> = keyof Partial<T>;
 
-type PV<T> = Partial<T>[keyof Partial<T>];
+export type PV<T> = Partial<T>[keyof Partial<T>];
 
 export type ImmutableFormStubs = List<Map<K<FormStub>, V<FormStub>>>;
 
@@ -185,55 +179,71 @@ export interface ImmutableFormController<
 
   setFields(fields: FormStubs<F>): void;
 
-  changeFormDatum: <N extends number>(
+  changeFormDatum<N extends number>(
     field: F[N]["field"],
     touchOrNot: boolean
-  ) => this;
+  ): this;
 
-  touchFormField: <N extends number>(
+  touchFormField<N extends number>(
     field: F[N]["field"],
     touchOrNot: boolean
-  ) => this;
+  ): this;
 
-  emptyFormField: <N extends number>(field: F[N]["field"]) => this;
+  emptyFormField<N extends number>(field: F[N]["field"]): this;
 
-  focusFormField: <N extends number>(
+  focusFormField<N extends number>(
     field: F[N]["field"],
     focusOrNot: boolean
-  ) => this;
+  ): this;
 
-  hoverFormField: <N extends number>(
+  hoverFormField<N extends number>(
     field: F[N]["field"],
     hoverOrNot: boolean
-  ) => this;
+  ): this;
 
   initiator: Initiator<F>;
 
   validator: (formData: F) => Map<K<M>, V<M>>;
 
-  asyncValidator?: (
+  asyncValidator?(
     formData: F
-  ) => Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>;
+  ): Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>;
 
-  startValidation: (
+  startValidation(
     callback: (meta: Map<K<M>, V<M>>) => void
-  ) => (() => void) | undefined;
+  ): (() => void) | undefined;
 
-  getMeta(): Map<PK<M>, PV<M>> | undefined;
+  getMeta(): Map<PK<M>, PV<M>>;
 
   getFieldMeta<N extends number = number>(
     field: F[N]["field"]
-  ): Map<K<M[F[N]["field"]]>, V<M[F[N]["field"]]>> | undefined;
-
-  getFieldsMeta(
-    fields: F[number]["field"][]
-  ): Map<
-    F[number]["field"],
-    Map<K<M[F[number]["field"]]>, V<M[F[number]["field"]]>>
-  >;
+  ): M[F[N]["field"]]
 
   changeFieldType<N extends number>(
     field: F[N]["field"],
     type: DatumType
   ): this;
+
+  resetFormDatum<N extends number>(field: F[N]["field"]): this;
+
+  resetFormAll(): this;
+
+  appendFormData(fields: FormStubs<F>): this;
+
+  removeFormData(fields: Array<F[number]["field"]>): this;
+
+  setMetadata(meta: Partial<M>): this;
+
+  setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this;
+
+  getClonedMetaByField<CF extends keyof M>(field: CF): Partial<M>[CF];
+
+  getFieldsMeta(fields: F[number]["field"][]): Map<PK<M>, PV<M>>;
+
+  observeMeta(callback: (meta: Partial<M>) => void): () => void | undefined;
+
+  observeMetaByField<K extends keyof M>(
+    field: K,
+    callback: (metaOne: Partial<M>[K]) => void
+  ): () => void | undefined;
 }
