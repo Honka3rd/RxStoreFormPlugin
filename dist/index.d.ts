@@ -1,7 +1,7 @@
 import { Plugin } from "rx-store-types";
 import { FormControlBasicMetadata, FormControlData, FormController, FormStubs, NormalFormPluginBuilderParams } from "./main/interfaces";
 import { Observable } from "rxjs";
-declare class NRFormBuilder<F extends FormControlData, M extends Record<F[number]["field"], FormControlBasicMetadata>, S extends string> {
+declare class NRFormBuilder<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string> {
     private NRF;
     constructor({ formSelector, validator, }: NormalFormPluginBuilderParams<F, M, S>);
     setAsyncValidator(asyncValidator: (formData: F) => Observable<Partial<M>> | Promise<Partial<M>>): this;
@@ -14,6 +14,7 @@ declare class NRFormBuilder<F extends FormControlData, M extends Record<F[number
     setMetaCloneFunctionMap(cloneFunctionMap: {
         [K in keyof Partial<M>]: (metaOne: Partial<M>[K]) => Partial<M>[K];
     }): this;
-    build(): FormController<F, M, S> & Plugin<S>;
+    setDefaultMeta(meta: Partial<M>): this;
+    getInstance(): FormController<F, M, S> & Plugin<S, any>;
 }
 export { NRFormBuilder };
