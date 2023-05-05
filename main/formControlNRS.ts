@@ -330,17 +330,6 @@ class FormControllerImpl<
   };
 
   @bound
-  chain<P extends Plugin<string>[]>(...plugins: P) {
-    this.safeExecute((connector) => {
-      Array.from(plugins).forEach((plugin) => {
-        plugin.initiator(connector as RxStore<Any> & Subscribable<Any>);
-      });
-    });
-
-    return this;
-  }
-
-  @bound
   getMeta() {
     return { ...this.metadata$?.value } as Partial<M>;
   }
