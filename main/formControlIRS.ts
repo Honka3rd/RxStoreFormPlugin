@@ -1,4 +1,11 @@
-import { Any, Initiator, PluginImpl, RxImStore } from "rx-store-types";
+import {
+  Any,
+  Initiator,
+  PluginImpl,
+  RxImStore,
+  RxStore,
+  Subscribable,
+} from "rx-store-types";
 import {
   DatumType,
   FormControlBasicMetadata,
@@ -85,23 +92,41 @@ export class ImmutableFormControllerImpl<
     });
   }
 
+  private cast(connector: RxStore<Any> & Subscribable<Any>) {
+    const casted = connector as unknown as RxImStore<
+      Record<S, () => List<Map<K<F[number]>, V<F[number]>>>>
+    >;
+    return casted;
+  }
+
+  private getDatumIndex<N extends number>(
+    field: F[N]["field"],
+    casted: RxImStore<Record<S, () => List<Map<K<F[number]>, V<F[number]>>>>>
+  ) {
+    const targetIndex = casted
+      .getState(this.id)
+      .findIndex((datum) => datum.get("field") === field);
+    return targetIndex;
+  }
+
   resetFormDatum<N extends number>(field: F[N]["field"]): this {
     this.safeExecute((connector) => {
-      const casted = connector as unknown as RxImStore<
-        Record<S, () => List<Map<K<F[number]>, V<F[number]>>>>
-      >;
+      const casted = this.cast(connector);
       const defaultDatum = this.findDatumByField(this.initiator()!, field);
+      const indexToReset = this.getDatumIndex(field, casted);
       if (defaultDatum) {
-        const indexToReset = casted
-          .getState(this.id)
-          .findIndex((im) => im.get("field") === field);
         if (indexToReset > -1) {
           this.commitMutation(
             casted.getState(this.id).set(indexToReset, defaultDatum),
             casted
           );
         }
+        return this;
       }
+      this.commitMutation(
+        casted.getState(this.id).splice(indexToReset, 1),
+        casted
+      );
     });
     return this;
   }
@@ -115,9 +140,7 @@ export class ImmutableFormControllerImpl<
 
   appendFormData(fields: FormStubs<F>): this {
     this.safeExecute((connector) => {
-      const casted = connector as unknown as RxImStore<
-        Record<S, () => List<Map<K<F[number]>, V<F[number]>>>>
-      >;
+      const casted = this.cast(connector);
       const data = this.appendDataByFields(fields, casted.getState(this.id));
       this.commitMutation(data, casted);
     });
@@ -126,9 +149,7 @@ export class ImmutableFormControllerImpl<
 
   removeFormData(fields: F[number]["field"][]): this {
     this.safeExecute((connector) => {
-      const casted = connector as unknown as RxImStore<
-        Record<S, () => List<Map<K<F[number]>, V<F[number]>>>>
-      >;
+      const casted = this.cast(connector);
       const removed = this.removeDataByFields(fields, casted.getState(this.id));
       this.commitMutation(removed, casted);
     });
@@ -204,12 +225,8 @@ export class ImmutableFormControllerImpl<
     type: DatumType
   ): this {
     this.safeExecute((connector) => {
-      const casted = connector as unknown as RxImStore<
-        Record<S, () => List<Map<K<F[number]>, V<F[number]>>>>
-      >;
-      const targetIndex = casted
-        .getState(this.id)
-        .findIndex((datum) => datum.get("field") === field);
+      const casted = this.cast(connector);
+      const targetIndex = this.getDatumIndex(field, casted);
       if (targetIndex >= 0) {
         const mutation = casted
           .getState(this.id)
@@ -225,31 +242,59 @@ export class ImmutableFormControllerImpl<
   }
 
   getFieldsMeta(fields: F[number]["field"][]): Map<PK<M>, PV<M>> {
-    throw new Error("Method not implemented.");
+    return Map().withMutations((mutation) => {
+      fields.forEach((field) => {
+        mutation.set(field, this.getFieldMeta(field));
+      });
+    }) as Map<PK<M>, PV<M>>;
   }
 
   setAsyncValidator(
     asyncValidator: (
       formData: F
-    ) =>
-      | Observable<Map<keyof M, Partial<M>[keyof M]>>
-      | Promise<Map<keyof M, Partial<M>[keyof M]>>
+    ) => Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>
   ): void {
-    throw new Error("Method not implemented.");
+    if (!this.asyncValidator) {
+      this.asyncValidator = asyncValidator;
+    }
   }
 
-  changeFormDatum<N extends number>(
+  changeFormValue<N extends number>(
     field: F[N]["field"],
-    touchOrNot: boolean
+    value: F[N]["value"]
   ): this {
-    throw new Error("Method not implemented.");
+    this.safeExecute((connector) => {
+      const casted = this.cast(connector);
+      const targetIndex = this.getDatumIndex(field, casted);
+      const mutation = casted
+        .getState(this.id)
+        .get(targetIndex)!
+        .set("value", value);
+      this.commitMutation(
+        casted.getState(this.id).set(targetIndex, mutation),
+        casted
+      );
+    });
+    return this;
   }
 
   touchFormField<N extends number>(
     field: F[N]["field"],
     touchOrNot: boolean
   ): this {
-    throw new Error("Method not implemented.");
+    this.safeExecute((connector) => {
+      const casted = this.cast(connector);
+      const targetIndex = this.getDatumIndex(field, casted);
+      const mutation = casted
+        .getState(this.id)
+        .get(targetIndex)!
+        .set("touched", touchOrNot as V<F[number]>);
+      this.commitMutation(
+        casted.getState(this.id).set(targetIndex, mutation),
+        casted
+      );
+    });
+    return this;
   }
 
   emptyFormField<N extends number>(field: F[N]["field"]): this {

@@ -238,9 +238,9 @@ export interface ImmutableFormController<
 
   setFields(fields: FormStubs<F>): void;
 
-  changeFormDatum<N extends number>(
+  changeFormValue<N extends number>(
     field: F[N]["field"],
-    touchOrNot: boolean
+    value: F[N]["value"]
   ): this;
 
   touchFormField<N extends number>(

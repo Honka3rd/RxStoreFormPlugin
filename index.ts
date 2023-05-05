@@ -2,16 +2,12 @@ import { Plugin } from "rx-store-types";
 import {
   FormControlBasicMetadata,
   FormControlData,
-  FormControlDatum,
-  FormControlMetadata,
-  FormControlStrDatum,
   FormController,
   FormStubs,
   NormalFormPluginBuilderParams,
 } from "./main/interfaces";
 import FormControllerImpl from "./main/formControlNRS";
 import { Observable } from "rxjs";
-import { NRS } from "rx-store-core";
 
 class NRFormBuilder<
   F extends FormControlData,
