@@ -262,7 +262,7 @@ export interface ImmutableFormController<
 
   initiator: Initiator<F>;
 
-  validator: (formData: F) => Map<K<M>, V<M>>;
+  validator: (formData: F) => Map<PK<M>, Map<"errors" | "info" | "warn", any>>;
 
   asyncValidator?(
     formData: F
@@ -272,11 +272,11 @@ export interface ImmutableFormController<
     callback: (meta: Map<K<M>, V<M>>) => void
   ): (() => void) | undefined;
 
-  getMeta(): Map<PK<M>, PV<M>>;
+  getMeta(): Map<PK<M>, Map<"errors" | "info" | "warn", any>>;
 
   getFieldMeta<N extends number = number>(
     field: F[N]["field"]
-  ): M[F[N]["field"]]
+  ): Map<PK<M>, Map<"errors" | "info" | "warn", any>>;
 
   changeFieldType<N extends number>(
     field: F[N]["field"],
@@ -295,14 +295,14 @@ export interface ImmutableFormController<
 
   setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this;
 
-  getClonedMetaByField<CF extends keyof M>(field: CF): Partial<M>[CF];
-
   getFieldsMeta(fields: F[number]["field"][]): Map<PK<M>, PV<M>>;
 
-  observeMeta(callback: (meta: Partial<M>) => void): () => void | undefined;
+  observeMeta(
+    callback: (meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>) => void
+  ): () => void | undefined;
 
   observeMetaByField<K extends keyof M>(
     field: K,
-    callback: (metaOne: Partial<M>[K]) => void
+    callback: (metaOne: Map<"errors" | "info" | "warn", any>) => void
   ): () => void | undefined;
 }
