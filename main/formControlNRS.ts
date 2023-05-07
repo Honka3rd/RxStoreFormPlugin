@@ -574,7 +574,7 @@ class FormControllerImpl<
       if (defaultDatum) {
         found.empty = true;
         found.value = defaultDatum.value;
-        return;
+        return this;
       }
       data.splice(
         data.findIndex((d) => d.field === field),

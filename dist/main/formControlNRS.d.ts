@@ -1,4 +1,4 @@
-import { Plugin, Initiator, PluginImpl, Comparator } from "rx-store-types";
+import { Initiator, PluginImpl, Comparator } from "rx-store-types";
 import { FormController, FormControlData, FormControlBasicDatum, FormControlBasicMetadata, FormStubs, DatumType } from "./interfaces";
 import { Observable } from "rxjs";
 declare class FormControllerImpl<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> extends PluginImpl<S, F> implements FormController<F, M, S> {
@@ -38,7 +38,6 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     private setAsyncState;
     private asyncValidatorExecutor;
     initiator: Initiator<F>;
-    chain<P extends Plugin<string>[]>(...plugins: P): this;
     getMeta(): Partial<M>;
     getDatum<At extends number = number>(field: F[At]["field"]): FormControlBasicDatum | undefined;
     getDatumValue<At extends number = number>(field: F[At]["field"]): F[At]["value"] | undefined;
