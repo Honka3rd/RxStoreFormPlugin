@@ -232,7 +232,7 @@ export interface ImmutableFormController<
 > {
   setAsyncValidator(
     asyncValidator: (
-      formData: F
+      formData: List<Map<keyof F[number], V<F[number]>>>
     ) => Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>
   ): void;
 
@@ -262,15 +262,17 @@ export interface ImmutableFormController<
 
   initiator: Initiator<F>;
 
-  validator: (formData: F) => Map<PK<M>, Map<"errors" | "info" | "warn", any>>;
+  validator: (
+    formData: List<Map<keyof F[number], V<F[number]>>>,
+    meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>
+  ) => Map<PK<M>, Map<"errors" | "info" | "warn", any>>;
 
   asyncValidator?(
-    formData: F
+    formData: List<Map<keyof F[number], V<F[number]>>>,
+    meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>
   ): Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>;
 
-  startValidation(
-    callback: (meta: Map<K<M>, V<M>>) => void
-  ): (() => void) | undefined;
+  startValidation(): (() => void) | undefined;
 
   getMeta(): Map<PK<M>, Map<"errors" | "info" | "warn", any>>;
 
@@ -291,7 +293,7 @@ export interface ImmutableFormController<
 
   removeFormData(fields: Array<F[number]["field"]>): this;
 
-  setMetadata(meta: Partial<M>): this;
+  setMetadata(meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>): this;
 
   setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this;
 

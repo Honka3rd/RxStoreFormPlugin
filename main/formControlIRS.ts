@@ -7,6 +7,7 @@ import {
   Subscribable,
 } from "rx-store-types";
 import {
+  AsyncState,
   DatumType,
   FormControlBasicMetadata,
   FormControlData,
@@ -17,8 +18,18 @@ import {
   PV,
   V,
 } from "./interfaces";
-import { List, Map, fromJS, is } from "immutable";
-import { BehaviorSubject, Observable, distinctUntilChanged, map } from "rxjs";
+import { List, Map, fromJS, is, merge } from "immutable";
+import {
+  BehaviorSubject,
+  Observable,
+  catchError,
+  distinctUntilChanged,
+  from,
+  map,
+  of,
+  switchMap,
+  tap,
+} from "rxjs";
 
 export class ImmutableFormControllerImpl<
     F extends FormControlData,
@@ -36,8 +47,13 @@ export class ImmutableFormControllerImpl<
   constructor(
     id: S,
     public validator: (
-      formData: F
-    ) => Map<PK<M>, Map<"errors" | "info" | "warn", any>>
+      formData: List<Map<keyof F[number], V<F[number]>>>,
+      meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>
+    ) => Map<PK<M>, Map<"errors" | "info" | "warn", any>>,
+    public asyncValidator?: (
+      formData: List<Map<keyof F[number], V<F[number]>>>,
+      meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>
+    ) => Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>
   ) {
     super(id);
   }
@@ -95,7 +111,8 @@ export class ImmutableFormControllerImpl<
   private cast(connector: RxStore<Any> & Subscribable<Any>) {
     const casted = connector as unknown as RxImStore<
       Record<S, () => List<Map<K<F[number]>, V<F[number]>>>>
-    >;
+    > &
+      Subscribable<Record<S, () => List<Map<K<F[number]>, V<F[number]>>>>>;
     return casted;
   }
 
@@ -107,6 +124,137 @@ export class ImmutableFormControllerImpl<
       .getState(this.id)
       .findIndex((datum) => datum.get("field") === field);
     return targetIndex;
+  }
+
+  private validatorExecutor(
+    connector: RxImStore<
+      Record<S, () => List<Map<K<F[number]>, V<F[number]>>>>
+    > &
+      Subscribable<Record<S, () => List<Map<K<F[number]>, V<F[number]>>>>>
+  ) {
+    return connector.observe(this.id, (formData) => {
+      const meta = this.validator(formData, this.getMeta());
+      this.setMetadata(meta);
+    });
+  }
+
+  private isPromise<T>($async: any): $async is Promise<T> {
+    return $async instanceof Promise;
+  }
+
+  private getAsyncFields = (
+    connector: RxImStore<
+      Record<S, () => List<Map<keyof F[number], V<F[number]>>>>
+    > &
+      Subscribable<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>>
+  ) => {
+    return connector
+      .getState(this.id)
+      .filter((datum) => datum.get("type") === DatumType.ASYNC)
+      .map((datum) => datum.get("field")!);
+  };
+
+  private setAsyncState(state: AsyncState) {
+    this.safeExecute((connector) => {
+      const casted = this.cast(connector);
+      const prevFormData = casted.getState(this.id);
+      const updated = prevFormData.withMutations((mutation) => {
+        this.getAsyncFields(casted).forEach((field) => {
+          const castedField = field as unknown as F[number]["field"];
+          const foundIndex = mutation.findIndex(
+            (d) => d.get("field") === castedField
+          );
+          const updatedDatum = mutation
+            .get(foundIndex)
+            ?.set("asyncState", state as V<F[number]>);
+          updatedDatum && mutation.set(foundIndex, updatedDatum);
+        });
+      });
+      this.commitMutation(updated, casted);
+    });
+  }
+
+  private getExcludedMeta(
+    connector: RxImStore<
+      Record<S, () => List<Map<keyof F[number], V<F[number]>>>>
+    > &
+      Subscribable<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>>
+  ) {
+    const excluded = connector
+      .getState(this.id)
+      .filter((datum) => datum.get("type") === DatumType.EXCLUDED)
+      .map((datum) => datum.get("field")!);
+    return this.getFieldsMeta(excluded.toJS() as F[number]["field"][]);
+  }
+
+  private asyncValidatorExecutor(
+    connector: RxImStore<
+      Record<S, () => List<Map<K<F[number]>, V<F[number]>>>>
+    > &
+      Subscribable<Record<S, () => List<Map<K<F[number]>, V<F[number]>>>>>
+  ) {
+    if (!this.asyncValidator) {
+      return;
+    }
+    const subscription = connector
+      .getDataSource()
+      .pipe(
+        map((states) => states[this.id]),
+        distinctUntilChanged((var1, var2) => is(var1, var2)),
+        map((formData: List<Map<K<F[number]>, V<F[number]>>>) =>
+          formData.filter((datum) => datum.get("type") === DatumType.ASYNC)
+        ),
+
+        switchMap((asyncFormData) => {
+          const oldMeta = this.getMeta();
+          if (!asyncFormData.size) {
+            return of(oldMeta);
+          }
+
+          this.setAsyncState(AsyncState.PENDING);
+          const async$ = this.asyncValidator!(asyncFormData, oldMeta);
+          const reduced$ = this.isPromise(async$) ? from(async$) : async$;
+          return reduced$.pipe(
+            catchError(() => {
+              return of({
+                success: false,
+                meta: this.getMeta(),
+              });
+            }),
+            map((meta) => {
+              if ("success" in meta && !meta.success) {
+                return meta;
+              }
+              const m = meta as unknown as Map<
+                keyof M,
+                Map<"errors" | "info" | "warn", any>
+              >;
+              return { success: true, meta: m };
+            }),
+            tap(({ success }) => {
+              if (success) {
+                this.setAsyncState(AsyncState.DONE);
+                return;
+              }
+              this.setAsyncState(AsyncState.ERROR);
+            }),
+            map(({ meta, success }) => {
+              if (!success) {
+                return meta;
+              }
+              return merge(
+                this.getMeta(),
+                meta,
+                this.getExcludedMeta(connector)
+              );
+            })
+          );
+        })
+      )
+      .subscribe((meta) => {
+        this.setMetadata(meta);
+      });
+    return () => subscription.unsubscribe();
   }
 
   resetFormDatum<N extends number>(field: F[N]["field"]): this {
@@ -121,7 +269,7 @@ export class ImmutableFormControllerImpl<
             casted
           );
         }
-        return this;
+        return;
       }
       this.commitMutation(
         casted.getState(this.id).splice(indexToReset, 1),
@@ -156,13 +304,9 @@ export class ImmutableFormControllerImpl<
     return this;
   }
 
-  setMetadata(meta: Partial<M>): this {
+  setMetadata(meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>): this {
     this.safeExecute(() => {
-      const casted = fromJS(meta) as Map<
-        PK<M>,
-        Map<"errors" | "info" | "warn", any>
-      >;
-      this.metadata$?.next(casted);
+      this.metadata$?.next(meta);
     });
     return this;
   }
@@ -251,7 +395,7 @@ export class ImmutableFormControllerImpl<
 
   setAsyncValidator(
     asyncValidator: (
-      formData: F
+      formData: List<Map<keyof F[number], V<F[number]>>>
     ) => Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>
   ): void {
     if (!this.asyncValidator) {
@@ -298,39 +442,77 @@ export class ImmutableFormControllerImpl<
   }
 
   emptyFormField<N extends number>(field: F[N]["field"]): this {
-    throw new Error("Method not implemented.");
+    this.safeExecute((connector) => {
+      const casted = this.cast(connector);
+      const targetIndex = this.getDatumIndex(field, casted);
+      const defaultDatum = this.findDatumByField(this.initiator()!, field);
+      if (defaultDatum) {
+        this.commitMutation(
+          casted.getState(this.id).set(targetIndex, defaultDatum),
+          casted
+        );
+        return;
+      }
+      this.commitMutation(
+        casted.getState(this.id).splice(targetIndex, 1),
+        casted
+      );
+    });
+    return this;
   }
 
   focusFormField<N extends number>(
     field: F[N]["field"],
     focusOrNot: boolean
   ): this {
-    throw new Error("Method not implemented.");
+    this.safeExecute((connector) => {
+      const casted = this.cast(connector);
+      const targetIndex = this.getDatumIndex(field, casted);
+      const mutation = casted
+        .getState(this.id)
+        .get(targetIndex)!
+        .set("focused", focusOrNot as V<F[number]>);
+      this.commitMutation(
+        casted.getState(this.id).set(targetIndex, mutation),
+        casted
+      );
+    });
+    return this;
   }
 
   hoverFormField<N extends number>(
     field: F[N]["field"],
     hoverOrNot: boolean
   ): this {
-    throw new Error("Method not implemented.");
+    this.safeExecute((connector) => {
+      const casted = this.cast(connector);
+      const targetIndex = this.getDatumIndex(field, casted);
+      const mutation = casted
+        .getState(this.id)
+        .get(targetIndex)!
+        .set("hovered", hoverOrNot as V<F[number]>);
+      this.commitMutation(
+        casted.getState(this.id).set(targetIndex, mutation),
+        casted
+      );
+    });
+    return this;
   }
 
-  asyncValidator?(
-    formData: F
-  ):
-    | Observable<Map<keyof M, Partial<M>[keyof M]>>
-    | Promise<Map<keyof M, Partial<M>[keyof M]>> {
-    throw new Error("Method not implemented.");
-  }
-
-  startValidation(
-    callback: (meta: Map<keyof M, V<M>>) => void
-  ): (() => void) | undefined {
-    throw new Error("Method not implemented.");
+  startValidation() {
+    return this.safeExecute((connector) => {
+      const casted = this.cast(connector);
+      const stopValidation = this.validatorExecutor(casted);
+      const stopAsyncValidation = this.asyncValidatorExecutor(casted);
+      return () => {
+        stopValidation?.();
+        stopAsyncValidation?.();
+      };
+    });
   }
 
   getMeta(): Map<PK<M>, Map<"errors" | "info" | "warn", any>> {
-    throw new Error("Method not implemented.");
+    return Map(this.metadata$?.value);
   }
 
   initiator: Initiator<List<Map<K<F[number]>, V<F[number]>>>> = (connector) => {
