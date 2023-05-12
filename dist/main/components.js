@@ -65,8 +65,8 @@ var NRFormFieldComponent = function () {
                 var _a;
                 _this = _super.call(this) || this;
                 _this.field = (__runInitializers(_this, _instanceExtraInitializers), void 0);
-                _this.formControllerEmitter = new rxjs_1.Subject();
-                _this.directChildEmitter = new rxjs_1.Subject();
+                _this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
+                _this.directChildEmitter = new rxjs_1.BehaviorSubject(null);
                 _this.observer = new MutationObserver(_this.setDirectChildFromMutations);
                 _this.setField(_this.getAttribute("field"));
                 var type = (_a = _this.getAttribute("type")) !== null && _a !== void 0 ? _a : interfaces_1.DatumType.SYNC;
@@ -188,8 +188,8 @@ var NRFormComponent = function () {
             __extends(NRFormComponent, _super);
             function NRFormComponent() {
                 var _this = _super.call(this) || this;
-                _this.fieldListEmitter = (__runInitializers(_this, _instanceExtraInitializers_1), new rxjs_1.Subject());
-                _this.formControllerEmitter = new rxjs_1.Subject();
+                _this.fieldListEmitter = (__runInitializers(_this, _instanceExtraInitializers_1), new rxjs_1.BehaviorSubject([]));
+                _this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
                 _this.observer = new MutationObserver(_this.setFieldListFromMutationRecords);
                 _this.subscription = _this.controlAll();
                 return _this;
@@ -214,7 +214,11 @@ var NRFormComponent = function () {
                     .asObservable()
                     .pipe((0, rxjs_1.switchMap)(function (controller) {
                     return _this.fieldListEmitter.asObservable().pipe((0, rxjs_1.tap)(function (nodeList) {
-                        nodeList.forEach(function (node) { return node.setNRFormController(controller); });
+                        if (controller) {
+                            nodeList.forEach(function (node) {
+                                return node.setNRFormController(controller);
+                            });
+                        }
                     }));
                 }))
                     .subscribe();

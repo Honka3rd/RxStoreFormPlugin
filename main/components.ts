@@ -1,4 +1,5 @@
 import {
+  BehaviorSubject,
   Subject,
   Subscription,
   distinctUntilChanged,
@@ -35,9 +36,10 @@ class NRFormFieldComponent<
   private type?: DatumType;
   private mapper?: (ev: any) => F[N]["value"];
 
-  private formControllerEmitter: Subject<FormController<F, M, S>> =
-    new Subject();
-  private directChildEmitter: Subject<HTMLElement> = new Subject();
+  private formControllerEmitter: Subject<FormController<F, M, S> | null> =
+    new BehaviorSubject<FormController<F, M, S> | null>(null);
+  private directChildEmitter: Subject<HTMLElement | null> =
+    new BehaviorSubject<HTMLElement | null>(null);
   private subscription: Subscription;
 
   @bound
@@ -205,9 +207,9 @@ class NRFormComponent<
     NRFormControllerInjector<F, M, S>
 {
   private fieldListEmitter: Subject<NRFormFieldComponent<F, M, S>[]> =
-    new Subject();
-  private formControllerEmitter: Subject<FormController<F, M, S>> =
-    new Subject();
+    new BehaviorSubject<NRFormFieldComponent<F, M, S>[]>([]);
+  private formControllerEmitter: Subject<FormController<F, M, S> | null> =
+    new BehaviorSubject<FormController<F, M, S> | null>(null);
 
   private subscription: Subscription;
 
@@ -236,7 +238,11 @@ class NRFormComponent<
         switchMap((controller) =>
           this.fieldListEmitter.asObservable().pipe(
             tap((nodeList) => {
-              nodeList.forEach((node) => node.setNRFormController(controller));
+              if (controller) {
+                nodeList.forEach((node) =>
+                  node.setNRFormController(controller)
+                );
+              }
             })
           )
         )
