@@ -21,16 +21,15 @@ export enum AsyncState {
 }
 
 export enum DatumType {
-  EXCLUDED,
-  ASYNC,
-  SYNC,
+  EXCLUDED = "Excluded",
+  ASYNC = "Async",
+  SYNC = "Sync",
 }
 
 export type FormControlBasicDatum = {
   field: string;
   value: any;
   touched: boolean;
-  empty: boolean;
   changed: boolean;
   focused: boolean;
   hovered: boolean;
@@ -38,11 +37,10 @@ export type FormControlBasicDatum = {
   asyncState?: AsyncState;
 };
 
-export type FormControlDatum<F, T> = {
+export type FormControlDatum<F extends string, T> = {
   field: F;
   value: T;
   touched: boolean;
-  empty: boolean;
   changed: boolean;
   focused: boolean;
   hovered: boolean;
@@ -54,7 +52,6 @@ export type FormControlStrDatum<F> = {
   field: F;
   value: string;
   touched: boolean;
-  empty: boolean;
   changed: boolean;
   focused: boolean;
   hovered: boolean;
@@ -83,6 +80,8 @@ export interface FormController<
   ): void;
 
   setFields(fields: FormStubs<F>): void;
+
+  getFields(): FormStubs<F>;
 
   setMetaComparator(
     metaComparator: (meta1: Partial<M>, meta2: Partial<M>) => boolean
@@ -238,6 +237,8 @@ export interface ImmutableFormController<
 
   setFields(fields: FormStubs<F>): void;
 
+  setDefaultMeta(meta: Partial<M>): void;
+
   changeFormValue<N extends number>(
     field: F[N]["field"],
     value: F[N]["value"]
@@ -308,3 +309,44 @@ export interface ImmutableFormController<
     callback: (metaOne: Map<"errors" | "info" | "warn", any>) => void
   ): () => void | undefined;
 }
+
+export type ImmutableFormPluginBuilderParams<
+  F extends FormControlData,
+  M extends Record<F[number]["field"], FormControlBasicMetadata>,
+  S extends string
+> = {
+  formSelector: S;
+  validator: ImmutableFormController<F, M, S>["validator"];
+};
+
+export interface ConnectedCallback {
+  connectedCallback(): void;
+}
+
+export interface DisconnectedCallback {
+  disconnectedCallback(): void;
+}
+
+export interface AttributeChangedCallback {
+  attributeChangedCallback(key: string, prev: any, next: any): void;
+}
+
+export interface NRFormControllerInjector<
+  F extends FormControlData,
+  M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
+  S extends string
+> {
+  setNRFormController(controller: FormController<F, M, S>): void;
+}
+
+export interface NRFieldDataMapperInjector<
+  F extends FormControlData,
+  N extends number = number
+> {
+  setDataMapper(mapper: (ev: any) => F[N]["value"]): void;
+}
+
+export type InstallDefinition = Partial<{
+  FormSelector: string;
+  FieldSelector: string;
+}>

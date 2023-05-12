@@ -1,8 +1,6 @@
 import {
   RxNStore,
-  RxStore,
   Subscribable,
-  Plugin,
   Any,
   Initiator,
   PluginImpl,
@@ -43,7 +41,7 @@ class FormControllerImpl<
     formData: F,
     metadata: Partial<M>
   ) => Observable<Partial<M>> | Promise<Partial<M>>;
-  private fields?: FormStubs<F>;
+  private fields: FormStubs<F> = [];
   private metaComparator?: (meta1: Partial<M>, meta2: Partial<M>) => boolean;
   private metaComparatorMap?: {
     [K in keyof Partial<M>]: (m1: Partial<M>[K], m2: Partial<M>[K]) => boolean;
@@ -77,6 +75,10 @@ class FormControllerImpl<
     if (!this.fields) {
       this.fields = fields;
     }
+  }
+
+  getFields(): FormStubs<F> {
+    return this.fields;
   }
 
   setMetaComparator(
@@ -183,7 +185,6 @@ class FormControllerImpl<
       data.push({
         field,
         touched: false,
-        empty: true,
         changed: false,
         hovered: false,
         focused: false,
@@ -318,7 +319,6 @@ class FormControllerImpl<
       return this.fields.map(({ field, defaultValue, type }) => ({
         field,
         touched: false,
-        empty: true,
         changed: false,
         hovered: false,
         focused: false,
@@ -539,7 +539,6 @@ class FormControllerImpl<
       const defaultDatum = this.findDatumByField(this.initiator()!, field);
       if (defaultDatum) {
         found.changed = defaultDatum.changed;
-        found.empty = defaultDatum.empty;
         found.focused = defaultDatum.focused;
         found.hovered = defaultDatum.hovered;
         found.touched = defaultDatum.touched;
@@ -572,7 +571,6 @@ class FormControllerImpl<
     this.safeCommitMutation(field, (found, data) => {
       const defaultDatum = this.findDatumByField(this.initiator()!, field);
       if (defaultDatum) {
-        found.empty = true;
         found.value = defaultDatum.value;
         return this;
       }

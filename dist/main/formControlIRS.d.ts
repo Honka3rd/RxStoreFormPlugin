@@ -7,7 +7,10 @@ export declare class ImmutableFormControllerImpl<F extends FormControlData, M ex
     asyncValidator?: ((formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>) => Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>) | undefined;
     private metadata$?;
     private fields?;
+    private defaultMeta?;
     constructor(id: S, validator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>) => Map<PK<M>, Map<"errors" | "info" | "warn", any>>, asyncValidator?: ((formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>) => Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>) | undefined);
+    setFields(fields: FormStubs<F>): void;
+    setDefaultMeta(meta: Partial<M>): void;
     private removeDataByFields;
     private commitMutation;
     private findDatumByField;
@@ -26,7 +29,6 @@ export declare class ImmutableFormControllerImpl<F extends FormControlData, M ex
     removeFormData(fields: F[number]["field"][]): this;
     setMetadata(meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>): this;
     setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this;
-    setFields(fields: FormStubs<F>): void;
     observeMeta(callback: (meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>) => void): () => void | undefined;
     observeMetaByField<K extends keyof M>(field: K, callback: (metaOne: Map<"errors" | "info" | "warn", any>) => void): () => void | undefined;
     getFieldMeta<N extends number = number>(field: F[N]["field"]): Map<keyof M, Map<"errors" | "info" | "warn", any>>;

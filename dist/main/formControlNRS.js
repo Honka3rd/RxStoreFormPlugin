@@ -97,6 +97,7 @@ var FormControllerImpl = function () {
             function FormControllerImpl(id, validator) {
                 var _this = _super.call(this, id) || this;
                 _this.validator = (__runInitializers(_this, _instanceExtraInitializers), validator);
+                _this.fields = [];
                 _this.getAsyncFields = function (connector) {
                     return connector
                         .getState(_this.id)
@@ -121,7 +122,6 @@ var FormControllerImpl = function () {
                             return ({
                                 field: field,
                                 touched: false,
-                                empty: true,
                                 changed: false,
                                 hovered: false,
                                 focused: false,
@@ -143,6 +143,9 @@ var FormControllerImpl = function () {
                 if (!this.fields) {
                     this.fields = fields;
                 }
+            };
+            FormControllerImpl.prototype.getFields = function () {
+                return this.fields;
             };
             FormControllerImpl.prototype.setMetaComparator = function (metaComparator) {
                 if (!this.metaComparator) {
@@ -224,7 +227,6 @@ var FormControllerImpl = function () {
                     data.push({
                         field: field,
                         touched: false,
-                        empty: true,
                         changed: false,
                         hovered: false,
                         focused: false,
@@ -459,7 +461,6 @@ var FormControllerImpl = function () {
                     var defaultDatum = _this.findDatumByField(_this.initiator(), field);
                     if (defaultDatum) {
                         found.changed = defaultDatum.changed;
-                        found.empty = defaultDatum.empty;
                         found.focused = defaultDatum.focused;
                         found.hovered = defaultDatum.hovered;
                         found.touched = defaultDatum.touched;
@@ -488,7 +489,6 @@ var FormControllerImpl = function () {
                 this.safeCommitMutation(field, function (found, data) {
                     var defaultDatum = _this.findDatumByField(_this.initiator(), field);
                     if (defaultDatum) {
-                        found.empty = true;
                         found.value = defaultDatum.value;
                         return _this;
                     }

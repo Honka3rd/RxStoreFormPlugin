@@ -30,6 +30,7 @@ import {
   switchMap,
   tap,
 } from "rxjs";
+import { bound } from "rx-store-core";
 
 export class ImmutableFormControllerImpl<
     F extends FormControlData,
@@ -43,6 +44,7 @@ export class ImmutableFormControllerImpl<
     Map<PK<M>, Map<"errors" | "info" | "warn", any>>
   >;
   private fields?: FormStubs<F>;
+  private defaultMeta?: Map<PK<M>, Map<"errors" | "info" | "warn", any>>;
 
   constructor(
     id: S,
@@ -56,6 +58,19 @@ export class ImmutableFormControllerImpl<
     ) => Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>
   ) {
     super(id);
+  }
+
+  setFields(fields: FormStubs<F>) {
+    if (!this.fields) {
+      this.fields = fields;
+    }
+  }
+
+  setDefaultMeta(meta: Partial<M>): void {
+    this.defaultMeta = fromJS(meta) as Map<
+      PK<M>,
+      Map<"errors" | "info" | "warn", any>
+    >;
   }
 
   private removeDataByFields(
@@ -257,6 +272,7 @@ export class ImmutableFormControllerImpl<
     return () => subscription.unsubscribe();
   }
 
+  @bound
   resetFormDatum<N extends number>(field: F[N]["field"]): this {
     this.safeExecute((connector) => {
       const casted = this.cast(connector);
@@ -279,6 +295,7 @@ export class ImmutableFormControllerImpl<
     return this;
   }
 
+  @bound
   resetFormAll(): this {
     this.safeExecute((connector) => {
       connector.reset(this.id);
@@ -286,6 +303,7 @@ export class ImmutableFormControllerImpl<
     return this;
   }
 
+  @bound
   appendFormData(fields: FormStubs<F>): this {
     this.safeExecute((connector) => {
       const casted = this.cast(connector);
@@ -295,6 +313,7 @@ export class ImmutableFormControllerImpl<
     return this;
   }
 
+  @bound
   removeFormData(fields: F[number]["field"][]): this {
     this.safeExecute((connector) => {
       const casted = this.cast(connector);
@@ -304,6 +323,7 @@ export class ImmutableFormControllerImpl<
     return this;
   }
 
+  @bound
   setMetadata(meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>): this {
     this.safeExecute(() => {
       this.metadata$?.next(meta);
@@ -311,6 +331,7 @@ export class ImmutableFormControllerImpl<
     return this;
   }
 
+  @bound
   setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this {
     this.safeExecute(() => {
       const meta = this.getMeta();
@@ -323,12 +344,7 @@ export class ImmutableFormControllerImpl<
     return this;
   }
 
-  setFields(fields: FormStubs<F>) {
-    if (!this.fields) {
-      this.fields = fields;
-    }
-  }
-
+  @bound
   observeMeta(
     callback: (meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>) => void
   ): () => void | undefined {
@@ -338,6 +354,7 @@ export class ImmutableFormControllerImpl<
     return () => subscription?.unsubscribe();
   }
 
+  @bound
   observeMetaByField<K extends keyof M>(
     field: K,
     callback: (metaOne: Map<"errors" | "info" | "warn", any>) => void
@@ -355,6 +372,7 @@ export class ImmutableFormControllerImpl<
     return () => subscription?.unsubscribe();
   }
 
+  @bound
   getFieldMeta<N extends number = number>(field: F[N]["field"]) {
     return this.safeExecute(() => {
       return this.metadata$?.value.get(field) as Map<
@@ -364,6 +382,7 @@ export class ImmutableFormControllerImpl<
     })!;
   }
 
+  @bound
   changeFieldType<N extends number>(
     field: F[N]["field"],
     type: DatumType
@@ -374,17 +393,19 @@ export class ImmutableFormControllerImpl<
       if (targetIndex >= 0) {
         const mutation = casted
           .getState(this.id)
-          .get(targetIndex)!
-          .set("type", type as V<F[number]>);
-        this.commitMutation(
-          casted.getState(this.id).set(targetIndex, mutation),
-          casted
-        );
+          .get(targetIndex)
+          ?.set("type", type as V<F[number]>);
+        mutation &&
+          this.commitMutation(
+            casted.getState(this.id).set(targetIndex, mutation),
+            casted
+          );
       }
     });
     return this;
   }
 
+  @bound
   getFieldsMeta(fields: F[number]["field"][]): Map<PK<M>, PV<M>> {
     return Map().withMutations((mutation) => {
       fields.forEach((field) => {
@@ -393,6 +414,7 @@ export class ImmutableFormControllerImpl<
     }) as Map<PK<M>, PV<M>>;
   }
 
+  @bound
   setAsyncValidator(
     asyncValidator: (
       formData: List<Map<keyof F[number], V<F[number]>>>
@@ -403,6 +425,7 @@ export class ImmutableFormControllerImpl<
     }
   }
 
+  @bound
   changeFormValue<N extends number>(
     field: F[N]["field"],
     value: F[N]["value"]
@@ -412,16 +435,18 @@ export class ImmutableFormControllerImpl<
       const targetIndex = this.getDatumIndex(field, casted);
       const mutation = casted
         .getState(this.id)
-        .get(targetIndex)!
-        .set("value", value);
-      this.commitMutation(
-        casted.getState(this.id).set(targetIndex, mutation),
-        casted
-      );
+        .get(targetIndex)
+        ?.set("value", value);
+      mutation &&
+        this.commitMutation(
+          casted.getState(this.id).set(targetIndex, mutation),
+          casted
+        );
     });
     return this;
   }
 
+  @bound
   touchFormField<N extends number>(
     field: F[N]["field"],
     touchOrNot: boolean
@@ -431,16 +456,18 @@ export class ImmutableFormControllerImpl<
       const targetIndex = this.getDatumIndex(field, casted);
       const mutation = casted
         .getState(this.id)
-        .get(targetIndex)!
-        .set("touched", touchOrNot as V<F[number]>);
-      this.commitMutation(
-        casted.getState(this.id).set(targetIndex, mutation),
-        casted
-      );
+        .get(targetIndex)
+        ?.set("touched", touchOrNot as V<F[number]>);
+      mutation &&
+        this.commitMutation(
+          casted.getState(this.id).set(targetIndex, mutation),
+          casted
+        );
     });
     return this;
   }
 
+  @bound
   emptyFormField<N extends number>(field: F[N]["field"]): this {
     this.safeExecute((connector) => {
       const casted = this.cast(connector);
@@ -461,6 +488,7 @@ export class ImmutableFormControllerImpl<
     return this;
   }
 
+  @bound
   focusFormField<N extends number>(
     field: F[N]["field"],
     focusOrNot: boolean
@@ -470,16 +498,18 @@ export class ImmutableFormControllerImpl<
       const targetIndex = this.getDatumIndex(field, casted);
       const mutation = casted
         .getState(this.id)
-        .get(targetIndex)!
-        .set("focused", focusOrNot as V<F[number]>);
-      this.commitMutation(
-        casted.getState(this.id).set(targetIndex, mutation),
-        casted
-      );
+        .get(targetIndex)
+        ?.set("focused", focusOrNot as V<F[number]>);
+      mutation &&
+        this.commitMutation(
+          casted.getState(this.id).set(targetIndex, mutation),
+          casted
+        );
     });
     return this;
   }
 
+  @bound
   hoverFormField<N extends number>(
     field: F[N]["field"],
     hoverOrNot: boolean
@@ -499,6 +529,7 @@ export class ImmutableFormControllerImpl<
     return this;
   }
 
+  @bound
   startValidation() {
     return this.safeExecute((connector) => {
       const casted = this.cast(connector);
@@ -511,6 +542,7 @@ export class ImmutableFormControllerImpl<
     });
   }
 
+  @bound
   getMeta(): Map<PK<M>, Map<"errors" | "info" | "warn", any>> {
     return Map(this.metadata$?.value);
   }
@@ -518,7 +550,9 @@ export class ImmutableFormControllerImpl<
   initiator: Initiator<List<Map<K<F[number]>, V<F[number]>>>> = (connector) => {
     if (connector && !this.connector) {
       this.connector = connector;
-      this.metadata$ = new BehaviorSubject(connector.getState(this.selector()));
+      this.metadata$ = new BehaviorSubject(
+        this.defaultMeta ? this.defaultMeta : this.getMeta()
+      );
       return;
     }
 
