@@ -143,8 +143,7 @@ var NRFormFieldComponent = function () {
                 }
             };
             NRFormFieldComponent.prototype.attrSetter = function (target) {
-                var _this = this;
-                return function (k, v) { return _this.setAttribute(k, v); };
+                return function (k, v) { return target.setAttribute(k, v); };
             };
             NRFormFieldComponent.prototype.valuesBinding = function (target, formController) {
                 var _this = this;

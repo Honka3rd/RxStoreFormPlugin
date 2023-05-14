@@ -174,7 +174,7 @@ class NRFormFieldComponent<
 
   @bound
   private attrSetter(target: HTMLElement) {
-    return (k: string, v: any) => this.setAttribute(k, v);
+    return (k: string, v: any) => target.setAttribute(k, v);
   }
 
   private valuesBinding(
