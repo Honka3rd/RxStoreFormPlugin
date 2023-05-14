@@ -460,10 +460,10 @@ var FormControllerImpl = function () {
                 this.safeCommitMutation(field, function (found, data) {
                     var defaultDatum = _this.findDatumByField(_this.initiator(), field);
                     if (defaultDatum) {
-                        found.changed = defaultDatum.changed;
-                        found.focused = defaultDatum.focused;
-                        found.hovered = defaultDatum.hovered;
-                        found.touched = defaultDatum.touched;
+                        found.changed = false;
+                        found.focused = false;
+                        found.hovered = false;
+                        found.touched = false;
                         found.value = defaultDatum.value;
                         return _this;
                     }

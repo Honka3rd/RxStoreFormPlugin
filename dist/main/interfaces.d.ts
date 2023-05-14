@@ -150,8 +150,8 @@ export interface ConnectedCallback {
 export interface DisconnectedCallback {
     disconnectedCallback(): void;
 }
-export interface AttributeChangedCallback {
-    attributeChangedCallback(key: string, prev: any, next: any): void;
+export interface AttributeChangedCallback<E extends HTMLElement, P extends Any = {}> {
+    attributeChangedCallback(key: K<E & P>, prev: V<E & P>, next: V<E & P>): void;
 }
 export interface NRFormControllerInjector<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> {
     setNRFormController(controller: FormController<F, M, S>): void;
@@ -159,7 +159,19 @@ export interface NRFormControllerInjector<F extends FormControlData, M extends P
 export interface NRFieldDataMapperInjector<F extends FormControlData, N extends number = number> {
     setDataMapper(mapper: (ev: any) => F[N]["value"]): void;
 }
+export interface NRFieldAttributeBinderInjector {
+    setAttrBinder(binder: <D extends FormControlBasicDatum>(attributeSetter: (k: string, v: any) => void, attrs: D) => void): void;
+}
+export interface NRFieldMetaBinderInjector {
+    setMetaBinder(binder: <M extends FormControlBasicMetadata>(attributeSetter: (k: string, v: any) => void, meta: M) => void): void;
+}
 export type InstallDefinition = Partial<{
     FormSelector: string;
     FieldSelector: string;
 }>;
+export type CustomerAttrs = {
+    placeholder?: boolean;
+    defaultValue?: any;
+    asyncState?: AsyncState;
+    value?: any;
+};

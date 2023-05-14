@@ -7,15 +7,22 @@ import {
   tap,
 } from "rxjs";
 import {
+  AttributeChangedCallback,
   ConnectedCallback,
+  CustomerAttrs,
   DatumType,
   DisconnectedCallback,
+  FormControlBasicDatum,
   FormControlBasicMetadata,
   FormControlData,
   FormController,
   InstallDefinition,
+  K,
+  NRFieldAttributeBinderInjector,
   NRFieldDataMapperInjector,
+  NRFieldMetaBinderInjector,
   NRFormControllerInjector,
+  V,
 } from "./interfaces";
 import { bound } from "rx-store-core";
 
@@ -27,31 +34,71 @@ class NRFormFieldComponent<
   >
   extends HTMLElement
   implements
-    NRFormControllerInjector<F, M, S>,
     ConnectedCallback,
     DisconnectedCallback,
-    NRFieldDataMapperInjector<F, N>
+    AttributeChangedCallback<HTMLElement, CustomerAttrs>,
+    NRFieldDataMapperInjector<F, N>,
+    NRFormControllerInjector<F, M, S>,
+    NRFieldAttributeBinderInjector,
+    NRFieldMetaBinderInjector
 {
   private field?: F[N]["field"];
   private type?: DatumType;
   private mapper?: (ev: any) => F[N]["value"];
+  private attributeBinder?: <D extends FormControlBasicDatum>(
+    attributeSetter: (k: string, v: any) => void,
+    attrs: D
+  ) => void;
+  private metaDataBinder?: <M extends FormControlBasicMetadata>(
+    attributeSetter: (k: string, v: any) => void,
+    meta: M
+  ) => void;
 
-  private formControllerEmitter: Subject<FormController<F, M, S> | null> =
-    new BehaviorSubject<FormController<F, M, S> | null>(null);
-  private directChildEmitter: Subject<HTMLElement | null> =
+  private formControllerEmitter: BehaviorSubject<FormController<
+    F,
+    M,
+    S
+  > | null> = new BehaviorSubject<FormController<F, M, S> | null>(null);
+  private directChildEmitter: BehaviorSubject<HTMLElement | null> =
     new BehaviorSubject<HTMLElement | null>(null);
   private subscription: Subscription;
+  private unBind?: () => void;
+
+  private getTargetIfAny(found: HTMLElement | null) {
+    const targetSelector = this.getAttribute("targetSelector");
+    return targetSelector ? found?.querySelector(targetSelector) : found;
+  }
+
+  private directChild: HTMLElement | null = null;
 
   @bound
   private setDirectChildFromMutations(mutationList: MutationRecord[]) {
-    const first = mutationList
-      .filter((mutation) => mutation.type === "childList")[0]
-      .addedNodes.item(0);
+    const mutations = mutationList.filter(
+      (mutation) => mutation.type === "childList"
+    )[0];
+    const first = mutations.addedNodes.item(0);
     if (!(first instanceof HTMLElement)) {
       return;
     }
+    const removed = mutations.removedNodes.item(0);
+    if (removed && this.directChild && removed === this.directChild) {
+      this.unBind?.();
+    }
 
-    this.directChildEmitter.next(first);
+    this.directChild = first;
+    const target = this.getTargetIfAny(first);
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    this.directChildEmitter.next(target);
+  }
+
+  private directChildIsTarget() {
+    if (!this.directChildEmitter?.value || !this.directChild) {
+      return false;
+    }
+
+    return this.directChildEmitter?.value === this.directChild;
   }
 
   private observer = new MutationObserver(this.setDirectChildFromMutations);
@@ -89,40 +136,91 @@ class NRFormFieldComponent<
   }
 
   private attachChildEventListeners(
-    firstChild: Node | null,
+    target: Node | null,
     formController: FormController<F, M, S> | null
   ) {
     const { field } = this;
     if (!formController || !field) {
       return;
     }
-    if (firstChild instanceof HTMLElement) {
-      firstChild.addEventListener("mouseover", () =>
+
+    if (target instanceof HTMLElement) {
+      target.addEventListener("mouseover", () =>
         this.setHovered(true, formController, field)
       );
 
-      firstChild.addEventListener("mouseleave", () =>
+      target.addEventListener("mouseleave", () =>
         this.setHovered(false, formController, field)
       );
 
-      firstChild.addEventListener("focus", () =>
+      target.addEventListener("focus", () =>
         this.setFocused(true, formController, field)
       );
 
-      firstChild.addEventListener("blur", () =>
-        this.setFocused(false, formController, field)
-      );
+      target.addEventListener("blur", () => {
+        this.setFocused(false, formController, field);
+        this.setTouched(true, formController, field);
+      });
 
-      firstChild.addEventListener("mousedown", () =>
-        this.setTouched(true, formController, field)
-      );
-
-      firstChild.addEventListener("change", (event: any) => {
+      target.addEventListener("change", (event: any) => {
         if (this.mapper) {
           this.setValue(this.mapper(event), formController, field);
           return;
         }
         this.setValue(event.target.value, formController, field);
+      });
+    }
+  }
+
+  @bound
+  private attrSetter(target: HTMLElement) {
+    return (k: string, v: any) => this.setAttribute(k, v);
+  }
+
+  private valuesBinding(
+    target: Node | null,
+    formController: FormController<F, M, S> | null
+  ) {
+    const { field } = this;
+    if (!formController || !field) {
+      return;
+    }
+
+    if (target instanceof HTMLElement) {
+      return formController.observeFormDatum(field, (datum) => {
+        const target = this.getTargetIfAny(this.directChild);
+        if (!(target instanceof HTMLElement)) {
+          return;
+        }
+        if (this.attributeBinder) {
+          this.attributeBinder(this.attrSetter(target), datum);
+          return;
+        }
+        if ("value" in target) {
+          target.setAttribute("value", datum.value);
+        }
+      });
+    }
+  }
+
+  private metaBinding(
+    target: Node | null,
+    formController: FormController<F, M, S> | null
+  ) {
+    const { field } = this;
+    if (!formController || !field) {
+      return;
+    }
+
+    if (target instanceof HTMLElement) {
+      return formController.observeMetaByField(field, (meta) => {
+        const target = this.getTargetIfAny(this.directChild);
+        if (!(target instanceof HTMLElement)) {
+          return;
+        }
+        if (this.metaDataBinder && meta) {
+          this.metaDataBinder(this.attrSetter(target), meta);
+        }
       });
     }
   }
@@ -150,6 +248,12 @@ class NRFormFieldComponent<
             distinctUntilChanged(),
             tap((firstChild) => {
               this.attachChildEventListeners(firstChild, controller);
+              const unbindV = this.valuesBinding(firstChild, controller);
+              const unbindM = this.metaBinding(firstChild, controller);
+              this.unBind = () => {
+                unbindV?.();
+                unbindM?.();
+              };
             })
           )
         )
@@ -157,12 +261,34 @@ class NRFormFieldComponent<
       .subscribe();
   }
 
-  constructor() {
-    super();
+  private setRequiredProperties() {
     this.setField(this.getAttribute("field") as F[N]["field"]);
     const type = this.getAttribute("type") ?? DatumType.SYNC;
     this.setDatumType(type as DatumType);
+  }
+
+  constructor() {
+    super();
+    this.setRequiredProperties();
     this.subscription = this.makeControl();
+  }
+
+  setMetaBinder(
+    binder: <M extends FormControlBasicMetadata>(
+      attributeSetter: (k: string, v: any) => void,
+      meta: M
+    ) => void
+  ): void {
+    this.metaDataBinder = binder;
+  }
+
+  setAttrBinder(
+    binder: <D extends FormControlBasicDatum>(
+      attributeSetter: (k: string, v: any) => void,
+      attrs: D
+    ) => void
+  ): void {
+    this.attributeBinder = binder;
   }
 
   setDataMapper(mapper: (ev: any) => F[N]["value"]): void {
@@ -192,6 +318,50 @@ class NRFormFieldComponent<
   disconnectedCallback(): void {
     this.observer.disconnect();
     this.subscription.unsubscribe();
+    this.unBind?.();
+  }
+
+  attributeChangedCallback(
+    key: K<HTMLElement & CustomerAttrs>,
+    prev: V<HTMLElement & CustomerAttrs>,
+    next: V<HTMLElement & CustomerAttrs>
+  ) {
+    if (key === "placeholder") {
+      const target = this.getTargetIfAny(this.directChildEmitter?.value);
+      if (!target) {
+        return;
+      }
+
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement
+      ) {
+        if (this.directChildIsTarget()) {
+          return;
+        }
+        target.setAttribute(key, next);
+      }
+    }
+
+    if (key === "defaultValue") {
+      const target = this.getTargetIfAny(this.directChildEmitter?.value);
+      if (!target) {
+        return;
+      }
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement
+      ) {
+        if (this.directChildIsTarget()) {
+          return;
+        }
+        target.setAttribute(key, next);
+      }
+    }
+  }
+
+  static observedAttributes() {
+    return ["placeholder", "defaultValue"];
   }
 }
 
