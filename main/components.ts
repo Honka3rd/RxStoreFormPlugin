@@ -64,41 +64,69 @@ class NRFormFieldComponent<
   private subscription: Subscription;
   private unBind?: () => void;
 
-  private getTargetIfAny(found: HTMLElement | null) {
-    const targetSelector = this.getAttribute("targetSelector");
-    return targetSelector ? found?.querySelector(targetSelector) : found;
-  }
-
-  private directChild: HTMLElement | null = null;
-
   @bound
   private setDirectChildFromMutations(mutationList: MutationRecord[]) {
     const mutations = mutationList.filter(
       (mutation) => mutation.type === "childList"
-    )[0];
-    const first = mutations.addedNodes.item(0);
-    if (!(first instanceof HTMLElement)) {
-      return;
-    }
-    const removed = mutations.removedNodes.item(0);
-    if (removed && this.directChild && removed === this.directChild) {
+    );
+
+    const removedAll = mutations.reduce((acc, next) => {
+      Array.from(next.removedNodes).forEach((node) => {
+        acc.push(node);
+      });
+      return acc;
+    }, [] as Node[]);
+    const removed = removedAll.find(
+      (rm) => this.directChildEmitter?.value === rm
+    );
+    if (removed) {
       this.unBind?.();
     }
-
-    this.directChild = first;
-    const target = this.getTargetIfAny(first);
-    if (!(target instanceof HTMLElement)) {
+    if (!this.dataset.targetSelector && !this.dataset.targetId) {
+      const first = mutations[0].addedNodes.item(0);
+      if (!(first instanceof HTMLElement)) {
+        return;
+      }
+      this.directChildEmitter.next(first);
       return;
     }
-    this.directChildEmitter.next(target);
+
+    if (this.dataset.targetId) {
+      const allAdded = mutations.reduce((acc, next) => {
+        Array.from(next.addedNodes).forEach((node) => {
+          acc.push(node);
+        });
+        return acc;
+      }, [] as Node[]);
+      const added = allAdded
+        .filter((a) => a instanceof HTMLElement)
+        .find((a) => {
+          (a as HTMLElement).id === this.dataset.targetId;
+        });
+      if (!added) {
+        return;
+      }
+      if (this.dataset.targetId === (added as HTMLElement).id) {
+        added instanceof HTMLElement && this.directChildEmitter.next(added);
+      }
+      return;
+    }
+
+    if (this.dataset.targetSelector) {
+      const target = this.querySelector(this.dataset.targetSelector);
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+      this.directChildEmitter.next(target);
+    }
   }
 
   private directChildIsTarget() {
-    if (!this.directChildEmitter?.value || !this.directChild) {
+    if (!this.directChildEmitter?.value && !this.children.item(0)) {
       return false;
     }
 
-    return this.directChildEmitter?.value === this.directChild;
+    return this.directChildEmitter.value === this.children.item(0);
   }
 
   private observer = new MutationObserver(this.setDirectChildFromMutations);
@@ -188,17 +216,22 @@ class NRFormFieldComponent<
 
     if (target instanceof HTMLElement) {
       return formController.observeFormDatum(field, (datum) => {
-        const target = this.getTargetIfAny(this.directChild);
-        if (!(target instanceof HTMLElement)) {
-          return;
-        }
+        this.setAttribute("data-focused", String(datum.focused));
+        this.setAttribute("data-changed", String(datum.changed));
+        this.setAttribute("data-touched", String(datum.touched));
+        this.setAttribute("data-hovered", String(datum.hovered));
+        datum.asyncState &&
+          this.setAttribute("data-async-state", String(datum.asyncState));
+        this.setAttribute("data-value", datum.value);
         if (this.attributeBinder) {
           this.attributeBinder(this.attrSetter(target), datum);
           return;
         }
         if ("value" in target) {
           target.setAttribute("value", datum.value);
+          return;
         }
+        target.setAttribute("data-value", datum.value);
       });
     }
   }
@@ -214,11 +247,10 @@ class NRFormFieldComponent<
 
     if (target instanceof HTMLElement) {
       return formController.observeMetaByField(field, (meta) => {
-        const target = this.getTargetIfAny(this.directChild);
-        if (!(target instanceof HTMLElement)) {
+        if (!meta) {
           return;
         }
-        if (this.metaDataBinder && meta) {
+        if (this.metaDataBinder) {
           this.metaDataBinder(this.attrSetter(target), meta);
         }
       });
@@ -262,8 +294,12 @@ class NRFormFieldComponent<
   }
 
   private setRequiredProperties() {
-    this.setField(this.getAttribute("field") as F[N]["field"]);
-    const type = this.getAttribute("type") ?? DatumType.SYNC;
+    const field = this.getAttribute("data-field") as F[N]["field"];
+    if (!field || !field.length) {
+      throw new Error("Form field is not set");
+    }
+    this.setField(field);
+    const type = this.getAttribute("data-type") ?? DatumType.SYNC;
     this.setDatumType(type as DatumType);
   }
 
@@ -309,7 +345,7 @@ class NRFormFieldComponent<
 
   connectedCallback(): void {
     this.observer.observe(this, {
-      subtree: false,
+      subtree: true,
       childList: true,
       attributes: false,
     });
@@ -326,12 +362,12 @@ class NRFormFieldComponent<
     prev: V<HTMLElement & CustomerAttrs>,
     next: V<HTMLElement & CustomerAttrs>
   ) {
-    if (key === "placeholder") {
-      const target = this.getTargetIfAny(this.directChildEmitter?.value);
-      if (!target) {
-        return;
-      }
+    const target = this.directChildEmitter.value;
+    if (!target) {
+      return;
+    }
 
+    if (key === "placeholder") {
       if (
         target instanceof HTMLInputElement ||
         target instanceof HTMLTextAreaElement
@@ -344,10 +380,6 @@ class NRFormFieldComponent<
     }
 
     if (key === "defaultValue") {
-      const target = this.getTargetIfAny(this.directChildEmitter?.value);
-      if (!target) {
-        return;
-      }
       if (
         target instanceof HTMLInputElement ||
         target instanceof HTMLTextAreaElement
@@ -439,6 +471,7 @@ class NRFormComponent<
   }
 
   setNRFormController(controller: FormController<F, M, S>): void {
+    this.setAttribute("data-selector", controller.selector());
     this.formControllerEmitter.next(controller);
   }
 }

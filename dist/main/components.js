@@ -66,40 +66,67 @@ var NRFormFieldComponent = function () {
                 _this.field = (__runInitializers(_this, _instanceExtraInitializers), void 0);
                 _this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
                 _this.directChildEmitter = new rxjs_1.BehaviorSubject(null);
-                _this.directChild = null;
                 _this.observer = new MutationObserver(_this.setDirectChildFromMutations);
                 _this.setRequiredProperties();
                 _this.subscription = _this.makeControl();
                 return _this;
             }
-            NRFormFieldComponent.prototype.getTargetIfAny = function (found) {
-                var targetSelector = this.getAttribute("targetSelector");
-                return targetSelector ? found === null || found === void 0 ? void 0 : found.querySelector(targetSelector) : found;
-            };
             NRFormFieldComponent.prototype.setDirectChildFromMutations = function (mutationList) {
+                var _this = this;
                 var _a;
-                var mutations = mutationList.filter(function (mutation) { return mutation.type === "childList"; })[0];
-                var first = mutations.addedNodes.item(0);
-                if (!(first instanceof HTMLElement)) {
-                    return;
-                }
-                var removed = mutations.removedNodes.item(0);
-                if (removed && this.directChild && removed === this.directChild) {
+                var mutations = mutationList.filter(function (mutation) { return mutation.type === "childList"; });
+                var removedAll = mutations.reduce(function (acc, next) {
+                    Array.from(next.removedNodes).forEach(function (node) {
+                        acc.push(node);
+                    });
+                    return acc;
+                }, []);
+                var removed = removedAll.find(function (rm) { var _a; return ((_a = _this.directChildEmitter) === null || _a === void 0 ? void 0 : _a.value) === rm; });
+                if (removed) {
                     (_a = this.unBind) === null || _a === void 0 ? void 0 : _a.call(this);
                 }
-                this.directChild = first;
-                var target = this.getTargetIfAny(first);
-                if (!(target instanceof HTMLElement)) {
+                if (!this.dataset.targetSelector && !this.dataset.targetId) {
+                    var first = mutations[0].addedNodes.item(0);
+                    if (!(first instanceof HTMLElement)) {
+                        return;
+                    }
+                    this.directChildEmitter.next(first);
                     return;
                 }
-                this.directChildEmitter.next(target);
+                if (this.dataset.targetId) {
+                    var allAdded = mutations.reduce(function (acc, next) {
+                        Array.from(next.addedNodes).forEach(function (node) {
+                            acc.push(node);
+                        });
+                        return acc;
+                    }, []);
+                    var added = allAdded
+                        .filter(function (a) { return a instanceof HTMLElement; })
+                        .find(function (a) {
+                        a.id === _this.dataset.targetId;
+                    });
+                    if (!added) {
+                        return;
+                    }
+                    if (this.dataset.targetId === added.id) {
+                        added instanceof HTMLElement && this.directChildEmitter.next(added);
+                    }
+                    return;
+                }
+                if (this.dataset.targetSelector) {
+                    var target = this.querySelector(this.dataset.targetSelector);
+                    if (!(target instanceof HTMLElement)) {
+                        return;
+                    }
+                    this.directChildEmitter.next(target);
+                }
             };
             NRFormFieldComponent.prototype.directChildIsTarget = function () {
-                var _a, _b;
-                if (!((_a = this.directChildEmitter) === null || _a === void 0 ? void 0 : _a.value) || !this.directChild) {
+                var _a;
+                if (!((_a = this.directChildEmitter) === null || _a === void 0 ? void 0 : _a.value) && !this.children.item(0)) {
                     return false;
                 }
-                return ((_b = this.directChildEmitter) === null || _b === void 0 ? void 0 : _b.value) === this.directChild;
+                return this.directChildEmitter.value === this.children.item(0);
             };
             NRFormFieldComponent.prototype.setValue = function (value, formController, field) {
                 formController.changeFormValue(field, value);
@@ -153,17 +180,22 @@ var NRFormFieldComponent = function () {
                 }
                 if (target instanceof HTMLElement) {
                     return formController.observeFormDatum(field, function (datum) {
-                        var target = _this.getTargetIfAny(_this.directChild);
-                        if (!(target instanceof HTMLElement)) {
-                            return;
-                        }
+                        _this.setAttribute("data-focused", String(datum.focused));
+                        _this.setAttribute("data-changed", String(datum.changed));
+                        _this.setAttribute("data-touched", String(datum.touched));
+                        _this.setAttribute("data-hovered", String(datum.hovered));
+                        datum.asyncState &&
+                            _this.setAttribute("data-async-state", String(datum.asyncState));
+                        _this.setAttribute("data-value", datum.value);
                         if (_this.attributeBinder) {
                             _this.attributeBinder(_this.attrSetter(target), datum);
                             return;
                         }
                         if ("value" in target) {
                             target.setAttribute("value", datum.value);
+                            return;
                         }
+                        target.setAttribute("data-value", datum.value);
                     });
                 }
             };
@@ -175,11 +207,10 @@ var NRFormFieldComponent = function () {
                 }
                 if (target instanceof HTMLElement) {
                     return formController.observeMetaByField(field, function (meta) {
-                        var target = _this.getTargetIfAny(_this.directChild);
-                        if (!(target instanceof HTMLElement)) {
+                        if (!meta) {
                             return;
                         }
-                        if (_this.metaDataBinder && meta) {
+                        if (_this.metaDataBinder) {
                             _this.metaDataBinder(_this.attrSetter(target), meta);
                         }
                     });
@@ -216,8 +247,12 @@ var NRFormFieldComponent = function () {
             };
             NRFormFieldComponent.prototype.setRequiredProperties = function () {
                 var _a;
-                this.setField(this.getAttribute("field"));
-                var type = (_a = this.getAttribute("type")) !== null && _a !== void 0 ? _a : interfaces_1.DatumType.SYNC;
+                var field = this.getAttribute("data-field");
+                if (!field || !field.length) {
+                    throw new Error("Form field is not set");
+                }
+                this.setField(field);
+                var type = (_a = this.getAttribute("data-type")) !== null && _a !== void 0 ? _a : interfaces_1.DatumType.SYNC;
                 this.setDatumType(type);
             };
             NRFormFieldComponent.prototype.setMetaBinder = function (binder) {
@@ -240,7 +275,7 @@ var NRFormFieldComponent = function () {
             };
             NRFormFieldComponent.prototype.connectedCallback = function () {
                 this.observer.observe(this, {
-                    subtree: false,
+                    subtree: true,
                     childList: true,
                     attributes: false,
                 });
@@ -252,12 +287,11 @@ var NRFormFieldComponent = function () {
                 (_a = this.unBind) === null || _a === void 0 ? void 0 : _a.call(this);
             };
             NRFormFieldComponent.prototype.attributeChangedCallback = function (key, prev, next) {
-                var _a, _b;
+                var target = this.directChildEmitter.value;
+                if (!target) {
+                    return;
+                }
                 if (key === "placeholder") {
-                    var target = this.getTargetIfAny((_a = this.directChildEmitter) === null || _a === void 0 ? void 0 : _a.value);
-                    if (!target) {
-                        return;
-                    }
                     if (target instanceof HTMLInputElement ||
                         target instanceof HTMLTextAreaElement) {
                         if (this.directChildIsTarget()) {
@@ -267,10 +301,6 @@ var NRFormFieldComponent = function () {
                     }
                 }
                 if (key === "defaultValue") {
-                    var target = this.getTargetIfAny((_b = this.directChildEmitter) === null || _b === void 0 ? void 0 : _b.value);
-                    if (!target) {
-                        return;
-                    }
                     if (target instanceof HTMLInputElement ||
                         target instanceof HTMLTextAreaElement) {
                         if (this.directChildIsTarget()) {
@@ -348,6 +378,7 @@ var NRFormComponent = function () {
                 this.subscription.unsubscribe();
             };
             NRFormComponent.prototype.setNRFormController = function (controller) {
+                this.setAttribute("data-selector", controller.selector());
                 this.formControllerEmitter.next(controller);
             };
             return NRFormComponent;
