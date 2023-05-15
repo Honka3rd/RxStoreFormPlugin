@@ -5,7 +5,7 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     validator: (formData: F, metadata: Partial<M>) => Partial<M>;
     private metadata$?;
     asyncValidator?: (formData: F, metadata: Partial<M>) => Observable<Partial<M>> | Promise<Partial<M>>;
-    private fields?;
+    private fields;
     private metaComparator?;
     private metaComparatorMap?;
     private cloneFunction?;
@@ -14,6 +14,7 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     constructor(id: S, validator: (formData: F, metadata: Partial<M>) => Partial<M>);
     setAsyncValidator(asyncValidator: (formData: F, metadata: Partial<M>) => Observable<Partial<M>> | Promise<Partial<M>>): void;
     setFields(fields: FormStubs<F>): void;
+    getFields(): FormStubs<F>;
     setMetaComparator(metaComparator: (meta1: Partial<M>, meta2: Partial<M>) => boolean): void;
     setMetaComparatorMap(metaComparatorMap: {
         [K in keyof Partial<M>]: (m1: Partial<M>[K], m2: Partial<M>[K]) => boolean;

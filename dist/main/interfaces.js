@@ -9,7 +9,7 @@ var AsyncState;
 })(AsyncState = exports.AsyncState || (exports.AsyncState = {}));
 var DatumType;
 (function (DatumType) {
-    DatumType[DatumType["EXCLUDED"] = 0] = "EXCLUDED";
-    DatumType[DatumType["ASYNC"] = 1] = "ASYNC";
-    DatumType[DatumType["SYNC"] = 2] = "SYNC";
+    DatumType["EXCLUDED"] = "Excluded";
+    DatumType["ASYNC"] = "Async";
+    DatumType["SYNC"] = "Sync";
 })(DatumType = exports.DatumType || (exports.DatumType = {}));

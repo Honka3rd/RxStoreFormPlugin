@@ -17,26 +17,24 @@ export declare enum AsyncState {
     ERROR = 2
 }
 export declare enum DatumType {
-    EXCLUDED = 0,
-    ASYNC = 1,
-    SYNC = 2
+    EXCLUDED = "Excluded",
+    ASYNC = "Async",
+    SYNC = "Sync"
 }
 export type FormControlBasicDatum = {
     field: string;
     value: any;
     touched: boolean;
-    empty: boolean;
     changed: boolean;
     focused: boolean;
     hovered: boolean;
     type: DatumType;
     asyncState?: AsyncState;
 };
-export type FormControlDatum<F, T> = {
+export type FormControlDatum<F extends string, T> = {
     field: F;
     value: T;
     touched: boolean;
-    empty: boolean;
     changed: boolean;
     focused: boolean;
     hovered: boolean;
@@ -47,7 +45,6 @@ export type FormControlStrDatum<F> = {
     field: F;
     value: string;
     touched: boolean;
-    empty: boolean;
     changed: boolean;
     focused: boolean;
     hovered: boolean;
@@ -63,6 +60,7 @@ export type FormStubs<F extends FormControlBasicDatum[]> = Array<{
 export interface FormController<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> {
     setAsyncValidator(asyncValidator: (formData: F, metadata: Partial<M>) => Observable<Partial<M>> | Promise<Partial<M>>): void;
     setFields(fields: FormStubs<F>): void;
+    getFields(): FormStubs<F>;
     setMetaComparator(metaComparator: (meta1: Partial<M>, meta2: Partial<M>) => boolean): void;
     setMetaComparatorMap(metaComparatorMap: {
         [K in keyof Partial<M>]: (m1: Partial<M>[K], m2: Partial<M>[K]) => boolean;
@@ -119,6 +117,7 @@ export type ImmutableFormStubs = List<Map<K<FormStub>, V<FormStub>>>;
 export interface ImmutableFormController<F extends FormControlData, M extends Record<F[number]["field"], FormControlBasicMetadata>, S extends string> {
     setAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>) => Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>): void;
     setFields(fields: FormStubs<F>): void;
+    setDefaultMeta(meta: Partial<M>): void;
     changeFormValue<N extends number>(field: F[N]["field"], value: F[N]["value"]): this;
     touchFormField<N extends number>(field: F[N]["field"], touchOrNot: boolean): this;
     emptyFormField<N extends number>(field: F[N]["field"]): this;
@@ -141,3 +140,38 @@ export interface ImmutableFormController<F extends FormControlData, M extends Re
     observeMeta(callback: (meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>) => void): () => void | undefined;
     observeMetaByField<K extends keyof M>(field: K, callback: (metaOne: Map<"errors" | "info" | "warn", any>) => void): () => void | undefined;
 }
+export type ImmutableFormPluginBuilderParams<F extends FormControlData, M extends Record<F[number]["field"], FormControlBasicMetadata>, S extends string> = {
+    formSelector: S;
+    validator: ImmutableFormController<F, M, S>["validator"];
+};
+export interface ConnectedCallback {
+    connectedCallback(): void;
+}
+export interface DisconnectedCallback {
+    disconnectedCallback(): void;
+}
+export interface AttributeChangedCallback<E extends HTMLElement, P extends Any = {}> {
+    attributeChangedCallback(key: K<E & P>, prev: V<E & P>, next: V<E & P>): void;
+}
+export interface NRFormControllerInjector<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> {
+    setNRFormController(controller: FormController<F, M, S>): void;
+}
+export interface NRFieldDataMapperInjector<F extends FormControlData, N extends number = number> {
+    setDataMapper(mapper: (ev: any) => F[N]["value"]): void;
+}
+export interface NRFieldAttributeBinderInjector {
+    setAttrBinder(binder: <D extends FormControlBasicDatum>(attributeSetter: (k: string, v: any) => void, attrs: D) => void): void;
+}
+export interface NRFieldMetaBinderInjector {
+    setMetaBinder(binder: <M extends FormControlBasicMetadata>(attributeSetter: (k: string, v: any) => void, meta: M) => void): void;
+}
+export type InstallDefinition = Partial<{
+    FormSelector: string;
+    FieldSelector: string;
+}>;
+export type CustomerAttrs = {
+    placeholder?: boolean;
+    defaultValue?: any;
+    asyncState?: AsyncState;
+    value?: any;
+};
