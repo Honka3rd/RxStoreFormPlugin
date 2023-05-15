@@ -357,7 +357,7 @@ class NRFormFieldComponent<
     this.unBind?.();
   }
 
-  attributeChangedCallback(
+  /* attributeChangedCallback(
     key: K<HTMLElement & CustomerAttrs>,
     prev: V<HTMLElement & CustomerAttrs>,
     next: V<HTMLElement & CustomerAttrs>
@@ -394,7 +394,7 @@ class NRFormFieldComponent<
 
   static observedAttributes() {
     return ["placeholder", "defaultValue"];
-  }
+  } */
 }
 
 class NRFormComponent<
