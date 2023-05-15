@@ -33,14 +33,14 @@ class NRFormFieldComponent<
     N extends number = number
   >
   extends HTMLElement
-  implements
+  /* implements
     ConnectedCallback,
     DisconnectedCallback,
     AttributeChangedCallback<HTMLElement, CustomerAttrs>,
     NRFieldDataMapperInjector<F, N>,
     NRFormControllerInjector<F, M, S>,
     NRFieldAttributeBinderInjector,
-    NRFieldMetaBinderInjector
+    NRFieldMetaBinderInjector */
 {
   private field?: F[N]["field"];
   private type?: DatumType;
@@ -64,7 +64,6 @@ class NRFormFieldComponent<
   private subscription: Subscription;
   private unBind?: () => void;
 
-  @bound
   private setDirectChildFromMutations(mutationList: MutationRecord[]) {
     const mutations = mutationList.filter(
       (mutation) => mutation.type === "childList"
@@ -310,7 +309,7 @@ class NRFormFieldComponent<
     this.subscription = this.makeControl();
   }
 
-  setMetaBinder(
+/*   setMetaBinder(
     binder: <M extends FormControlBasicMetadata>(
       attributeSetter: (k: string, v: any) => void,
       meta: M
@@ -395,7 +394,7 @@ class NRFormFieldComponent<
 
   static observedAttributes() {
     return ["placeholder", "defaultValue"];
-  }
+  } */
 }
 
 class NRFormComponent<
@@ -442,9 +441,9 @@ class NRFormComponent<
           this.fieldListEmitter.asObservable().pipe(
             tap((nodeList) => {
               if (controller) {
-                nodeList.forEach((node) =>
+               /*  nodeList.forEach((node) =>
                   node.setNRFormController(controller)
-                );
+                ); */
               }
             })
           )
@@ -483,9 +482,9 @@ export const installNRFComponents = ({
 }: InstallDefinition = {}) => {
   const fieldId = fieldSelector ? fieldSelector : "rx-field-component";
   const formId = formSelector ? formSelector : "rx-form-component";
-  /* if (!window.customElements.get(fieldId)) {
+  if (!window.customElements.get(fieldId)) {
     window.customElements.define(fieldId, NRFormFieldComponent);
-  } */
+  }
   if (!window.customElements.get(formId)) {
     window.customElements.define(formId, NRFormComponent);
   }

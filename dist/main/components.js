@@ -41,7 +41,6 @@ const rx_store_core_1 = require("rx-store-core");
 let NRFormFieldComponent = (() => {
     var _a;
     let _instanceExtraInitializers = [];
-    let _setDirectChildFromMutations_decorators;
     let _attrSetter_decorators;
     return _a = class NRFormFieldComponent extends HTMLElement {
             setDirectChildFromMutations(mutationList) {
@@ -223,69 +222,9 @@ let NRFormFieldComponent = (() => {
                 this.setRequiredProperties();
                 this.subscription = this.makeControl();
             }
-            setMetaBinder(binder) {
-                this.metaDataBinder = binder;
-            }
-            setAttrBinder(binder) {
-                this.attributeBinder = binder;
-            }
-            setDataMapper(mapper) {
-                this.mapper = mapper;
-            }
-            setNRFormController(controller) {
-                this.formControllerEmitter.next(controller);
-            }
-            getField() {
-                return this.field;
-            }
-            getDatumType() {
-                return this.type;
-            }
-            connectedCallback() {
-                this.observer.observe(this, {
-                    subtree: true,
-                    childList: true,
-                    attributes: false,
-                });
-            }
-            disconnectedCallback() {
-                var _a;
-                this.observer.disconnect();
-                this.subscription.unsubscribe();
-                (_a = this.unBind) === null || _a === void 0 ? void 0 : _a.call(this);
-            }
-            attributeChangedCallback(key, prev, next) {
-                const target = this.directChildEmitter.value;
-                if (!target) {
-                    return;
-                }
-                if (key === "placeholder") {
-                    if (target instanceof HTMLInputElement ||
-                        target instanceof HTMLTextAreaElement) {
-                        if (this.directChildIsTarget()) {
-                            return;
-                        }
-                        target.setAttribute(key, next);
-                    }
-                }
-                if (key === "defaultValue") {
-                    if (target instanceof HTMLInputElement ||
-                        target instanceof HTMLTextAreaElement) {
-                        if (this.directChildIsTarget()) {
-                            return;
-                        }
-                        target.setAttribute(key, next);
-                    }
-                }
-            }
-            static observedAttributes() {
-                return ["placeholder", "defaultValue"];
-            }
         },
         (() => {
-            _setDirectChildFromMutations_decorators = [rx_store_core_1.bound];
             _attrSetter_decorators = [rx_store_core_1.bound];
-            __esDecorate(_a, null, _setDirectChildFromMutations_decorators, { kind: "method", name: "setDirectChildFromMutations", static: false, private: false, access: { has: obj => "setDirectChildFromMutations" in obj, get: obj => obj.setDirectChildFromMutations } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _attrSetter_decorators, { kind: "method", name: "attrSetter", static: false, private: false, access: { has: obj => "attrSetter" in obj, get: obj => obj.attrSetter } }, null, _instanceExtraInitializers);
         })(),
         _a;
@@ -312,7 +251,9 @@ let NRFormComponent = (() => {
                     .asObservable()
                     .pipe((0, rxjs_1.switchMap)((controller) => this.fieldListEmitter.asObservable().pipe((0, rxjs_1.tap)((nodeList) => {
                     if (controller) {
-                        nodeList.forEach((node) => node.setNRFormController(controller));
+                        /*  nodeList.forEach((node) =>
+                           node.setNRFormController(controller)
+                         ); */
                     }
                 }))))
                     .subscribe();
@@ -349,9 +290,9 @@ let NRFormComponent = (() => {
 const installNRFComponents = ({ formSelector, fieldSelector, } = {}) => {
     const fieldId = fieldSelector ? fieldSelector : "rx-field-component";
     const formId = formSelector ? formSelector : "rx-form-component";
-    /* if (!window.customElements.get(fieldId)) {
-      window.customElements.define(fieldId, NRFormFieldComponent);
-    } */
+    if (!window.customElements.get(fieldId)) {
+        window.customElements.define(fieldId, NRFormFieldComponent);
+    }
     if (!window.customElements.get(formId)) {
         window.customElements.define(formId, NRFormComponent);
     }
