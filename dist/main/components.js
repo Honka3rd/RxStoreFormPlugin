@@ -222,27 +222,35 @@ let NRFormFieldComponent = (() => {
                 this.setRequiredProperties();
                 this.subscription = this.makeControl();
             }
-            setMetaBinder(binder) {
+            /*   setMetaBinder(
+                binder: <M extends FormControlBasicMetadata>(
+                  attributeSetter: (k: string, v: any) => void,
+                  meta: M
+                ) => void
+              ): void {
                 this.metaDataBinder = binder;
-            }
-            setAttrBinder(binder) {
+              }
+            
+              setAttrBinder(
+                binder: <D extends FormControlBasicDatum>(
+                  attributeSetter: (k: string, v: any) => void,
+                  attrs: D
+                ) => void
+              ): void {
                 this.attributeBinder = binder;
-            }
-            /*   setDataMapper(mapper: (ev: any) => F[N]["value"]): void {
-                this.mapper = mapper;
-              }
-            
-              setNRFormController(controller: FormController<F, M, S>): void {
-                this.formControllerEmitter.next(controller);
-              }
-            
-              getField() {
-                return this.field;
-              }
-            
-              getDatumType() {
-                return this.type;
               } */
+            setDataMapper(mapper) {
+                this.mapper = mapper;
+            }
+            setNRFormController(controller) {
+                this.formControllerEmitter.next(controller);
+            }
+            getField() {
+                return this.field;
+            }
+            getDatumType() {
+                return this.type;
+            }
             connectedCallback() {
                 this.observer.observe(this, {
                     subtree: true,
