@@ -327,7 +327,7 @@ class NRFormFieldComponent<
     this.attributeBinder = binder;
   } */
 
-  setDataMapper(mapper: (ev: any) => F[N]["value"]): void {
+/*   setDataMapper(mapper: (ev: any) => F[N]["value"]): void {
     this.mapper = mapper;
   }
 
@@ -341,7 +341,7 @@ class NRFormFieldComponent<
 
   getDatumType() {
     return this.type;
-  }
+  } */
 
   connectedCallback(): void {
     this.observer.observe(this, {

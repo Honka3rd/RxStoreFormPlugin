@@ -239,18 +239,21 @@ let NRFormFieldComponent = (() => {
               ): void {
                 this.attributeBinder = binder;
               } */
-            setDataMapper(mapper) {
+            /*   setDataMapper(mapper: (ev: any) => F[N]["value"]): void {
                 this.mapper = mapper;
-            }
-            setNRFormController(controller) {
+              }
+            
+              setNRFormController(controller: FormController<F, M, S>): void {
                 this.formControllerEmitter.next(controller);
-            }
-            getField() {
+              }
+            
+              getField() {
                 return this.field;
-            }
-            getDatumType() {
+              }
+            
+              getDatumType() {
                 return this.type;
-            }
+              } */
             connectedCallback() {
                 this.observer.observe(this, {
                     subtree: true,
