@@ -140,9 +140,7 @@ var FormControllerImpl = function () {
                 }
             };
             FormControllerImpl.prototype.setFields = function (fields) {
-                if (!this.fields) {
-                    this.fields = fields;
-                }
+                this.fields = fields;
             };
             FormControllerImpl.prototype.getFields = function () {
                 return this.fields;

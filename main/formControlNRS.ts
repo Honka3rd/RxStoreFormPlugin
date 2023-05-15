@@ -72,9 +72,7 @@ class FormControllerImpl<
   }
 
   setFields(fields: FormStubs<F>) {
-    if (!this.fields) {
-      this.fields = fields;
-    }
+    this.fields = fields;
   }
 
   getFields(): FormStubs<F> {
