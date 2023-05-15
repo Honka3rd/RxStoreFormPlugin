@@ -4,67 +4,63 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.IRFormBuilder = exports.NRFormBuilder = void 0;
-var formControlNRS_1 = __importDefault(require("./formControlNRS"));
-var formControlIRS_1 = require("./formControlIRS");
-var NRFormBuilder = /** @class */ (function () {
-    function NRFormBuilder(_a) {
-        var formSelector = _a.formSelector, validator = _a.validator;
+const formControlNRS_1 = __importDefault(require("./formControlNRS"));
+const formControlIRS_1 = require("./formControlIRS");
+class NRFormBuilder {
+    constructor({ formSelector, validator, }) {
         this.NRF = new formControlNRS_1.default(formSelector, validator);
     }
-    NRFormBuilder.prototype.setAsyncValidator = function (asyncValidator) {
+    setAsyncValidator(asyncValidator) {
         this.NRF.setAsyncValidator(asyncValidator);
         return this;
-    };
-    NRFormBuilder.prototype.setFields = function (fields) {
+    }
+    setFields(fields) {
         this.NRF.setFields(fields);
         return this;
-    };
-    NRFormBuilder.prototype.setMetaComparator = function (metaComparator) {
+    }
+    setMetaComparator(metaComparator) {
         this.NRF.setMetaComparator(metaComparator);
         return this;
-    };
-    NRFormBuilder.prototype.setMetaComparatorMap = function (metaComparatorMap) {
+    }
+    setMetaComparatorMap(metaComparatorMap) {
         this.NRF.setMetaComparatorMap(metaComparatorMap);
         return this;
-    };
-    NRFormBuilder.prototype.setMetaCloneFunction = function (cloneFunction) {
+    }
+    setMetaCloneFunction(cloneFunction) {
         this.NRF.setMetaCloneFunction(cloneFunction);
         return this;
-    };
-    NRFormBuilder.prototype.setMetaCloneFunctionMap = function (cloneFunctionMap) {
+    }
+    setMetaCloneFunctionMap(cloneFunctionMap) {
         this.NRF.setMetaCloneFunctionMap(cloneFunctionMap);
         return this;
-    };
-    NRFormBuilder.prototype.setDefaultMeta = function (meta) {
+    }
+    setDefaultMeta(meta) {
         this.NRF.setDefaultMeta(meta);
         return this;
-    };
-    NRFormBuilder.prototype.getInstance = function () {
+    }
+    getInstance() {
         return this.NRF;
-    };
-    return NRFormBuilder;
-}());
+    }
+}
 exports.NRFormBuilder = NRFormBuilder;
-var IRFormBuilder = /** @class */ (function () {
-    function IRFormBuilder(_a) {
-        var formSelector = _a.formSelector, validator = _a.validator;
+class IRFormBuilder {
+    constructor({ formSelector, validator, }) {
         this.IRF = new formControlIRS_1.ImmutableFormControllerImpl(formSelector, validator);
     }
-    IRFormBuilder.prototype.setAsyncValidator = function (asyncValidator) {
+    setAsyncValidator(asyncValidator) {
         this.IRF.setAsyncValidator(asyncValidator);
         return this;
-    };
-    IRFormBuilder.prototype.setFields = function (fields) {
+    }
+    setFields(fields) {
         this.IRF.setFields(fields);
         return this;
-    };
-    IRFormBuilder.prototype.setDefaultMeta = function (meta) {
+    }
+    setDefaultMeta(meta) {
         this.IRF.setDefaultMeta(meta);
         return this;
-    };
-    IRFormBuilder.prototype.getInstance = function () {
+    }
+    getInstance() {
         return this.IRF;
-    };
-    return IRFormBuilder;
-}());
+    }
+}
 exports.IRFormBuilder = IRFormBuilder;

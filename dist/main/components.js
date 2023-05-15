@@ -1,19 +1,4 @@
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 var __runInitializers = (this && this.__runInitializers) || function (thisArg, initializers, value) {
     var useValue = arguments.length > 2;
     for (var i = 0; i < initializers.length; i++) {
@@ -48,46 +33,33 @@ var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, 
     if (target) Object.defineProperty(target, contextIn.name, descriptor);
     done = true;
 };
-var _this = this;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.installNRFComponents = void 0;
-var rxjs_1 = require("rxjs");
-var interfaces_1 = require("./interfaces");
-var rx_store_core_1 = require("rx-store-core");
-var NRFormFieldComponent = function () {
+const rxjs_1 = require("rxjs");
+const interfaces_1 = require("./interfaces");
+const rx_store_core_1 = require("rx-store-core");
+let NRFormFieldComponent = (() => {
     var _a;
-    var _instanceExtraInitializers = [];
-    var _setDirectChildFromMutations_decorators;
-    var _attrSetter_decorators;
-    return _a = /** @class */ (function (_super) {
-            __extends(NRFormFieldComponent, _super);
-            function NRFormFieldComponent() {
-                var _this = _super.call(this) || this;
-                _this.field = (__runInitializers(_this, _instanceExtraInitializers), void 0);
-                _this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
-                _this.directChildEmitter = new rxjs_1.BehaviorSubject(null);
-                _this.observer = new MutationObserver(_this.setDirectChildFromMutations);
-                _this.setRequiredProperties();
-                _this.subscription = _this.makeControl();
-                return _this;
-            }
-            NRFormFieldComponent.prototype.setDirectChildFromMutations = function (mutationList) {
-                var _this = this;
-                var mutations = mutationList.filter(function (mutation) { return mutation.type === "childList"; });
+    let _instanceExtraInitializers = [];
+    let _setDirectChildFromMutations_decorators;
+    let _attrSetter_decorators;
+    return _a = class NRFormFieldComponent extends HTMLElement {
+            setDirectChildFromMutations(mutationList) {
+                const mutations = mutationList.filter((mutation) => mutation.type === "childList");
                 if (this.unBind) {
-                    var removedAll = mutations.reduce(function (acc, next) {
-                        Array.from(next.removedNodes).forEach(function (node) {
+                    const removedAll = mutations.reduce((acc, next) => {
+                        Array.from(next.removedNodes).forEach((node) => {
                             acc.push(node);
                         });
                         return acc;
                     }, []);
-                    var removed = removedAll.find(function (rm) { var _a; return rm && ((_a = _this.directChildEmitter) === null || _a === void 0 ? void 0 : _a.value) === rm; });
+                    const removed = removedAll.find((rm) => { var _a; return rm && ((_a = this.directChildEmitter) === null || _a === void 0 ? void 0 : _a.value) === rm; });
                     if (removed) {
                         this.unBind();
                     }
                 }
                 if (!this.dataset.targetSelector && !this.dataset.targetId) {
-                    var first = mutations[0].addedNodes.item(0);
+                    const first = mutations[0].addedNodes.item(0);
                     if (!(first instanceof HTMLElement)) {
                         return;
                     }
@@ -95,14 +67,14 @@ var NRFormFieldComponent = function () {
                     return;
                 }
                 if (this.dataset.targetId) {
-                    var allAdded = mutations.reduce(function (acc, next) {
-                        Array.from(next.addedNodes).forEach(function (node) {
+                    const allAdded = mutations.reduce((acc, next) => {
+                        Array.from(next.addedNodes).forEach((node) => {
                             acc.push(node);
                         });
                         return acc;
                     }, []);
-                    var added = allAdded.find(function (a) {
-                        a instanceof HTMLElement && a.id === _this.dataset.targetId;
+                    const added = allAdded.find((a) => {
+                        a instanceof HTMLElement && a.id === this.dataset.targetId;
                     });
                     if (!added) {
                         return;
@@ -113,81 +85,73 @@ var NRFormFieldComponent = function () {
                     return;
                 }
                 if (this.dataset.targetSelector) {
-                    var target = this.querySelector(this.dataset.targetSelector);
+                    const target = this.querySelector(this.dataset.targetSelector);
                     if (!(target instanceof HTMLElement)) {
                         return;
                     }
                     this.directChildEmitter.next(target);
                 }
-            };
-            NRFormFieldComponent.prototype.directChildIsTarget = function () {
+            }
+            directChildIsTarget() {
                 var _a;
                 if (!((_a = this.directChildEmitter) === null || _a === void 0 ? void 0 : _a.value) && !this.children.item(0)) {
                     return false;
                 }
                 return this.directChildEmitter.value === this.children.item(0);
-            };
-            NRFormFieldComponent.prototype.setValue = function (value, formController, field) {
+            }
+            setValue(value, formController, field) {
                 formController.changeFormValue(field, value);
-            };
-            NRFormFieldComponent.prototype.setTouched = function (value, formController, field) {
+            }
+            setTouched(value, formController, field) {
                 formController.touchFormField(field, value);
-            };
-            NRFormFieldComponent.prototype.setFocused = function (value, formController, field) {
+            }
+            setFocused(value, formController, field) {
                 formController.focusFormField(field, value);
-            };
-            NRFormFieldComponent.prototype.setHovered = function (value, formController, field) {
+            }
+            setHovered(value, formController, field) {
                 formController.hoverFormField(field, value);
-            };
-            NRFormFieldComponent.prototype.attachChildEventListeners = function (target, formController) {
-                var _this = this;
-                var field = this.field;
+            }
+            attachChildEventListeners(target, formController) {
+                const { field } = this;
                 if (!formController || !field) {
                     return;
                 }
                 if (target instanceof HTMLElement) {
-                    target.addEventListener("mouseover", function () {
-                        return _this.setHovered(true, formController, field);
+                    target.addEventListener("mouseover", () => this.setHovered(true, formController, field));
+                    target.addEventListener("mouseleave", () => this.setHovered(false, formController, field));
+                    target.addEventListener("focus", () => this.setFocused(true, formController, field));
+                    target.addEventListener("blur", () => {
+                        this.setFocused(false, formController, field);
+                        this.setTouched(true, formController, field);
                     });
-                    target.addEventListener("mouseleave", function () {
-                        return _this.setHovered(false, formController, field);
-                    });
-                    target.addEventListener("focus", function () {
-                        return _this.setFocused(true, formController, field);
-                    });
-                    target.addEventListener("blur", function () {
-                        _this.setFocused(false, formController, field);
-                        _this.setTouched(true, formController, field);
-                    });
-                    target.addEventListener("change", function (event) {
-                        if (_this.mapper) {
-                            _this.setValue(_this.mapper(event), formController, field);
+                    target.addEventListener("change", (event) => {
+                        if (this.mapper) {
+                            this.setValue(this.mapper(event), formController, field);
                             return;
                         }
-                        _this.setValue(event.target.value, formController, field);
+                        this.setValue(event.target.value, formController, field);
                     });
                 }
-            };
-            NRFormFieldComponent.prototype.attrSetter = function (target) {
-                return function (k, v) { return target.setAttribute(k, v); };
-            };
-            NRFormFieldComponent.prototype.valuesBinding = function (target, formController) {
-                var _this = this;
-                var field = this.field;
+            }
+            attrSetter(target) {
+                return (k, v) => target.setAttribute(k, v);
+            }
+            valuesBinding(target, formController) {
+                const { field } = this;
                 if (!formController || !field) {
                     return;
                 }
                 if (target instanceof HTMLElement) {
-                    return formController.observeFormDatum(field, function (datum) {
-                        _this.setAttribute("data-focused", String(datum.focused));
-                        _this.setAttribute("data-changed", String(datum.changed));
-                        _this.setAttribute("data-touched", String(datum.touched));
-                        _this.setAttribute("data-hovered", String(datum.hovered));
+                    return formController.observeFormDatum(field, (datum) => {
+                        this.setAttribute("data-focused", String(datum.focused));
+                        this.setAttribute("data-changed", String(datum.changed));
+                        this.setAttribute("data-touched", String(datum.touched));
+                        this.setAttribute("data-hovered", String(datum.hovered));
                         datum.asyncState &&
-                            _this.setAttribute("data-async-state", String(datum.asyncState));
-                        _this.setAttribute("data-value", datum.value);
-                        if (_this.attributeBinder) {
-                            _this.attributeBinder(_this.attrSetter(target), datum);
+                            this.setAttribute("data-async-state", String(datum.asyncState));
+                        this.setAttribute("data-value", datum.value);
+                        if (this.attributeBinder) {
+                            this.attributeBinder(this.attrSetter(target), datum);
                             return;
                         }
                         if ("value" in target) {
@@ -197,96 +161,101 @@ var NRFormFieldComponent = function () {
                         target.setAttribute("data-value", datum.value);
                     });
                 }
-            };
-            NRFormFieldComponent.prototype.metaBinding = function (target, formController) {
-                var _this = this;
-                var field = this.field;
+            }
+            metaBinding(target, formController) {
+                const { field } = this;
                 if (!formController || !field) {
                     return;
                 }
                 if (target instanceof HTMLElement) {
-                    return formController.observeMetaByField(field, function (meta) {
+                    return formController.observeMetaByField(field, (meta) => {
                         if (!meta) {
                             return;
                         }
-                        if (_this.metaDataBinder) {
-                            _this.metaDataBinder(_this.attrSetter(target), meta);
+                        if (this.metaDataBinder) {
+                            this.metaDataBinder(this.attrSetter(target), meta);
                         }
                     });
                 }
-            };
-            NRFormFieldComponent.prototype.setField = function (field) {
+            }
+            setField(field) {
                 if (this.field) {
                     return;
                 }
                 this.field = field;
-            };
-            NRFormFieldComponent.prototype.setDatumType = function (type) {
+            }
+            setDatumType(type) {
                 if (this.type) {
                     return;
                 }
                 this.type = type;
-            };
-            NRFormFieldComponent.prototype.makeControl = function () {
-                var _this = this;
+            }
+            makeControl() {
                 return this.formControllerEmitter
                     .asObservable()
-                    .pipe((0, rxjs_1.switchMap)(function (controller) {
-                    return _this.directChildEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.tap)(function (firstChild) {
-                        _this.attachChildEventListeners(firstChild, controller);
-                        var unbindV = _this.valuesBinding(firstChild, controller);
-                        var unbindM = _this.metaBinding(firstChild, controller);
-                        _this.unBind = function () {
-                            unbindV === null || unbindV === void 0 ? void 0 : unbindV();
-                            unbindM === null || unbindM === void 0 ? void 0 : unbindM();
-                        };
-                    }));
-                }))
+                    .pipe((0, rxjs_1.switchMap)((controller) => this.directChildEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.tap)((firstChild) => {
+                    this.attachChildEventListeners(firstChild, controller);
+                    const unbindV = this.valuesBinding(firstChild, controller);
+                    const unbindM = this.metaBinding(firstChild, controller);
+                    this.unBind = () => {
+                        unbindV === null || unbindV === void 0 ? void 0 : unbindV();
+                        unbindM === null || unbindM === void 0 ? void 0 : unbindM();
+                    };
+                }))))
                     .subscribe();
-            };
-            NRFormFieldComponent.prototype.setRequiredProperties = function () {
+            }
+            setRequiredProperties() {
                 var _a;
-                var field = this.getAttribute("data-field");
+                const field = this.getAttribute("data-field");
                 if (!field || !field.length) {
                     throw new Error("Form field is not set");
                 }
                 this.setField(field);
-                var type = (_a = this.getAttribute("data-type")) !== null && _a !== void 0 ? _a : interfaces_1.DatumType.SYNC;
+                const type = (_a = this.getAttribute("data-type")) !== null && _a !== void 0 ? _a : interfaces_1.DatumType.SYNC;
                 this.setDatumType(type);
-            };
-            NRFormFieldComponent.prototype.setMetaBinder = function (binder) {
+            }
+            constructor() {
+                super();
+                this.field = (__runInitializers(this, _instanceExtraInitializers), void 0);
+                this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
+                this.directChildEmitter = new rxjs_1.BehaviorSubject(null);
+                this.observer = new MutationObserver(this.setDirectChildFromMutations);
+                this.setRequiredProperties();
+                this.subscription = this.makeControl();
+            }
+            setMetaBinder(binder) {
                 this.metaDataBinder = binder;
-            };
-            NRFormFieldComponent.prototype.setAttrBinder = function (binder) {
+            }
+            setAttrBinder(binder) {
                 this.attributeBinder = binder;
-            };
-            NRFormFieldComponent.prototype.setDataMapper = function (mapper) {
+            }
+            setDataMapper(mapper) {
                 this.mapper = mapper;
-            };
-            NRFormFieldComponent.prototype.setNRFormController = function (controller) {
+            }
+            setNRFormController(controller) {
                 this.formControllerEmitter.next(controller);
-            };
-            NRFormFieldComponent.prototype.getField = function () {
+            }
+            getField() {
                 return this.field;
-            };
-            NRFormFieldComponent.prototype.getDatumType = function () {
+            }
+            getDatumType() {
                 return this.type;
-            };
-            NRFormFieldComponent.prototype.connectedCallback = function () {
+            }
+            connectedCallback() {
                 this.observer.observe(this, {
                     subtree: true,
                     childList: true,
                     attributes: false,
                 });
-            };
-            NRFormFieldComponent.prototype.disconnectedCallback = function () {
+            }
+            disconnectedCallback() {
                 var _a;
                 this.observer.disconnect();
                 this.subscription.unsubscribe();
                 (_a = this.unBind) === null || _a === void 0 ? void 0 : _a.call(this);
-            };
-            NRFormFieldComponent.prototype.attributeChangedCallback = function (key, prev, next) {
-                var target = this.directChildEmitter.value;
+            }
+            attributeChangedCallback(key, prev, next) {
+                const target = this.directChildEmitter.value;
                 if (!target) {
                     return;
                 }
@@ -308,90 +277,78 @@ var NRFormFieldComponent = function () {
                         target.setAttribute(key, next);
                     }
                 }
-            };
-            NRFormFieldComponent.observedAttributes = function () {
+            }
+            static observedAttributes() {
                 return ["placeholder", "defaultValue"];
-            };
-            return NRFormFieldComponent;
-        }(HTMLElement)),
-        (function () {
+            }
+        },
+        (() => {
             _setDirectChildFromMutations_decorators = [rx_store_core_1.bound];
             _attrSetter_decorators = [rx_store_core_1.bound];
-            __esDecorate(_a, null, _setDirectChildFromMutations_decorators, { kind: "method", name: "setDirectChildFromMutations", static: false, private: false, access: { has: function (obj) { return "setDirectChildFromMutations" in obj; }, get: function (obj) { return obj.setDirectChildFromMutations; } } }, null, _instanceExtraInitializers);
-            __esDecorate(_a, null, _attrSetter_decorators, { kind: "method", name: "attrSetter", static: false, private: false, access: { has: function (obj) { return "attrSetter" in obj; }, get: function (obj) { return obj.attrSetter; } } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _setDirectChildFromMutations_decorators, { kind: "method", name: "setDirectChildFromMutations", static: false, private: false, access: { has: obj => "setDirectChildFromMutations" in obj, get: obj => obj.setDirectChildFromMutations } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _attrSetter_decorators, { kind: "method", name: "attrSetter", static: false, private: false, access: { has: obj => "attrSetter" in obj, get: obj => obj.attrSetter } }, null, _instanceExtraInitializers);
         })(),
         _a;
-}();
-var NRFormComponent = function () {
+})();
+let NRFormComponent = (() => {
     var _a;
-    var _instanceExtraInitializers_1 = [];
-    var _setFieldListFromMutationRecords_decorators;
-    return _a = /** @class */ (function (_super) {
-            __extends(NRFormComponent, _super);
-            function NRFormComponent() {
-                var _this = _super.call(this) || this;
-                _this.fieldListEmitter = (__runInitializers(_this, _instanceExtraInitializers_1), new rxjs_1.BehaviorSubject([]));
-                _this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
-                _this.observer = new MutationObserver(_this.setFieldListFromMutationRecords);
-                _this.subscription = _this.controlAll();
-                return _this;
-            }
-            NRFormComponent.prototype.setFieldListFromMutationRecords = function (mutationList) {
-                var nodes = [];
+    let _instanceExtraInitializers_1 = [];
+    let _setFieldListFromMutationRecords_decorators;
+    return _a = class NRFormComponent extends HTMLFormElement {
+            setFieldListFromMutationRecords(mutationList) {
+                const nodes = [];
                 mutationList
-                    .filter(function (mutation) { return mutation.type === "childList"; })
-                    .forEach(function (mutation) {
-                    return Array.from(mutation.addedNodes).forEach(function (node) {
-                        if (!(node instanceof NRFormFieldComponent)) {
-                            return;
-                        }
-                        nodes.push(node);
-                    });
-                });
+                    .filter((mutation) => mutation.type === "childList")
+                    .forEach((mutation) => Array.from(mutation.addedNodes).forEach((node) => {
+                    if (!(node instanceof NRFormFieldComponent)) {
+                        return;
+                    }
+                    nodes.push(node);
+                }));
                 this.fieldListEmitter.next(nodes);
-            };
-            NRFormComponent.prototype.controlAll = function () {
-                var _this = this;
+            }
+            controlAll() {
                 return this.formControllerEmitter
                     .asObservable()
-                    .pipe((0, rxjs_1.switchMap)(function (controller) {
-                    return _this.fieldListEmitter.asObservable().pipe((0, rxjs_1.tap)(function (nodeList) {
-                        if (controller) {
-                            nodeList.forEach(function (node) {
-                                return node.setNRFormController(controller);
-                            });
-                        }
-                    }));
-                }))
+                    .pipe((0, rxjs_1.switchMap)((controller) => this.fieldListEmitter.asObservable().pipe((0, rxjs_1.tap)((nodeList) => {
+                    if (controller) {
+                        nodeList.forEach((node) => node.setNRFormController(controller));
+                    }
+                }))))
                     .subscribe();
-            };
-            NRFormComponent.prototype.connectedCallback = function () {
+            }
+            constructor() {
+                super();
+                this.fieldListEmitter = (__runInitializers(this, _instanceExtraInitializers_1), new rxjs_1.BehaviorSubject([]));
+                this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
+                this.observer = new MutationObserver(this.setFieldListFromMutationRecords);
+                this.subscription = this.controlAll();
+            }
+            connectedCallback() {
                 this.observer.observe(this, {
                     subtree: true,
                     childList: true,
                     attributes: false,
                 });
-            };
-            NRFormComponent.prototype.disconnectedCallback = function () {
+            }
+            disconnectedCallback() {
                 this.observer.disconnect();
                 this.subscription.unsubscribe();
-            };
-            NRFormComponent.prototype.setNRFormController = function (controller) {
+            }
+            setNRFormController(controller) {
                 this.setAttribute("data-selector", controller.selector());
                 this.formControllerEmitter.next(controller);
-            };
-            return NRFormComponent;
-        }(HTMLFormElement)),
-        (function () {
+            }
+        },
+        (() => {
             _setFieldListFromMutationRecords_decorators = [rx_store_core_1.bound];
-            __esDecorate(_a, null, _setFieldListFromMutationRecords_decorators, { kind: "method", name: "setFieldListFromMutationRecords", static: false, private: false, access: { has: function (obj) { return "setFieldListFromMutationRecords" in obj; }, get: function (obj) { return obj.setFieldListFromMutationRecords; } } }, null, _instanceExtraInitializers_1);
+            __esDecorate(_a, null, _setFieldListFromMutationRecords_decorators, { kind: "method", name: "setFieldListFromMutationRecords", static: false, private: false, access: { has: obj => "setFieldListFromMutationRecords" in obj, get: obj => obj.setFieldListFromMutationRecords } }, null, _instanceExtraInitializers_1);
         })(),
         _a;
-}();
-var installNRFComponents = function (_a) {
-    var _b = _a === void 0 ? {} : _a, formSelector = _b.formSelector, fieldSelector = _b.fieldSelector;
-    var fieldId = fieldSelector ? fieldSelector : "rx-field-component";
-    var formId = formSelector ? formSelector : "rx-form-component";
+})();
+const installNRFComponents = ({ formSelector, fieldSelector, } = {}) => {
+    const fieldId = fieldSelector ? fieldSelector : "rx-field-component";
+    const formId = formSelector ? formSelector : "rx-form-component";
     if (!window.customElements.get(fieldId)) {
         window.customElements.define(fieldId, NRFormFieldComponent);
     }
