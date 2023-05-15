@@ -222,6 +222,67 @@ let NRFormFieldComponent = (() => {
                 this.setRequiredProperties();
                 this.subscription = this.makeControl();
             }
+            setMetaBinder(binder) {
+                this.metaDataBinder = binder;
+            }
+            setAttrBinder(binder) {
+                this.attributeBinder = binder;
+            }
+            /*   setDataMapper(mapper: (ev: any) => F[N]["value"]): void {
+                this.mapper = mapper;
+              }
+            
+              setNRFormController(controller: FormController<F, M, S>): void {
+                this.formControllerEmitter.next(controller);
+              }
+            
+              getField() {
+                return this.field;
+              }
+            
+              getDatumType() {
+                return this.type;
+              } */
+            connectedCallback() {
+                this.observer.observe(this, {
+                    subtree: true,
+                    childList: true,
+                    attributes: false,
+                });
+            }
+            disconnectedCallback() {
+                var _a;
+                this.observer.disconnect();
+                this.subscription.unsubscribe();
+                (_a = this.unBind) === null || _a === void 0 ? void 0 : _a.call(this);
+            }
+            attributeChangedCallback(key, prev, next) {
+                const target = this.directChildEmitter.value;
+                if (!target) {
+                    return;
+                }
+                if (key === "placeholder") {
+                    if (target instanceof HTMLInputElement ||
+                        target instanceof HTMLTextAreaElement) {
+                        if (this.directChildIsTarget()) {
+                            return;
+                        }
+                        target.setAttribute(key, next);
+                    }
+                }
+                if (key === "defaultValue") {
+                    if (target instanceof HTMLInputElement ||
+                        target instanceof HTMLTextAreaElement) {
+                        if (this.directChildIsTarget()) {
+                            return;
+                        }
+                        target.setAttribute(key, next);
+                    }
+                }
+            }
+            static observedAttributes() {
+                return ["placeholder", "defaultValue"];
+            }
         },
         (() => {
             _attrSetter_decorators = [rx_store_core_1.bound];
@@ -253,7 +314,7 @@ let NRFormComponent = (() => {
                     if (controller) {
                         /*  nodeList.forEach((node) =>
                            node.setNRFormController(controller)
-                         ); */
+                         ) */ ;
                     }
                 }))))
                     .subscribe();

@@ -309,7 +309,7 @@ class NRFormFieldComponent<
     this.subscription = this.makeControl();
   }
 
-/*   setMetaBinder(
+  setMetaBinder(
     binder: <M extends FormControlBasicMetadata>(
       attributeSetter: (k: string, v: any) => void,
       meta: M
@@ -327,7 +327,7 @@ class NRFormFieldComponent<
     this.attributeBinder = binder;
   }
 
-  setDataMapper(mapper: (ev: any) => F[N]["value"]): void {
+/*   setDataMapper(mapper: (ev: any) => F[N]["value"]): void {
     this.mapper = mapper;
   }
 
@@ -341,7 +341,7 @@ class NRFormFieldComponent<
 
   getDatumType() {
     return this.type;
-  }
+  } */
 
   connectedCallback(): void {
     this.observer.observe(this, {
@@ -394,7 +394,7 @@ class NRFormFieldComponent<
 
   static observedAttributes() {
     return ["placeholder", "defaultValue"];
-  } */
+  }
 }
 
 class NRFormComponent<
@@ -443,7 +443,7 @@ class NRFormComponent<
               if (controller) {
                /*  nodeList.forEach((node) =>
                   node.setNRFormController(controller)
-                ); */
+                ) */;
               }
             })
           )
