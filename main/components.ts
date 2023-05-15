@@ -404,12 +404,12 @@ class NRFormComponent<
     S extends string = string
   >
   extends HTMLFormElement
-/*   implements
+  implements
     ConnectedCallback,
     DisconnectedCallback,
-    NRFormControllerInjector<F, M, S> */
+    NRFormControllerInjector<F, M, S>
 {
-  /* private fieldListEmitter: Subject<NRFormFieldComponent<F, M, S>[]> =
+  private fieldListEmitter: Subject<NRFormFieldComponent<F, M, S>[]> =
     new BehaviorSubject<NRFormFieldComponent<F, M, S>[]>([]);
   private formControllerEmitter: Subject<FormController<F, M, S> | null> =
     new BehaviorSubject<FormController<F, M, S> | null>(null);
@@ -474,7 +474,7 @@ class NRFormComponent<
   setNRFormController(controller: FormController<F, M, S>): void {
     this.setAttribute("data-selector", controller.selector());
     this.formControllerEmitter.next(controller);
-  } */
+  }
 }
 
 export const installNRFComponents = ({

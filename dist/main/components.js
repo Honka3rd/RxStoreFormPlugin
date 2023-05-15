@@ -290,8 +290,62 @@ let NRFormFieldComponent = (() => {
         })(),
         _a;
 })();
-class NRFormComponent extends HTMLFormElement {
-}
+let NRFormComponent = (() => {
+    var _a;
+    let _instanceExtraInitializers_1 = [];
+    let _setFieldListFromMutationRecords_decorators;
+    return _a = class NRFormComponent extends HTMLFormElement {
+            setFieldListFromMutationRecords(mutationList) {
+                const nodes = [];
+                mutationList
+                    .filter((mutation) => mutation.type === "childList")
+                    .forEach((mutation) => Array.from(mutation.addedNodes).forEach((node) => {
+                    if (!(node instanceof NRFormFieldComponent)) {
+                        return;
+                    }
+                    nodes.push(node);
+                }));
+                this.fieldListEmitter.next(nodes);
+            }
+            controlAll() {
+                return this.formControllerEmitter
+                    .asObservable()
+                    .pipe((0, rxjs_1.switchMap)((controller) => this.fieldListEmitter.asObservable().pipe((0, rxjs_1.tap)((nodeList) => {
+                    if (controller) {
+                        nodeList.forEach((node) => node.setNRFormController(controller));
+                    }
+                }))))
+                    .subscribe();
+            }
+            constructor() {
+                super();
+                this.fieldListEmitter = (__runInitializers(this, _instanceExtraInitializers_1), new rxjs_1.BehaviorSubject([]));
+                this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
+                this.observer = new MutationObserver(this.setFieldListFromMutationRecords);
+                this.subscription = this.controlAll();
+            }
+            connectedCallback() {
+                this.observer.observe(this, {
+                    subtree: true,
+                    childList: true,
+                    attributes: false,
+                });
+            }
+            disconnectedCallback() {
+                this.observer.disconnect();
+                this.subscription.unsubscribe();
+            }
+            setNRFormController(controller) {
+                this.setAttribute("data-selector", controller.selector());
+                this.formControllerEmitter.next(controller);
+            }
+        },
+        (() => {
+            _setFieldListFromMutationRecords_decorators = [rx_store_core_1.bound];
+            __esDecorate(_a, null, _setFieldListFromMutationRecords_decorators, { kind: "method", name: "setFieldListFromMutationRecords", static: false, private: false, access: { has: obj => "setFieldListFromMutationRecords" in obj, get: obj => obj.setFieldListFromMutationRecords } }, null, _instanceExtraInitializers_1);
+        })(),
+        _a;
+})();
 const installNRFComponents = ({ formSelector, fieldSelector, } = {}) => {
     const fieldId = fieldSelector ? fieldSelector : "rx-field-component";
     const formId = formSelector ? formSelector : "rx-form-component";
