@@ -1,5 +1,7 @@
 # RxStoreFormPlugin
 
+Beta version, do not use this in production!!!
+
 ** Code Example **
 ```javascript
 const sampleFormBuilder = new NRFormBuilder<
