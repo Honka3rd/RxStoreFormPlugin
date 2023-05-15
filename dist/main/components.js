@@ -253,6 +253,30 @@ let NRFormFieldComponent = (() => {
                 this.subscription.unsubscribe();
                 (_a = this.unBind) === null || _a === void 0 ? void 0 : _a.call(this);
             }
+            attributeChangedCallback(key, prev, next) {
+                const target = this.directChildEmitter.value;
+                if (!target) {
+                    return;
+                }
+                if (key === "placeholder") {
+                    if (target instanceof HTMLInputElement ||
+                        target instanceof HTMLTextAreaElement) {
+                        if (this.directChildIsTarget()) {
+                            return;
+                        }
+                        target.setAttribute(key, next);
+                    }
+                }
+                if (key === "defaultValue") {
+                    if (target instanceof HTMLInputElement ||
+                        target instanceof HTMLTextAreaElement) {
+                        if (this.directChildIsTarget()) {
+                            return;
+                        }
+                        target.setAttribute(key, next);
+                    }
+                }
+            }
         },
         (() => {
             _attrSetter_decorators = [rx_store_core_1.bound];
