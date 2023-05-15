@@ -277,6 +277,9 @@ let NRFormFieldComponent = (() => {
                     }
                 }
             }
+            static get observedAttributes() {
+                return ["placeholder", "defaultValue"];
+            }
         },
         (() => {
             _attrSetter_decorators = [rx_store_core_1.bound];

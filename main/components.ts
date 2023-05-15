@@ -33,14 +33,14 @@ class NRFormFieldComponent<
     N extends number = number
   >
   extends HTMLElement
-  /* implements
+  implements
     ConnectedCallback,
     DisconnectedCallback,
     AttributeChangedCallback<HTMLElement, CustomerAttrs>,
     NRFieldDataMapperInjector<F, N>,
     NRFormControllerInjector<F, M, S>,
     NRFieldAttributeBinderInjector,
-    NRFieldMetaBinderInjector */
+    NRFieldMetaBinderInjector
 {
   private field?: F[N]["field"];
   private type?: DatumType;
@@ -392,9 +392,9 @@ class NRFormFieldComponent<
     }
   }
 
-/*   static observedAttributes() {
+  static get observedAttributes() {
     return ["placeholder", "defaultValue"];
-  } */
+  }
 }
 
 class NRFormComponent<
