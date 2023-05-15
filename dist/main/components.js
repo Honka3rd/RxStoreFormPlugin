@@ -73,17 +73,18 @@ var NRFormFieldComponent = function () {
             }
             NRFormFieldComponent.prototype.setDirectChildFromMutations = function (mutationList) {
                 var _this = this;
-                var _a;
                 var mutations = mutationList.filter(function (mutation) { return mutation.type === "childList"; });
-                var removedAll = mutations.reduce(function (acc, next) {
-                    Array.from(next.removedNodes).forEach(function (node) {
-                        acc.push(node);
-                    });
-                    return acc;
-                }, []);
-                var removed = removedAll.find(function (rm) { var _a; return ((_a = _this.directChildEmitter) === null || _a === void 0 ? void 0 : _a.value) === rm; });
-                if (removed) {
-                    (_a = this.unBind) === null || _a === void 0 ? void 0 : _a.call(this);
+                if (this.unBind) {
+                    var removedAll = mutations.reduce(function (acc, next) {
+                        Array.from(next.removedNodes).forEach(function (node) {
+                            acc.push(node);
+                        });
+                        return acc;
+                    }, []);
+                    var removed = removedAll.find(function (rm) { var _a; return rm && ((_a = _this.directChildEmitter) === null || _a === void 0 ? void 0 : _a.value) === rm; });
+                    if (removed) {
+                        this.unBind();
+                    }
                 }
                 if (!this.dataset.targetSelector && !this.dataset.targetId) {
                     var first = mutations[0].addedNodes.item(0);
@@ -100,10 +101,8 @@ var NRFormFieldComponent = function () {
                         });
                         return acc;
                     }, []);
-                    var added = allAdded
-                        .filter(function (a) { return a instanceof HTMLElement; })
-                        .find(function (a) {
-                        a.id === _this.dataset.targetId;
+                    var added = allAdded.find(function (a) {
+                        a instanceof HTMLElement && a.id === _this.dataset.targetId;
                     });
                     if (!added) {
                         return;

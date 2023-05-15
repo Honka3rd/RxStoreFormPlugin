@@ -70,18 +70,21 @@ class NRFormFieldComponent<
       (mutation) => mutation.type === "childList"
     );
 
-    const removedAll = mutations.reduce((acc, next) => {
-      Array.from(next.removedNodes).forEach((node) => {
-        acc.push(node);
-      });
-      return acc;
-    }, [] as Node[]);
-    const removed = removedAll.find(
-      (rm) => this.directChildEmitter?.value === rm
-    );
-    if (removed) {
-      this.unBind?.();
+    if (this.unBind) {
+      const removedAll = mutations.reduce((acc, next) => {
+        Array.from(next.removedNodes).forEach((node) => {
+          acc.push(node);
+        });
+        return acc;
+      }, [] as Node[]);
+      const removed = removedAll.find(
+        (rm) => rm && this.directChildEmitter?.value === rm
+      );
+      if (removed) {
+        this.unBind();
+      }
     }
+
     if (!this.dataset.targetSelector && !this.dataset.targetId) {
       const first = mutations[0].addedNodes.item(0);
       if (!(first instanceof HTMLElement)) {
@@ -98,11 +101,9 @@ class NRFormFieldComponent<
         });
         return acc;
       }, [] as Node[]);
-      const added = allAdded
-        .filter((a) => a instanceof HTMLElement)
-        .find((a) => {
-          (a as HTMLElement).id === this.dataset.targetId;
-        });
+      const added = allAdded.find((a) => {
+        a instanceof HTMLElement && a.id === this.dataset.targetId;
+      });
       if (!added) {
         return;
       }
