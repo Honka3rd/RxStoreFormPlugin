@@ -7,7 +7,6 @@ exports.IRFormBuilder = exports.NRFormBuilder = void 0;
 const formControlNRS_1 = __importDefault(require("./formControlNRS"));
 const formControlIRS_1 = require("./formControlIRS");
 class NRFormBuilder {
-    NRF;
     constructor({ formSelector, validator, }) {
         this.NRF = new formControlNRS_1.default(formSelector, validator);
     }
@@ -45,7 +44,6 @@ class NRFormBuilder {
 }
 exports.NRFormBuilder = NRFormBuilder;
 class IRFormBuilder {
-    IRF;
     constructor({ formSelector, validator, }) {
         this.IRF = new formControlIRS_1.ImmutableFormControllerImpl(formSelector, validator);
     }
