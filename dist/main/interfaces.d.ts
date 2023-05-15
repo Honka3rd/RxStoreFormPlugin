@@ -166,8 +166,8 @@ export interface NRFieldMetaBinderInjector {
     setMetaBinder(binder: <M extends FormControlBasicMetadata>(attributeSetter: (k: string, v: any) => void, meta: M) => void): void;
 }
 export type InstallDefinition = Partial<{
-    FormSelector: string;
-    FieldSelector: string;
+    formSelector: string;
+    fieldSelector: string;
 }>;
 export type CustomerAttrs = {
     placeholder?: boolean;

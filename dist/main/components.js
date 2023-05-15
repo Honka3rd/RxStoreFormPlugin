@@ -389,8 +389,14 @@ var NRFormComponent = function () {
         _a;
 }();
 var installNRFComponents = function (_a) {
-    var FormSelector = _a.FormSelector, FieldSelector = _a.FieldSelector;
-    customElements.define(FormSelector !== null && FormSelector !== void 0 ? FormSelector : "rx-field-component", NRFormFieldComponent);
-    customElements.define(FieldSelector !== null && FieldSelector !== void 0 ? FieldSelector : "rx-form-component", NRFormComponent);
+    var _b = _a === void 0 ? {} : _a, formSelector = _b.formSelector, fieldSelector = _b.fieldSelector;
+    var fieldId = fieldSelector ? fieldSelector : "rx-field-component";
+    var formId = formSelector ? formSelector : "rx-form-component";
+    if (!window.customElements.get(fieldId)) {
+        window.customElements.define(fieldId, NRFormFieldComponent);
+    }
+    if (!window.customElements.get(formId)) {
+        window.customElements.define(formId, NRFormComponent);
+    }
 };
 exports.installNRFComponents = installNRFComponents;

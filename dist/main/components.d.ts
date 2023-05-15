@@ -1,2 +1,2 @@
 import { InstallDefinition } from "./interfaces";
-export declare const installNRFComponents: ({ FormSelector, FieldSelector, }: InstallDefinition) => void;
+export declare const installNRFComponents: ({ formSelector, fieldSelector, }?: InstallDefinition) => void;

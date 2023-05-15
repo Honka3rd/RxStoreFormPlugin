@@ -478,12 +478,15 @@ class NRFormComponent<
 }
 
 export const installNRFComponents = ({
-  FormSelector,
-  FieldSelector,
-}: InstallDefinition) => {
-  customElements.define(
-    FormSelector ?? "rx-field-component",
-    NRFormFieldComponent
-  );
-  customElements.define(FieldSelector ?? "rx-form-component", NRFormComponent);
+  formSelector,
+  fieldSelector,
+}: InstallDefinition = {}) => {
+  const fieldId = fieldSelector ? fieldSelector : "rx-field-component";
+  const formId = formSelector ? formSelector : "rx-form-component";
+  if (!window.customElements.get(fieldId)) {
+    window.customElements.define(fieldId, NRFormFieldComponent);
+  }
+  if (!window.customElements.get(formId)) {
+    window.customElements.define(formId, NRFormComponent);
+  }
 };

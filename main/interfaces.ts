@@ -368,8 +368,8 @@ export interface NRFieldMetaBinderInjector {
 }
 
 export type InstallDefinition = Partial<{
-  FormSelector: string;
-  FieldSelector: string;
+  formSelector: string;
+  fieldSelector: string;
 }>;
 
 export type CustomerAttrs = {
