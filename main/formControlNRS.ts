@@ -301,6 +301,33 @@ class FormControllerImpl<
     return () => subscription.unsubscribe();
   }
 
+  private cloneMetaByField<K extends keyof M>(field: K, meta: Partial<M>) {
+    const plucked = meta[field];
+    if (plucked) {
+      const cloned = {} as unknown as NonNullable<Partial<M>[K]>;
+      cloned.errors = shallowClone(plucked.errors);
+      if (plucked.info) {
+        cloned.info = shallowClone(plucked.info);
+      }
+      if (plucked.warn) {
+        cloned.warn = shallowClone(plucked.warn);
+      }
+      return cloned;
+    }
+    return plucked;
+  }
+
+  @bound
+  private cloneMeta(meta: Partial<M>) {
+    return (Object.getOwnPropertyNames(meta) as Array<keyof M>).reduce(
+      (acc, next) => {
+        acc[next] = this.cloneMetaByField(next, meta);
+        return acc;
+      },
+      {} as Partial<M>
+    );
+  }
+
   initiator: Initiator<F> = (connector) => {
     if (connector && !this.connector) {
       this.connector = connector as RxNStore<Any> & Subscribable<Any>;
@@ -392,7 +419,7 @@ class FormControllerImpl<
   @bound
   observeMeta(callback: (meta: Partial<M>) => void) {
     const subscription = this.metadata$
-      ?.pipe(map(shallowClone), distinctUntilChanged(this.metaComparator))
+      ?.pipe(map(this.cloneMeta), distinctUntilChanged(this.metaComparator))
       .subscribe(callback);
     return () => subscription?.unsubscribe();
   }
@@ -404,21 +431,7 @@ class FormControllerImpl<
   ) {
     const subscription = this.metadata$
       ?.pipe(
-        map((meta) => {
-          const plucked = meta[field];
-          if (plucked) {
-            const cloned = {} as unknown as NonNullable<Partial<M>[K]>;
-            cloned.errors = shallowClone(plucked.errors);
-            if (plucked.info) {
-              cloned.info = shallowClone(plucked.info);
-            }
-            if (plucked.warn) {
-              cloned.warn = shallowClone(plucked.warn);
-            }
-            return cloned;
-          }
-          return plucked;
-        }),
+        map((meta) => this.cloneMetaByField(field, meta)),
         distinctUntilChanged(this.metaComparatorMap?.[field])
       )
       .subscribe(callback);

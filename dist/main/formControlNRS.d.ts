@@ -38,6 +38,8 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     private getAsyncFields;
     private setAsyncState;
     private asyncValidatorExecutor;
+    private cloneMetaByField;
+    private cloneMeta;
     initiator: Initiator<F>;
     getMeta(): Partial<M>;
     getDatum<At extends number = number>(field: F[At]["field"]): FormControlBasicDatum | undefined;

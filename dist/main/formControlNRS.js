@@ -41,6 +41,7 @@ const rxjs_1 = require("rxjs");
 let FormControllerImpl = (() => {
     var _a;
     let _instanceExtraInitializers = [];
+    let _cloneMeta_decorators;
     let _getMeta_decorators;
     let _getDatum_decorators;
     let _getDatumValue_decorators;
@@ -259,6 +260,27 @@ let FormControllerImpl = (() => {
                     .subscribe((meta) => meta && this.safeCommitMeta(meta));
                 return () => subscription.unsubscribe();
             }
+            cloneMetaByField(field, meta) {
+                const plucked = meta[field];
+                if (plucked) {
+                    const cloned = {};
+                    cloned.errors = (0, rx_store_core_1.shallowClone)(plucked.errors);
+                    if (plucked.info) {
+                        cloned.info = (0, rx_store_core_1.shallowClone)(plucked.info);
+                    }
+                    if (plucked.warn) {
+                        cloned.warn = (0, rx_store_core_1.shallowClone)(plucked.warn);
+                    }
+                    return cloned;
+                }
+                return plucked;
+            }
+            cloneMeta(meta) {
+                return Object.getOwnPropertyNames(meta).reduce((acc, next) => {
+                    acc[next] = this.cloneMetaByField(next, meta);
+                    return acc;
+                }, {});
+            }
             getMeta() {
                 var _a;
                 return Object.assign({}, (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.value);
@@ -310,26 +332,12 @@ let FormControllerImpl = (() => {
             }
             observeMeta(callback) {
                 var _a;
-                const subscription = (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.pipe((0, rxjs_1.map)(rx_store_core_1.shallowClone), (0, rxjs_1.distinctUntilChanged)(this.metaComparator)).subscribe(callback);
+                const subscription = (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.pipe((0, rxjs_1.map)(this.cloneMeta), (0, rxjs_1.distinctUntilChanged)(this.metaComparator)).subscribe(callback);
                 return () => subscription === null || subscription === void 0 ? void 0 : subscription.unsubscribe();
             }
             observeMetaByField(field, callback) {
                 var _a, _b;
-                const subscription = (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.pipe((0, rxjs_1.map)((meta) => {
-                    const plucked = meta[field];
-                    if (plucked) {
-                        const cloned = {};
-                        cloned.errors = (0, rx_store_core_1.shallowClone)(plucked.errors);
-                        if (plucked.info) {
-                            cloned.info = (0, rx_store_core_1.shallowClone)(plucked.info);
-                        }
-                        if (plucked.warn) {
-                            cloned.warn = (0, rx_store_core_1.shallowClone)(plucked.warn);
-                        }
-                        return cloned;
-                    }
-                    return plucked;
-                }), (0, rxjs_1.distinctUntilChanged)((_b = this.metaComparatorMap) === null || _b === void 0 ? void 0 : _b[field])).subscribe(callback);
+                const subscription = (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.pipe((0, rxjs_1.map)((meta) => this.cloneMetaByField(field, meta)), (0, rxjs_1.distinctUntilChanged)((_b = this.metaComparatorMap) === null || _b === void 0 ? void 0 : _b[field])).subscribe(callback);
                 return () => subscription === null || subscription === void 0 ? void 0 : subscription.unsubscribe();
             }
             observeFormDatum(field, observer, comparator) {
@@ -479,6 +487,7 @@ let FormControllerImpl = (() => {
             }
         },
         (() => {
+            _cloneMeta_decorators = [rx_store_core_1.bound];
             _getMeta_decorators = [rx_store_core_1.bound];
             _getDatum_decorators = [rx_store_core_1.bound];
             _getDatumValue_decorators = [rx_store_core_1.bound];
@@ -503,6 +512,7 @@ let FormControllerImpl = (() => {
             _removeFormData_decorators = [rx_store_core_1.bound];
             _setMetadata_decorators = [rx_store_core_1.bound];
             _setMetaByField_decorators = [rx_store_core_1.bound];
+            __esDecorate(_a, null, _cloneMeta_decorators, { kind: "method", name: "cloneMeta", static: false, private: false, access: { has: obj => "cloneMeta" in obj, get: obj => obj.cloneMeta } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getMeta_decorators, { kind: "method", name: "getMeta", static: false, private: false, access: { has: obj => "getMeta" in obj, get: obj => obj.getMeta } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getDatum_decorators, { kind: "method", name: "getDatum", static: false, private: false, access: { has: obj => "getDatum" in obj, get: obj => obj.getDatum } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getDatumValue_decorators, { kind: "method", name: "getDatumValue", static: false, private: false, access: { has: obj => "getDatumValue" in obj, get: obj => obj.getDatumValue } }, null, _instanceExtraInitializers);
