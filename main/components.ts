@@ -221,7 +221,7 @@ class NRFormFieldComponent<
         this.setAttribute("data-touched", String(datum.touched));
         this.setAttribute("data-hovered", String(datum.hovered));
         datum.asyncState &&
-          this.setAttribute("data-async-state", String(datum.asyncState));
+          this.setAttribute("data-asyncState", String(datum.asyncState));
         this.setAttribute("data-value", datum.value);
         if (this.attributeBinder) {
           this.attributeBinder(this.attrSetter(target), datum);
@@ -231,7 +231,7 @@ class NRFormFieldComponent<
           target.setAttribute("value", datum.value);
           return;
         }
-        target.setAttribute("data-value", datum.value);
+        target.setAttribute("data-value", String(datum.value));
       });
     }
   }
@@ -241,7 +241,7 @@ class NRFormFieldComponent<
     formController: FormController<F, M, S> | null
   ) {
     const { field } = this;
-    if (!formController || !field) {
+    if (!formController || !field || !this.metaDataBinder) {
       return;
     }
 
@@ -250,9 +250,7 @@ class NRFormFieldComponent<
         if (!meta) {
           return;
         }
-        if (this.metaDataBinder) {
-          this.metaDataBinder(this.attrSetter(target), meta);
-        }
+        this.metaDataBinder?.(this.attrSetter(target), meta);
       });
     }
   }
@@ -441,9 +439,9 @@ class NRFormComponent<
           this.fieldListEmitter.asObservable().pipe(
             tap((nodeList) => {
               if (controller) {
-               /*  nodeList.forEach((node) =>
+                /*  nodeList.forEach((node) =>
                   node.setNRFormController(controller)
-                ) */;
+                ) */
               }
             })
           )

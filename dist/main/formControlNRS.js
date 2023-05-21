@@ -193,7 +193,7 @@ let FormControllerImpl = (() => {
             validatorExecutor(connector) {
                 return connector.observe(this.id, (formData) => {
                     const meta = this.validator(formData, this.getMeta());
-                    this.safeCommitMeta(meta);
+                    this.safeCommitMeta((0, rx_store_core_1.shallowClone)(meta));
                 });
             }
             getExcludedMeta(connector) {
@@ -315,7 +315,21 @@ let FormControllerImpl = (() => {
             }
             observeMetaByField(field, callback) {
                 var _a, _b;
-                const subscription = (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.pipe((0, rxjs_1.map)((meta) => meta[field]), (0, rxjs_1.distinctUntilChanged)((_b = this.metaComparatorMap) === null || _b === void 0 ? void 0 : _b[field])).subscribe(callback);
+                const subscription = (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.pipe((0, rxjs_1.map)((meta) => {
+                    const plucked = meta[field];
+                    if (plucked) {
+                        const cloned = {};
+                        cloned.errors = (0, rx_store_core_1.shallowClone)(plucked.errors);
+                        if (plucked.info) {
+                            cloned.info = (0, rx_store_core_1.shallowClone)(plucked.info);
+                        }
+                        if (plucked.warn) {
+                            cloned.warn = (0, rx_store_core_1.shallowClone)(plucked.warn);
+                        }
+                        return cloned;
+                    }
+                    return plucked;
+                }), (0, rxjs_1.distinctUntilChanged)((_b = this.metaComparatorMap) === null || _b === void 0 ? void 0 : _b[field])).subscribe(callback);
                 return () => subscription === null || subscription === void 0 ? void 0 : subscription.unsubscribe();
             }
             observeFormDatum(field, observer, comparator) {

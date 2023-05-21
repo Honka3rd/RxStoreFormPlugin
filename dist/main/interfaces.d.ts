@@ -3,8 +3,8 @@ import { Any, Comparator, Initiator } from "rx-store-types";
 import { Observable } from "rxjs";
 export type FormControlBasicMetadata = {
     errors: Any;
-    info?: any;
-    warn?: any;
+    info?: Any;
+    warn?: Any;
 };
 export type FormControlMetadata<E extends Any, I = any, W = any> = {
     errors: E;

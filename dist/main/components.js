@@ -147,7 +147,7 @@ let NRFormFieldComponent = (() => {
                         this.setAttribute("data-touched", String(datum.touched));
                         this.setAttribute("data-hovered", String(datum.hovered));
                         datum.asyncState &&
-                            this.setAttribute("data-async-state", String(datum.asyncState));
+                            this.setAttribute("data-asyncState", String(datum.asyncState));
                         this.setAttribute("data-value", datum.value);
                         if (this.attributeBinder) {
                             this.attributeBinder(this.attrSetter(target), datum);
@@ -157,23 +157,22 @@ let NRFormFieldComponent = (() => {
                             target.setAttribute("value", datum.value);
                             return;
                         }
-                        target.setAttribute("data-value", datum.value);
+                        target.setAttribute("data-value", String(datum.value));
                     });
                 }
             }
             metaBinding(target, formController) {
                 const { field } = this;
-                if (!formController || !field) {
+                if (!formController || !field || !this.metaDataBinder) {
                     return;
                 }
                 if (target instanceof HTMLElement) {
                     return formController.observeMetaByField(field, (meta) => {
+                        var _a;
                         if (!meta) {
                             return;
                         }
-                        if (this.metaDataBinder) {
-                            this.metaDataBinder(this.attrSetter(target), meta);
-                        }
+                        (_a = this.metaDataBinder) === null || _a === void 0 ? void 0 : _a.call(this, this.attrSetter(target), meta);
                     });
                 }
             }
@@ -310,8 +309,8 @@ let NRFormComponent = (() => {
                     .pipe((0, rxjs_1.switchMap)((controller) => this.fieldListEmitter.asObservable().pipe((0, rxjs_1.tap)((nodeList) => {
                     if (controller) {
                         /*  nodeList.forEach((node) =>
-                           node.setNRFormController(controller)
-                         ) */ ;
+                          node.setNRFormController(controller)
+                        ) */
                     }
                 }))))
                     .subscribe();

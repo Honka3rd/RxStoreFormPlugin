@@ -6,7 +6,7 @@ import {
   PluginImpl,
   Comparator,
 } from "rx-store-types";
-import { bound } from "rx-store-core";
+import { bound, shallowClone } from "rx-store-core";
 import {
   FormController,
   FormControlData,
@@ -197,7 +197,7 @@ class FormControllerImpl<
   ) {
     return connector.observe(this.id, (formData) => {
       const meta = this.validator(formData, this.getMeta());
-      this.safeCommitMeta(meta);
+      this.safeCommitMeta(shallowClone(meta));
     });
   }
 
@@ -404,7 +404,21 @@ class FormControllerImpl<
   ) {
     const subscription = this.metadata$
       ?.pipe(
-        map((meta) => meta[field]),
+        map((meta) => {
+          const plucked = meta[field];
+          if (plucked) {
+            const cloned = {} as unknown as NonNullable<Partial<M>[K]>;
+            cloned.errors = shallowClone(plucked.errors);
+            if (plucked.info) {
+              cloned.info = shallowClone(plucked.info);
+            }
+            if (plucked.warn) {
+              cloned.warn = shallowClone(plucked.warn);
+            }
+            return cloned;
+          }
+          return plucked;
+        }),
         distinctUntilChanged(this.metaComparatorMap?.[field])
       )
       .subscribe(callback);
