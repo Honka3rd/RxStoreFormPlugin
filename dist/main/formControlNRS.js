@@ -46,6 +46,7 @@ let FormControllerImpl = (() => {
     let _getDatum_decorators;
     let _getDatumValue_decorators;
     let _getClonedMetaByField_decorators;
+    let _getClonedMeta_decorators;
     let _getFieldMeta_decorators;
     let _getFieldsMeta_decorators;
     let _observeMeta_decorators;
@@ -261,8 +262,13 @@ let FormControllerImpl = (() => {
                 return () => subscription.unsubscribe();
             }
             cloneMetaByField(field, meta) {
+                var _a;
                 const plucked = meta[field];
+                const clone = (_a = this.cloneFunctionMap) === null || _a === void 0 ? void 0 : _a[field];
                 if (plucked) {
+                    if (clone) {
+                        return clone(plucked);
+                    }
                     const cloned = {};
                     cloned.errors = (0, rx_store_core_1.shallowClone)(plucked.errors);
                     if (plucked.info) {
@@ -276,6 +282,10 @@ let FormControllerImpl = (() => {
                 return plucked;
             }
             cloneMeta(meta) {
+                const clone = this.cloneFunction;
+                if (clone) {
+                    return clone(meta);
+                }
                 return Object.getOwnPropertyNames(meta).reduce((acc, next) => {
                     acc[next] = this.cloneMetaByField(next, meta);
                     return acc;
@@ -300,21 +310,11 @@ let FormControllerImpl = (() => {
                 });
             }
             getClonedMetaByField(field) {
-                var _a;
-                const meta = this.getMeta();
-                const clone = ((_a = this.cloneFunctionMap) === null || _a === void 0 ? void 0 : _a[field])
-                    ? this.cloneFunctionMap[field]
-                    : this.cloneFunction;
-                const target = meta[field];
-                if (clone && target) {
-                    return clone(target);
-                }
-                const casted = this.connector;
-                const defaultClone = casted === null || casted === void 0 ? void 0 : casted.cloneFunction;
-                if (defaultClone) {
-                    return defaultClone(target);
-                }
-                return target;
+                const target = this.getMeta()[field];
+                return target ? this.cloneMetaByField(field, target) : target;
+            }
+            getClonedMeta() {
+                return this.cloneMeta(this.getMeta());
             }
             getFieldMeta(field) {
                 var _a;
@@ -492,6 +492,7 @@ let FormControllerImpl = (() => {
             _getDatum_decorators = [rx_store_core_1.bound];
             _getDatumValue_decorators = [rx_store_core_1.bound];
             _getClonedMetaByField_decorators = [rx_store_core_1.bound];
+            _getClonedMeta_decorators = [rx_store_core_1.bound];
             _getFieldMeta_decorators = [rx_store_core_1.bound];
             _getFieldsMeta_decorators = [rx_store_core_1.bound];
             _observeMeta_decorators = [rx_store_core_1.bound];
@@ -517,6 +518,7 @@ let FormControllerImpl = (() => {
             __esDecorate(_a, null, _getDatum_decorators, { kind: "method", name: "getDatum", static: false, private: false, access: { has: obj => "getDatum" in obj, get: obj => obj.getDatum } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getDatumValue_decorators, { kind: "method", name: "getDatumValue", static: false, private: false, access: { has: obj => "getDatumValue" in obj, get: obj => obj.getDatumValue } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getClonedMetaByField_decorators, { kind: "method", name: "getClonedMetaByField", static: false, private: false, access: { has: obj => "getClonedMetaByField" in obj, get: obj => obj.getClonedMetaByField } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _getClonedMeta_decorators, { kind: "method", name: "getClonedMeta", static: false, private: false, access: { has: obj => "getClonedMeta" in obj, get: obj => obj.getClonedMeta } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getFieldMeta_decorators, { kind: "method", name: "getFieldMeta", static: false, private: false, access: { has: obj => "getFieldMeta" in obj, get: obj => obj.getFieldMeta } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getFieldsMeta_decorators, { kind: "method", name: "getFieldsMeta", static: false, private: false, access: { has: obj => "getFieldsMeta" in obj, get: obj => obj.getFieldsMeta } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _observeMeta_decorators, { kind: "method", name: "observeMeta", static: false, private: false, access: { has: obj => "observeMeta" in obj, get: obj => obj.observeMeta } }, null, _instanceExtraInitializers);

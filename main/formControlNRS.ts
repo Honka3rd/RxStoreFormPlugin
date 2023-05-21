@@ -303,7 +303,12 @@ class FormControllerImpl<
 
   private cloneMetaByField<K extends keyof M>(field: K, meta: Partial<M>) {
     const plucked = meta[field];
+    const clone = this.cloneFunctionMap?.[field];
+
     if (plucked) {
+      if (clone) {
+        return clone(plucked);
+      }
       const cloned = {} as unknown as NonNullable<Partial<M>[K]>;
       cloned.errors = shallowClone(plucked.errors);
       if (plucked.info) {
@@ -319,6 +324,10 @@ class FormControllerImpl<
 
   @bound
   private cloneMeta(meta: Partial<M>) {
+    const clone = this.cloneFunction;
+    if (clone) {
+      return clone(meta);
+    }
     return (Object.getOwnPropertyNames(meta) as Array<keyof M>).reduce(
       (acc, next) => {
         acc[next] = this.cloneMetaByField(next, meta);
@@ -381,23 +390,13 @@ class FormControllerImpl<
 
   @bound
   getClonedMetaByField<CF extends keyof Partial<M>>(field: CF) {
-    const meta = this.getMeta();
-    const clone = this.cloneFunctionMap?.[field]
-      ? this.cloneFunctionMap[field]
-      : this.cloneFunction;
-    const target = meta[field];
-    if (clone && target) {
-      return clone(target) as Partial<M>[CF];
-    }
-    const casted = this.connector as unknown as RxNStore<Record<S, () => F>>;
-    const defaultClone = casted?.cloneFunction;
-    if (defaultClone) {
-      return defaultClone(
-        target as ReturnType<Record<S, () => F>[S]>
-      ) as Partial<M>[CF];
-    }
+    const target = this.getMeta()[field];
+    return target ? this.cloneMetaByField(field, target) : target;
+  }
 
-    return target;
+  @bound
+  getClonedMeta() {
+    return this.cloneMeta(this.getMeta())
   }
 
   @bound

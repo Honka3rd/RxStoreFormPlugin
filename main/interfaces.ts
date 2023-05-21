@@ -136,6 +136,8 @@ export interface FormController<
 
   getMeta(): Partial<M> | undefined;
 
+  getClonedMeta(): Partial<M> | undefined;
+
   getFieldsMeta(fields: F[number]["field"][]): Partial<M>;
 
   changeFieldType<N extends number>(

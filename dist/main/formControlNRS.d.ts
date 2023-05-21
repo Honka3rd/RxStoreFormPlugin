@@ -45,6 +45,7 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     getDatum<At extends number = number>(field: F[At]["field"]): FormControlBasicDatum | undefined;
     getDatumValue<At extends number = number>(field: F[At]["field"]): F[At]["value"] | undefined;
     getClonedMetaByField<CF extends keyof Partial<M>>(field: CF): Partial<M>[CF];
+    getClonedMeta(): Partial<M>;
     getFieldMeta<At extends number = number>(field: F[At]["field"]): Partial<M>[F[At]["field"]];
     getFieldsMeta<At extends number = number>(fields: F[At]["field"][]): Partial<M>;
     observeMeta(callback: (meta: Partial<M>) => void): () => void | undefined;
