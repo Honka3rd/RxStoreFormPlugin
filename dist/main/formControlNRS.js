@@ -193,7 +193,7 @@ let FormControllerImpl = (() => {
             validatorExecutor(connector) {
                 return connector.observe(this.id, (formData) => {
                     const meta = this.validator(formData, this.getMeta());
-                    this.safeCommitMeta((0, rx_store_core_1.shallowClone)(meta));
+                    this.safeCommitMeta(meta);
                 });
             }
             getExcludedMeta(connector) {
@@ -310,7 +310,7 @@ let FormControllerImpl = (() => {
             }
             observeMeta(callback) {
                 var _a;
-                const subscription = (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.pipe((0, rxjs_1.distinctUntilChanged)(this.metaComparator)).subscribe(callback);
+                const subscription = (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.pipe((0, rxjs_1.map)(rx_store_core_1.shallowClone), (0, rxjs_1.distinctUntilChanged)(this.metaComparator)).subscribe(callback);
                 return () => subscription === null || subscription === void 0 ? void 0 : subscription.unsubscribe();
             }
             observeMetaByField(field, callback) {

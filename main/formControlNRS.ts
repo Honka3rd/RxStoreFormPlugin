@@ -197,7 +197,7 @@ class FormControllerImpl<
   ) {
     return connector.observe(this.id, (formData) => {
       const meta = this.validator(formData, this.getMeta());
-      this.safeCommitMeta(shallowClone(meta));
+      this.safeCommitMeta(meta);
     });
   }
 
@@ -392,7 +392,7 @@ class FormControllerImpl<
   @bound
   observeMeta(callback: (meta: Partial<M>) => void) {
     const subscription = this.metadata$
-      ?.pipe(distinctUntilChanged(this.metaComparator))
+      ?.pipe(map(shallowClone), distinctUntilChanged(this.metaComparator))
       .subscribe(callback);
     return () => subscription?.unsubscribe();
   }
