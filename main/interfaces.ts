@@ -26,38 +26,34 @@ export enum DatumType {
   SYNC = "Sync",
 }
 
-export type FormControlBasicDatum = {
-  field: string;
-  value: any;
+type MetaEmitter =
+  | (() => Observable<FormControlBasicMetadata>)
+  | (() => Promise<FormControlBasicMetadata>);
+
+type DatumAttr = {
   touched: boolean;
   changed: boolean;
   focused: boolean;
   hovered: boolean;
   type: DatumType;
   asyncState?: AsyncState;
+  metaEmitter?: MetaEmitter;
 };
+
+export type FormControlBasicDatum = {
+  field: string;
+  value: any;
+} & DatumAttr;
 
 export type FormControlDatum<F extends string, T> = {
   field: F;
   value: T;
-  touched: boolean;
-  changed: boolean;
-  focused: boolean;
-  hovered: boolean;
-  type: DatumType;
-  asyncState?: AsyncState;
-};
+} & DatumAttr;
 
 export type FormControlStrDatum<F> = {
   field: F;
   value: string;
-  touched: boolean;
-  changed: boolean;
-  focused: boolean;
-  hovered: boolean;
-  type: DatumType;
-  asyncState?: AsyncState;
-};
+} & DatumAttr;
 
 export type FormControlData = FormControlBasicDatum[];
 
@@ -65,6 +61,7 @@ export type FormStubs<F extends FormControlBasicDatum[]> = Array<{
   field: F[number]["field"];
   defaultValue?: F[number]["value"];
   type?: DatumType;
+  metaEmitter?: MetaEmitter;
 }>;
 
 export interface FormController<
@@ -277,11 +274,11 @@ export interface ImmutableFormController<
 
   startValidation(): (() => void) | undefined;
 
-  getMeta(): Map<PK<M>, Map<"errors" | "info" | "warn", any>>;
+  getMeta(): Map<PK<M>, Map<"errors" | "info" | "warn", Map<string, any>>>;
 
   getFieldMeta<N extends number = number>(
     field: F[N]["field"]
-  ): Map<PK<M>, Map<"errors" | "info" | "warn", any>>;
+  ): Map<"errors" | "info" | "warn", Map<string, any>>;
 
   changeFieldType<N extends number>(
     field: F[N]["field"],
@@ -296,19 +293,25 @@ export interface ImmutableFormController<
 
   removeFormData(fields: Array<F[number]["field"]>): this;
 
-  setMetadata(meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>): this;
+  setMetadata(
+    meta: Map<keyof M, Map<"errors" | "info" | "warn", Map<string, any>>>
+  ): this;
 
   setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this;
 
   getFieldsMeta(fields: F[number]["field"][]): Map<PK<M>, PV<M>>;
 
   observeMeta(
-    callback: (meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>) => void
+    callback: (
+      meta: Map<PK<M>, Map<"errors" | "info" | "warn", Map<string, any>>>
+    ) => void
   ): () => void | undefined;
 
   observeMetaByField<K extends keyof M>(
     field: K,
-    callback: (metaOne: Map<"errors" | "info" | "warn", any>) => void
+    callback: (
+      metaOne: Map<"errors" | "info" | "warn", Map<string, any>>
+    ) => void
   ): () => void | undefined;
 }
 

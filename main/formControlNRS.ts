@@ -26,6 +26,7 @@ import {
   of,
   catchError,
   tap,
+  Subscription,
 } from "rxjs";
 
 class FormControllerImpl<
@@ -179,7 +180,7 @@ class FormControllerImpl<
   }
 
   private appendDataByFields(fields: FormStubs<F>, data: F) {
-    fields.forEach(({ defaultValue, field, type }) => {
+    fields.forEach(({ defaultValue, field, type, metaEmitter }) => {
       data.push({
         field,
         touched: false,
@@ -188,6 +189,7 @@ class FormControllerImpl<
         focused: false,
         value: defaultValue,
         type: type ? type : DatumType.SYNC,
+        metaEmitter: type === DatumType.EXCLUDED ? metaEmitter : undefined,
       });
     });
   }
@@ -337,6 +339,23 @@ class FormControllerImpl<
     );
   }
 
+  private observeExcluded() {
+    return this.fields
+      .filter(
+        ({ type, metaEmitter }) => type === DatumType.EXCLUDED && metaEmitter
+      )
+      .reduce((acc, next) => {
+        const $meta = next.metaEmitter!();
+        const converged = $meta instanceof Promise ? from($meta) : $meta;
+        acc.push(
+          converged.subscribe((meta) => {
+            this.setMetaByField(next.field, meta as M[F[number]["field"]]);
+          })
+        );
+        return acc;
+      }, [] as Array<Subscription>);
+  }
+
   initiator: Initiator<F> = (connector) => {
     if (connector && !this.connector) {
       this.connector = connector as RxNStore<Any> & Subscribable<Any>;
@@ -350,7 +369,7 @@ class FormControllerImpl<
     }
 
     if (this.fields) {
-      return this.fields.map(({ field, defaultValue, type }) => ({
+      return this.fields.map(({ field, defaultValue, type, metaEmitter }) => ({
         field,
         touched: false,
         changed: false,
@@ -358,6 +377,7 @@ class FormControllerImpl<
         focused: false,
         value: defaultValue,
         type: type ? type : DatumType.SYNC,
+        metaEmitter: type === DatumType.EXCLUDED ? metaEmitter : undefined,
       })) as F;
     }
     return [] as unknown as F;
@@ -396,7 +416,7 @@ class FormControllerImpl<
 
   @bound
   getClonedMeta() {
-    return this.cloneMeta(this.getMeta())
+    return this.cloneMeta(this.getMeta());
   }
 
   @bound
@@ -523,9 +543,11 @@ class FormControllerImpl<
         connector as RxNStore<Record<S, () => F>> &
           Subscribable<Record<S, () => F>>
       );
+      const subscriptions = this.observeExcluded();
       return () => {
         stopSyncValidation();
         stopAsyncValidation?.();
+        subscriptions.forEach((s) => s.unsubscribe());
       };
     });
   }

@@ -22,6 +22,7 @@ import { List, Map, fromJS, is, merge } from "immutable";
 import {
   BehaviorSubject,
   Observable,
+  Subscription,
   catchError,
   distinctUntilChanged,
   from,
@@ -41,7 +42,7 @@ export class ImmutableFormControllerImpl<
   implements ImmutableFormController<F, M, S>
 {
   private metadata$?: BehaviorSubject<
-    Map<PK<M>, Map<"errors" | "info" | "warn", any>>
+    Map<PK<M>, Map<"errors" | "info" | "warn", Map<string, any>>>
   >;
   private fields?: FormStubs<F>;
   private defaultMeta?: Map<PK<M>, Map<"errors" | "info" | "warn", any>>;
@@ -107,7 +108,7 @@ export class ImmutableFormControllerImpl<
     data: List<Map<K<F[number]>, V<F[number]>>>
   ) {
     return data.withMutations((mutation) => {
-      fields.forEach(({ defaultValue, field, type }) => {
+      fields.forEach(({ defaultValue, field, type, metaEmitter }) => {
         const datum = Map({
           field,
           touched: false,
@@ -117,6 +118,7 @@ export class ImmutableFormControllerImpl<
           focused: false,
           value: defaultValue,
           type: type ? type : DatumType.SYNC,
+          metaEmitter: type === DatumType.EXCLUDED ? metaEmitter : undefined,
         }) as Map<K<F[number]>, V<F[number]>>;
         mutation.push(datum);
       });
@@ -272,6 +274,23 @@ export class ImmutableFormControllerImpl<
     return () => subscription.unsubscribe();
   }
 
+  private observeExcluded() {
+    return this.fields
+      ?.filter(
+        ({ type, metaEmitter }) => type === DatumType.EXCLUDED && metaEmitter
+      )
+      .reduce((acc, next) => {
+        const $meta = next.metaEmitter!();
+        const converged = $meta instanceof Promise ? from($meta) : $meta;
+        acc.push(
+          converged.subscribe((meta) => {
+            this.setMetaByField(next.field, meta as M[F[number]["field"]]);
+          })
+        );
+        return acc;
+      }, [] as Array<Subscription>);
+  }
+
   @bound
   resetFormDatum<N extends number>(field: F[N]["field"]): this {
     this.safeExecute((connector) => {
@@ -324,7 +343,9 @@ export class ImmutableFormControllerImpl<
   }
 
   @bound
-  setMetadata(meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>): this {
+  setMetadata(
+    meta: Map<keyof M, Map<"errors" | "info" | "warn", Map<string, any>>>
+  ): this {
     this.safeExecute(() => {
       this.metadata$?.next(meta);
     });
@@ -337,7 +358,7 @@ export class ImmutableFormControllerImpl<
       const meta = this.getMeta();
       const single = fromJS({ ...metaOne }) as Map<
         "errors" | "info" | "warn",
-        any
+        Map<string, any>
       >;
       this.metadata$?.next(meta.set(field, single));
     });
@@ -346,7 +367,9 @@ export class ImmutableFormControllerImpl<
 
   @bound
   observeMeta(
-    callback: (meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>) => void
+    callback: (
+      meta: Map<PK<M>, Map<"errors" | "info" | "warn", Map<string, any>>>
+    ) => void
   ): () => void | undefined {
     const subscription = this.metadata$
       ?.pipe(distinctUntilChanged((var1, var2) => var1.equals(var2)))
@@ -357,7 +380,9 @@ export class ImmutableFormControllerImpl<
   @bound
   observeMetaByField<K extends keyof M>(
     field: K,
-    callback: (metaOne: Map<"errors" | "info" | "warn", any>) => void
+    callback: (
+      metaOne: Map<"errors" | "info" | "warn", Map<string, any>>
+    ) => void
   ): () => void | undefined {
     const subscription = this.metadata$
       ?.pipe(
@@ -376,8 +401,8 @@ export class ImmutableFormControllerImpl<
   getFieldMeta<N extends number = number>(field: F[N]["field"]) {
     return this.safeExecute(() => {
       return this.metadata$?.value.get(field) as Map<
-        PK<M>,
-        Map<"errors" | "info" | "warn", any>
+        "errors" | "info" | "warn",
+        Map<string, any>
       >;
     })!;
   }
@@ -535,9 +560,11 @@ export class ImmutableFormControllerImpl<
       const casted = this.cast(connector);
       const stopValidation = this.validatorExecutor(casted);
       const stopAsyncValidation = this.asyncValidatorExecutor(casted);
+      const subscriptions = this.observeExcluded();
       return () => {
         stopValidation?.();
         stopAsyncValidation?.();
+        subscriptions?.forEach((s) => s.unsubscribe());
       };
     });
   }
@@ -558,7 +585,7 @@ export class ImmutableFormControllerImpl<
 
     if (this.fields) {
       return List(
-        this.fields.map(({ field, defaultValue, type }) =>
+        this.fields.map(({ field, defaultValue, type, metaEmitter }) =>
           Map({
             field,
             touched: false,
@@ -568,6 +595,7 @@ export class ImmutableFormControllerImpl<
             focused: false,
             value: defaultValue,
             type: type ? type : DatumType.SYNC,
+            metaEmitter: type === DatumType.EXCLUDED ? metaEmitter : undefined,
           })
         )
       );
