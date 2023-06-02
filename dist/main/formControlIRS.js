@@ -80,7 +80,7 @@ exports.ImmutableFormControllerImpl = (() => {
                         return;
                     }
                     if (this.fields) {
-                        return (0, immutable_1.List)(this.fields.map(({ field, defaultValue, type }) => (0, immutable_1.Map)({
+                        return (0, immutable_1.List)(this.fields.map(({ field, defaultValue, type, metaEmitter }) => (0, immutable_1.Map)({
                             field,
                             touched: false,
                             empty: true,
@@ -89,6 +89,7 @@ exports.ImmutableFormControllerImpl = (() => {
                             focused: false,
                             value: defaultValue,
                             type: type ? type : interfaces_1.DatumType.SYNC,
+                            metaEmitter: type === interfaces_1.DatumType.EXCLUDED ? metaEmitter : undefined,
                         })));
                     }
                     return (0, immutable_1.List)([]);
@@ -119,7 +120,7 @@ exports.ImmutableFormControllerImpl = (() => {
             }
             appendDataByFields(fields, data) {
                 return data.withMutations((mutation) => {
-                    fields.forEach(({ defaultValue, field, type }) => {
+                    fields.forEach(({ defaultValue, field, type, metaEmitter }) => {
                         const datum = (0, immutable_1.Map)({
                             field,
                             touched: false,
@@ -129,6 +130,7 @@ exports.ImmutableFormControllerImpl = (() => {
                             focused: false,
                             value: defaultValue,
                             type: type ? type : interfaces_1.DatumType.SYNC,
+                            metaEmitter: type === interfaces_1.DatumType.EXCLUDED ? metaEmitter : undefined,
                         });
                         mutation.push(datum);
                     });
@@ -219,6 +221,17 @@ exports.ImmutableFormControllerImpl = (() => {
                     this.setMetadata(meta);
                 });
                 return () => subscription.unsubscribe();
+            }
+            observeExcluded() {
+                var _a;
+                return (_a = this.fields) === null || _a === void 0 ? void 0 : _a.filter(({ type, metaEmitter }) => type === interfaces_1.DatumType.EXCLUDED && metaEmitter).reduce((acc, next) => {
+                    const $meta = next.metaEmitter();
+                    const converged = $meta instanceof Promise ? (0, rxjs_1.from)($meta) : $meta;
+                    acc.push(converged.subscribe((meta) => {
+                        this.setMetaByField(next.field, meta);
+                    }));
+                    return acc;
+                }, []);
             }
             resetFormDatum(field) {
                 this.safeExecute((connector) => {
@@ -389,9 +402,11 @@ exports.ImmutableFormControllerImpl = (() => {
                     const casted = this.cast(connector);
                     const stopValidation = this.validatorExecutor(casted);
                     const stopAsyncValidation = this.asyncValidatorExecutor(casted);
+                    const subscriptions = this.observeExcluded();
                     return () => {
                         stopValidation === null || stopValidation === void 0 ? void 0 : stopValidation();
                         stopAsyncValidation === null || stopAsyncValidation === void 0 ? void 0 : stopAsyncValidation();
+                        subscriptions === null || subscriptions === void 0 ? void 0 : subscriptions.forEach((s) => s.unsubscribe());
                     };
                 });
             }

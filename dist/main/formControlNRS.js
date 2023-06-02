@@ -85,7 +85,7 @@ let FormControllerImpl = (() => {
                         return;
                     }
                     if (this.fields) {
-                        return this.fields.map(({ field, defaultValue, type }) => ({
+                        return this.fields.map(({ field, defaultValue, type, metaEmitter }) => ({
                             field,
                             touched: false,
                             changed: false,
@@ -93,6 +93,7 @@ let FormControllerImpl = (() => {
                             focused: false,
                             value: defaultValue,
                             type: type ? type : interfaces_1.DatumType.SYNC,
+                            metaEmitter: type === interfaces_1.DatumType.EXCLUDED ? metaEmitter : undefined,
                         }));
                     }
                     return [];
@@ -180,7 +181,7 @@ let FormControllerImpl = (() => {
                 });
             }
             appendDataByFields(fields, data) {
-                fields.forEach(({ defaultValue, field, type }) => {
+                fields.forEach(({ defaultValue, field, type, metaEmitter }) => {
                     data.push({
                         field,
                         touched: false,
@@ -189,6 +190,7 @@ let FormControllerImpl = (() => {
                         focused: false,
                         value: defaultValue,
                         type: type ? type : interfaces_1.DatumType.SYNC,
+                        metaEmitter: type === interfaces_1.DatumType.EXCLUDED ? metaEmitter : undefined,
                     });
                 });
             }
@@ -291,6 +293,18 @@ let FormControllerImpl = (() => {
                     return acc;
                 }, {});
             }
+            observeExcluded() {
+                return this.fields
+                    .filter(({ type, metaEmitter }) => type === interfaces_1.DatumType.EXCLUDED && metaEmitter)
+                    .reduce((acc, next) => {
+                    const $meta = next.metaEmitter();
+                    const converged = $meta instanceof Promise ? (0, rxjs_1.from)($meta) : $meta;
+                    acc.push(converged.subscribe((meta) => {
+                        this.setMetaByField(next.field, meta);
+                    }));
+                    return acc;
+                }, []);
+            }
             getMeta() {
                 var _a;
                 return Object.assign({}, (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.value);
@@ -383,9 +397,11 @@ let FormControllerImpl = (() => {
                 return this.safeExecute((connector) => {
                     const stopSyncValidation = this.validatorExecutor(connector);
                     const stopAsyncValidation = this.asyncValidatorExecutor(connector);
+                    const subscriptions = this.observeExcluded();
                     return () => {
                         stopSyncValidation();
                         stopAsyncValidation === null || stopAsyncValidation === void 0 ? void 0 : stopAsyncValidation();
+                        subscriptions.forEach((s) => s.unsubscribe());
                     };
                 });
             }
