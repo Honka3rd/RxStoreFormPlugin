@@ -6,7 +6,7 @@ import { List, Map } from "immutable";
 declare class NRFormBuilder<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string> {
     private NRF;
     constructor({ formSelector, validator, }: NormalFormPluginBuilderParams<F, M, S>);
-    setAsyncValidator(asyncValidator: (formData: F) => Observable<Partial<M>> | Promise<Partial<M>>): this;
+    setAsyncValidator(asyncValidator: (formData: F, metadata: Partial<M>) => Observable<Partial<M>> | Promise<Partial<M>>): this;
     setFields(fields: FormStubs<F>): this;
     setMetaComparator(metaComparator: (meta1: Partial<M>, meta2: Partial<M>) => boolean): this;
     setMetaComparatorMap(metaComparatorMap: {

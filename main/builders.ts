@@ -30,7 +30,8 @@ class NRFormBuilder<
 
   setAsyncValidator(
     asyncValidator: (
-      formData: F
+      formData: F,
+      metadata: Partial<M>
     ) => Observable<Partial<M>> | Promise<Partial<M>>
   ) {
     this.NRF.setAsyncValidator(asyncValidator);

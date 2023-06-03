@@ -1,6 +1,6 @@
 {
   "name": "rx-store-form-plugin",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "description": "a type safe form validation plugin based on Rx-Store-core",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
