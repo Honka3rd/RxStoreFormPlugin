@@ -229,13 +229,14 @@ let FormControllerImpl = (() => {
                 const compare = specCompare ? specCompare : connector.comparator;
                 const subscription = connector
                     .getDataSource()
-                    .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.distinctUntilChanged)(compare), (0, rxjs_1.map)((formData) => formData.filter(({ type }) => type === interfaces_1.DatumType.ASYNC)), (0, rxjs_1.switchMap)((asyncFormData) => {
+                    .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.distinctUntilChanged)(compare), (0, rxjs_1.switchMap)((formData) => {
                     const oldMeta = this.getMeta();
+                    const asyncFormData = formData.filter(({ type }) => type === interfaces_1.DatumType.ASYNC);
                     if (!asyncFormData.length) {
                         return (0, rxjs_1.of)(oldMeta);
                     }
                     this.setAsyncState(interfaces_1.AsyncState.PENDING);
-                    const async$ = this.asyncValidator(asyncFormData, oldMeta);
+                    const async$ = this.asyncValidator(formData, oldMeta);
                     const reduced$ = async$ instanceof Promise ? (0, rxjs_1.from)(async$) : async$;
                     return reduced$.pipe((0, rxjs_1.catchError)(() => {
                         return (0, rxjs_1.of)({

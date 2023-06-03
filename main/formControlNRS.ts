@@ -248,23 +248,21 @@ class FormControllerImpl<
       .pipe(
         map((states) => states[this.id]),
         distinctUntilChanged(compare),
-        map(
-          (formData) =>
-            formData.filter(({ type }) => type === DatumType.ASYNC) as {
-              [K in keyof Record<S, () => F>]: ReturnType<
-                Record<S, () => F>[K]
-              >;
-            }[S]
-        ),
-
-        switchMap((asyncFormData) => {
+        switchMap((formData) => {
           const oldMeta = this.getMeta();
+          
+          const asyncFormData = formData.filter(
+            ({ type }) => type === DatumType.ASYNC
+          ) as {
+            [K in keyof Record<S, () => F>]: ReturnType<Record<S, () => F>[K]>;
+          }[S];
+
           if (!asyncFormData.length) {
             return of(oldMeta);
           }
 
           this.setAsyncState(AsyncState.PENDING);
-          const async$ = this.asyncValidator!(asyncFormData, oldMeta);
+          const async$ = this.asyncValidator!(formData, oldMeta);
           const reduced$ = async$ instanceof Promise ? from(async$) : async$;
           return reduced$.pipe(
             catchError(() => {
