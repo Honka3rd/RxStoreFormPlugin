@@ -52,6 +52,9 @@ exports.ImmutableFormControllerImpl = (() => {
     let _setMetaByField_decorators;
     let _observeMeta_decorators;
     let _observeMetaByField_decorators;
+    let _observeFormData_decorators;
+    let _observeFormDatum_decorators;
+    let _observeFormValue_decorators;
     let _getFieldMeta_decorators;
     let _changeFieldType_decorators;
     let _getFieldsMeta_decorators;
@@ -302,6 +305,41 @@ exports.ImmutableFormControllerImpl = (() => {
                 });
                 return () => subscription === null || subscription === void 0 ? void 0 : subscription.unsubscribe();
             }
+            observeFormData(fields, observer) {
+                const casted = this.cast(this.connector);
+                const subscription = casted
+                    .getDataSource()
+                    .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.map)((form) => {
+                    return (0, immutable_1.List)().withMutations((mutation) => {
+                        form.forEach((datum) => {
+                            const found = fields.find((field) => datum.get("field") === field);
+                            if (found) {
+                                mutation.push(found);
+                            }
+                        });
+                    });
+                }), (0, rxjs_1.distinctUntilChanged)((var1, var2) => (0, immutable_1.is)(var1, var2)))
+                    .subscribe(observer);
+                return () => subscription.unsubscribe();
+            }
+            observeFormDatum(field, observer) {
+                const subscription = this.cast(this.connector)
+                    .getDataSource()
+                    .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.map)((form) => this.findDatumByField(form, field)), (0, rxjs_1.distinctUntilChanged)((var1, var2) => (0, immutable_1.is)(var1, var2)))
+                    .subscribe(observer);
+                return () => subscription.unsubscribe();
+            }
+            observeFormValue(field, observer) {
+                const subscription = this.cast(this.connector)
+                    .getDataSource()
+                    .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.map)((form) => this.findDatumByField(form, field).get("value")), (0, rxjs_1.distinctUntilChanged)((var1, var2) => (0, immutable_1.is)(var1, var2)))
+                    .subscribe(observer);
+                return () => subscription.unsubscribe();
+            }
+            getDatum(field) {
+                const casted = this.cast(this.connector);
+                return this.findDatumByField(casted.getState(this.id), field);
+            }
             getFieldMeta(field) {
                 return this.safeExecute(() => {
                     var _a;
@@ -425,6 +463,9 @@ exports.ImmutableFormControllerImpl = (() => {
             _setMetaByField_decorators = [rx_store_core_1.bound];
             _observeMeta_decorators = [rx_store_core_1.bound];
             _observeMetaByField_decorators = [rx_store_core_1.bound];
+            _observeFormData_decorators = [rx_store_core_1.bound];
+            _observeFormDatum_decorators = [rx_store_core_1.bound];
+            _observeFormValue_decorators = [rx_store_core_1.bound];
             _getFieldMeta_decorators = [rx_store_core_1.bound];
             _changeFieldType_decorators = [rx_store_core_1.bound];
             _getFieldsMeta_decorators = [rx_store_core_1.bound];
@@ -445,6 +486,9 @@ exports.ImmutableFormControllerImpl = (() => {
             __esDecorate(_a, null, _setMetaByField_decorators, { kind: "method", name: "setMetaByField", static: false, private: false, access: { has: obj => "setMetaByField" in obj, get: obj => obj.setMetaByField } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _observeMeta_decorators, { kind: "method", name: "observeMeta", static: false, private: false, access: { has: obj => "observeMeta" in obj, get: obj => obj.observeMeta } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _observeMetaByField_decorators, { kind: "method", name: "observeMetaByField", static: false, private: false, access: { has: obj => "observeMetaByField" in obj, get: obj => obj.observeMetaByField } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _observeFormData_decorators, { kind: "method", name: "observeFormData", static: false, private: false, access: { has: obj => "observeFormData" in obj, get: obj => obj.observeFormData } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _observeFormDatum_decorators, { kind: "method", name: "observeFormDatum", static: false, private: false, access: { has: obj => "observeFormDatum" in obj, get: obj => obj.observeFormDatum } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _observeFormValue_decorators, { kind: "method", name: "observeFormValue", static: false, private: false, access: { has: obj => "observeFormValue" in obj, get: obj => obj.observeFormValue } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getFieldMeta_decorators, { kind: "method", name: "getFieldMeta", static: false, private: false, access: { has: obj => "getFieldMeta" in obj, get: obj => obj.getFieldMeta } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _changeFieldType_decorators, { kind: "method", name: "changeFieldType", static: false, private: false, access: { has: obj => "changeFieldType" in obj, get: obj => obj.changeFieldType } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getFieldsMeta_decorators, { kind: "method", name: "getFieldsMeta", static: false, private: false, access: { has: obj => "getFieldsMeta" in obj, get: obj => obj.getFieldsMeta } }, null, _instanceExtraInitializers);

@@ -104,8 +104,10 @@ class IRFormBuilder<
   setAsyncValidator(
     asyncValidator: (
       formData: List<Map<keyof F[number], V<F[number]>>>,
-      meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>
-    ) => Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>
+      meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>
+    ) =>
+      | Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>
+      | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>
   ) {
     this.IRF.setAsyncValidator(asyncValidator);
     return this;

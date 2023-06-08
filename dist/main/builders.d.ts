@@ -1,5 +1,5 @@
 import { Observable } from "rxjs";
-import { AsyncValidationConfig, FormControlBasicMetadata, FormControlData, FormController, FormStubs, ImmutableFormPluginBuilderParams, NormalFormPluginBuilderParams, PK, PV, V } from "./interfaces";
+import { AsyncValidationConfig, FormControlBasicMetadata, FormControlData, FormController, FormStubs, ImmutableFormPluginBuilderParams, NormalFormPluginBuilderParams, PK, V } from "./interfaces";
 import { Plugin } from "rx-store-types";
 import { ImmutableFormControllerImpl } from "./formControlIRS";
 import { List, Map } from "immutable";
@@ -23,7 +23,7 @@ declare class NRFormBuilder<F extends FormControlData, M extends Partial<Record<
 declare class IRFormBuilder<F extends FormControlData, M extends Record<F[number]["field"], FormControlBasicMetadata>, S extends string = string> {
     private IRF;
     constructor({ formSelector, validator, }: ImmutableFormPluginBuilderParams<F, M, S>);
-    setAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>) => Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>): this;
+    setAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>) => Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>> | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>): this;
     setFields(fields: FormStubs<F>): this;
     setDefaultMeta(meta: Partial<M>): this;
     setAsyncConfig(cfg: AsyncValidationConfig): this;

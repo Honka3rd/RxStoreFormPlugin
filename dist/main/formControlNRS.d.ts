@@ -1,6 +1,6 @@
 import { Comparator, Initiator, PluginImpl } from "rx-store-types";
 import { Observable } from "rxjs";
-import { AsyncValidationNConfig, DatumType, FormControlBasicDatum, FormControlBasicMetadata, FormControlData, FormController, FormStubs } from "./interfaces";
+import { AsyncValidationNConfig, DatumType, FormControlBasicMetadata, FormControlData, FormController, FormStubs } from "./interfaces";
 declare class FormControllerImpl<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> extends PluginImpl<S, F> implements FormController<F, M, S> {
     validator: (formData: F, metadata: Partial<M>) => Partial<M>;
     private metadata$?;
@@ -47,7 +47,7 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     getFormData(): ReturnType<Record<S, () => F>[S]>;
     initiator: Initiator<F>;
     getMeta(): Partial<M>;
-    getDatum<At extends number = number>(field: F[At]["field"]): FormControlBasicDatum | undefined;
+    getDatum<At extends number = number>(field: F[At]["field"]): F[At] | undefined;
     getDatumValue<At extends number = number>(field: F[At]["field"]): F[At]["value"] | undefined;
     getClonedMetaByField<CF extends keyof Partial<M>>(field: CF): Partial<M>[CF];
     getClonedMeta(): Partial<M>;

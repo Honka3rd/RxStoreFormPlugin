@@ -23,7 +23,6 @@ import { List, Map, fromJS, is, merge } from "immutable";
 import {
   BehaviorSubject,
   Observable,
-  Subscription,
   catchError,
   debounceTime,
   distinctUntilChanged,
@@ -64,8 +63,10 @@ export class ImmutableFormControllerImpl<
     ) => Map<PK<M>, Map<"errors" | "info" | "warn", any>>,
     public asyncValidator?: (
       formData: List<Map<keyof F[number], V<F[number]>>>,
-      meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>
-    ) => Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>
+      meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>
+    ) =>
+      | Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>
+      | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>
   ) {
     super(id);
   }
@@ -404,6 +405,84 @@ export class ImmutableFormControllerImpl<
   }
 
   @bound
+  observeFormData<CompareAts extends readonly number[] = number[]>(
+    fields: F[CompareAts[number]]["field"][],
+    observer: (
+      result: List<Map<keyof F[CompareAts[number]], PV<F[CompareAts[number]]>>>
+    ) => void
+  ): () => void {
+    const casted = this.cast(this.connector!);
+    const subscription = casted
+      .getDataSource()
+      .pipe(
+        map((states) => states[this.id]),
+        map((form) => {
+          return List().withMutations((mutation) => {
+            form.forEach((datum) => {
+              const found = fields.find(
+                (field) => datum.get("field") === field
+              );
+              if (found) {
+                mutation.push(found);
+              }
+            });
+          }) as List<
+            Map<keyof F[CompareAts[number]], PV<F[CompareAts[number]]>>
+          >;
+        }),
+        distinctUntilChanged((var1, var2) => is(var1, var2))
+      )
+      .subscribe(observer);
+    return () => subscription.unsubscribe();
+  }
+
+  @bound
+  observeFormDatum<CompareAt extends number = number>(
+    field: F[CompareAt]["field"],
+    observer: (
+      result: Map<
+        keyof ReturnType<Record<S, () => F>[S]>[CompareAt],
+        PV<ReturnType<Record<S, () => F>[S]>[CompareAt]>
+      >
+    ) => void
+  ): () => void {
+    const subscription = this.cast(this.connector!)
+      .getDataSource()
+      .pipe(
+        map((states) => states[this.id]),
+        map((form) => this.findDatumByField(form, field)!),
+        distinctUntilChanged((var1, var2) => is(var1, var2))
+      )
+      .subscribe(observer);
+    return () => subscription.unsubscribe();
+  }
+
+  @bound
+  observeFormValue<CompareAt extends number = number>(
+    field: F[CompareAt]["field"],
+    observer: (
+      result: ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]
+    ) => void
+  ): () => void {
+    const subscription = this.cast(this.connector!)
+      .getDataSource()
+      .pipe(
+        map((states) => states[this.id]),
+        map((form) => this.findDatumByField(form, field)!.get("value")),
+        distinctUntilChanged((var1, var2) => is(var1, var2))
+      )
+      .subscribe(observer);
+    return () => subscription.unsubscribe();
+  }
+
+  getDatum<At extends number = number>(
+    field: F[At]["field"]
+  ): Map<keyof F[At], PV<F[At]>> {
+    const casted = this.cast(this.connector!);
+    return this.findDatumByField(casted.getState(this.id), field)!;
+  }
+
+  @bound
   getFieldMeta<N extends number = number>(field: F[N]["field"]) {
     return this.safeExecute(() => {
       return this.metadata$?.value.get(field) as Map<
@@ -452,7 +531,9 @@ export class ImmutableFormControllerImpl<
     asyncValidator: (
       formData: List<Map<keyof F[number], V<F[number]>>>,
       meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>
-    ) => Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>
+    ) =>
+      | Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>
+      | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>
   ): void {
     if (!this.asyncValidator) {
       this.asyncValidator = asyncValidator;

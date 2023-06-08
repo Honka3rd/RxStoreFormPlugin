@@ -320,7 +320,7 @@ let FormControllerImpl = (() => {
             }
             getDatum(field) {
                 return this.safeExecute((connector) => {
-                    const casted = connector;
+                    const casted = this.cast(connector);
                     return this.findDatumByField(casted.getState(this.id), field);
                 });
             }
@@ -375,7 +375,7 @@ let FormControllerImpl = (() => {
                 return () => { };
             }
             observeFormValue(field, observer, comparator) {
-                const casted = this.connector;
+                const casted = this.cast(this.connector);
                 if (casted) {
                     const subscription = casted
                         .getDataSource()
@@ -386,7 +386,7 @@ let FormControllerImpl = (() => {
                 return () => { };
             }
             observeFormData(fields, observer, comparator) {
-                const casted = this.connector;
+                const casted = this.cast(this.connector);
                 if (casted) {
                     const subscription = casted
                         .getDataSource()

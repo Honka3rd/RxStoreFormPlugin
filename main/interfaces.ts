@@ -15,9 +15,9 @@ export type FormControlMetadata<E extends Any, I = any, W = any> = {
 };
 
 export enum AsyncState {
-  PENDING="PENDING",
-  DONE="DONE",
-  ERROR="ERROR",
+  PENDING = "PENDING",
+  DONE = "DONE",
+  ERROR = "ERROR",
 }
 
 export enum DatumType {
@@ -55,10 +55,10 @@ export type FormControlData = FormControlBasicDatum[];
 export type AsyncValidationConfig = {
   debounceDuration: number;
   lazy: boolean;
-}
+};
 
 export interface AsyncValidationNConfig extends AsyncValidationConfig {
-  compare?: (var1: any, var2: any) => boolean
+  compare?: (var1: any, var2: any) => boolean;
 }
 
 export type FormStubs<F extends FormControlBasicDatum[]> = Array<{
@@ -197,13 +197,13 @@ export interface FormController<
 
   getDatum<At extends number = number>(
     field: F[At]["field"]
-  ): FormControlBasicDatum | undefined;
+  ): F[At] | undefined;
 
   getDatumValue<At extends number = number>(
     field: F[At]["field"]
   ): F[At]["value"] | undefined;
 
-  getFormData(): ReturnType<Record<S, () => F>[S]>
+  getFormData(): ReturnType<Record<S, () => F>[S]>;
 }
 
 export type NormalFormPluginBuilderParams<
@@ -238,8 +238,11 @@ export interface ImmutableFormController<
 > {
   setAsyncValidator(
     asyncValidator: (
-      formData: List<Map<keyof F[number], V<F[number]>>>
-    ) => Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>
+      formData: List<Map<keyof F[number], V<F[number]>>>,
+      meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>
+    ) =>
+      | Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>
+      | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>
   ): void;
 
   setFields(fields: FormStubs<F>): void;
@@ -279,8 +282,10 @@ export interface ImmutableFormController<
 
   asyncValidator?(
     formData: List<Map<keyof F[number], V<F[number]>>>,
-    meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>
-  ): Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>;
+    meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>
+  ):
+    | Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>
+    | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>;
 
   startValidation(): (() => void) | undefined;
 
@@ -324,7 +329,37 @@ export interface ImmutableFormController<
     ) => void
   ): () => void | undefined;
 
-  getFormData(): ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]>
+  observeFormData<CompareAts extends readonly number[] = number[]>(
+    fields: F[CompareAts[number]]["field"][],
+    observer: (
+      result: List<Map<PK<F[CompareAts[number]]>, PV<F[CompareAts[number]]>>>
+    ) => void
+  ): () => void;
+
+  observeFormDatum<CompareAt extends number = number>(
+    field: F[CompareAt]["field"],
+    observer: (
+      result: Map<
+        PK<ReturnType<Record<S, () => F>[S]>[CompareAt]>,
+        PV<ReturnType<Record<S, () => F>[S]>[CompareAt]>
+      >
+    ) => void
+  ): () => void;
+
+  observeFormValue<CompareAt extends number = number>(
+    field: F[CompareAt]["field"],
+    observer: (
+      result: ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]
+    ) => void,
+  ): () => void;
+
+  getFormData(): ReturnType<
+    Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]
+  >;
+
+  getDatum<At extends number = number>(
+    field: F[At]["field"]
+  ): Map<PK<F[At]>, PV<F[At]>>
 }
 
 export type ImmutableFormPluginBuilderParams<

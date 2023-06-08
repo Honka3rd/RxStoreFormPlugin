@@ -402,8 +402,8 @@ class FormControllerImpl<
   @bound
   getDatum<At extends number = number>(field: F[At]["field"]) {
     return this.safeExecute((connector) => {
-      const casted = connector as unknown as RxNStore<Record<S, () => F>>;
-      return this.findDatumByField(casted.getState(this.id), field);
+      const casted = this.cast(connector);
+      return this.findDatumByField(casted.getState(this.id), field) as F[At];
     });
   }
 
@@ -499,7 +499,7 @@ class FormControllerImpl<
       ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]
     >
   ) {
-    const casted = this.connector as unknown as RxNStore<Record<S, () => F>>;
+    const casted = this.cast(this.connector!);
     if (casted) {
       const subscription = casted
         .getDataSource()
@@ -520,7 +520,7 @@ class FormControllerImpl<
     observer: (result: F[CompareAts[number]][]) => void,
     comparator?: Comparator<F[CompareAts[number]][]>
   ) {
-    const casted = this.connector as unknown as RxNStore<Record<S, () => F>>;
+    const casted = this.cast(this.connector!);
     if (casted) {
       const subscription = casted
         .getDataSource()
