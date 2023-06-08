@@ -246,7 +246,7 @@ let FormControllerImpl = (() => {
                         return (0, rxjs_1.of)(oldMeta);
                     }
                     this.setAsyncState(interfaces_1.AsyncState.PENDING);
-                    const async$ = this.asyncValidator(formData, oldMeta);
+                    const async$ = this.asyncValidator(this.getFormData(), oldMeta);
                     const reduced$ = async$ instanceof Promise ? (0, rxjs_1.from)(async$) : async$;
                     return reduced$.pipe((0, rxjs_1.catchError)(() => {
                         return (0, rxjs_1.of)({

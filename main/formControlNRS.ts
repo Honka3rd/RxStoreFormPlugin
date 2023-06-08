@@ -277,7 +277,7 @@ class FormControllerImpl<
           }
 
           this.setAsyncState(AsyncState.PENDING);
-          const async$ = this.asyncValidator!(formData, oldMeta);
+          const async$ = this.asyncValidator!(this.getFormData(), oldMeta);
           const reduced$ = async$ instanceof Promise ? from(async$) : async$;
           return reduced$.pipe(
             catchError(() => {
