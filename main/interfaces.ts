@@ -70,6 +70,8 @@ export type FormStubs<F extends FormControlBasicDatum[]> = Array<{
   defaultValue?: F[number]["value"];
   type?: DatumType;
   metaEmitter?: MetaEmitter;
+  lazy?: boolean;
+  debounce?: number;
 }>;
 
 export interface FormController<

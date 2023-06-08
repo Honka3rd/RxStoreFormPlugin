@@ -29,6 +29,8 @@ import {
   tap,
   Subscription,
   filter,
+  exhaustMap,
+  debounceTime,
 } from "rxjs";
 
 class FormControllerImpl<
@@ -373,14 +375,16 @@ class FormControllerImpl<
           ({ type, metaEmitter }) => type === DatumType.EXCLUDED && metaEmitter
         )
         .reduce((acc, next) => {
+          const connect = next.lazy ? exhaustMap : switchMap;
           const excludedOutput = casted
             .getDataSource()
             .pipe(
               filter((source) =>
                 Boolean(source[this.id].find((d) => d.field === next.field))
               ),
+              debounceTime(next.debounce ?? 0),
               tap(() => this.setExcludedState(AsyncState.PENDING, next.field)),
-              switchMap((data) => {
+              connect((data) => {
                 const $meta = next.metaEmitter!(
                   this.getFormData(),
                   this.getMeta(),
