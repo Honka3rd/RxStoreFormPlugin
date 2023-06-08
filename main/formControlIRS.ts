@@ -9,6 +9,7 @@ import {
 import {
   AsyncState,
   DatumType,
+  FormControlBasicDatum,
   FormControlBasicMetadata,
   FormControlData,
   FormStubs,
@@ -25,6 +26,7 @@ import {
   Subscription,
   catchError,
   distinctUntilChanged,
+  filter,
   from,
   map,
   of,
@@ -200,8 +202,8 @@ export class ImmutableFormControllerImpl<
     const excluded = connector
       .getState(this.id)
       .filter((datum) => datum.get("type") === DatumType.EXCLUDED)
-      .map((datum) => datum.get("field")!);
-    return this.getFieldsMeta(excluded.toJS() as F[number]["field"][]);
+      .map((datum) => datum.get("field")!) as List<F[number]["field"]>;
+    return this.getFieldsMeta(excluded);
   }
 
   private asyncValidatorExecutor(
@@ -218,11 +220,10 @@ export class ImmutableFormControllerImpl<
       .pipe(
         map((states) => states[this.id]),
         distinctUntilChanged((var1, var2) => is(var1, var2)),
-        map((formData: List<Map<K<F[number]>, V<F[number]>>>) =>
-          formData.filter((datum) => datum.get("type") === DatumType.ASYNC)
-        ),
-
-        switchMap((asyncFormData) => {
+        switchMap((formData) => {
+          const asyncFormData = formData.filter(
+            (datum) => datum.get("type") === DatumType.ASYNC
+          );
           const oldMeta = this.getMeta();
           if (!asyncFormData.size) {
             return of(oldMeta);
@@ -274,21 +275,74 @@ export class ImmutableFormControllerImpl<
     return () => subscription.unsubscribe();
   }
 
-  private observeExcluded() {
-    return this.fields
-      ?.filter(
-        ({ type, metaEmitter }) => type === DatumType.EXCLUDED && metaEmitter
-      )
-      .reduce((acc, next) => {
-        const $meta = next.metaEmitter!();
-        const converged = $meta instanceof Promise ? from($meta) : $meta;
-        acc.push(
-          converged.subscribe((meta) => {
-            this.setMetaByField(next.field, meta as M[F[number]["field"]]);
-          })
+  private getFormData() {
+    return this.safeExecute((connector) => {
+      const casted = this.cast(connector);
+      return casted.getState(this.id)!;
+    })!;
+  }
+
+  private setExcludedState(state: AsyncState, field: string) {
+    this.safeExecute((connector) => {
+      const casted = this.cast(connector);
+      const formData = casted.getState(this.id);
+      const index = formData.findIndex(
+        (datum) =>
+          datum.get("field") === field &&
+          datum.get("type") === DatumType.EXCLUDED
+      ); 
+      if (index >= 0) {
+        const cloned = formData.set(
+          index,
+          formData.get(index)!.set("asyncState", state as V<F[number]>)
         );
-        return acc;
-      }, [] as Array<Subscription>);
+        this.commitMutation(cloned, casted);
+      }
+    });
+  }
+
+  private observeExcluded() {
+    return this.safeExecute((connector) => {
+      const casted = this.cast(connector);
+      const subscriptions = this.fields
+        ?.filter(
+          ({ type, metaEmitter }) => type === DatumType.EXCLUDED && metaEmitter
+        )
+        .reduce((acc, next) => {
+          const excludedOutput = casted
+            .getDataSource()
+            .pipe(
+              filter((source) =>
+                Boolean(
+                  source[this.id].find((d) => d.get("field") === next.field)
+                )
+              ),
+              tap(() => this.setExcludedState(AsyncState.PENDING, next.field)),
+              switchMap((data) => {
+                const $meta = next.metaEmitter!(
+                  this.getFormData(),
+                  this.getMeta(),
+                  data
+                );
+                const converged =
+                  $meta instanceof Promise ? from($meta) : $meta;
+                return converged.pipe(
+                  catchError(() => {
+                    this.setExcludedState(AsyncState.ERROR, next.field);
+                    return of(this.getFieldMeta(next.field));
+                  }),
+                  tap(() => this.setExcludedState(AsyncState.DONE, next.field))
+                );
+              })
+            )
+            .subscribe();
+          acc.push(excludedOutput);
+          return acc;
+        }, [] as Array<Subscription>);
+      return () => {
+        subscriptions?.forEach((subscription) => subscription.unsubscribe());
+      };
+    });
   }
 
   @bound
@@ -431,7 +485,9 @@ export class ImmutableFormControllerImpl<
   }
 
   @bound
-  getFieldsMeta(fields: F[number]["field"][]): Map<PK<M>, PV<M>> {
+  getFieldsMeta(
+    fields: F[number]["field"][] | List<F[number]["field"]>
+  ): Map<PK<M>, PV<M>> {
     return Map().withMutations((mutation) => {
       fields.forEach((field) => {
         mutation.set(field, this.getFieldMeta(field));
@@ -442,7 +498,8 @@ export class ImmutableFormControllerImpl<
   @bound
   setAsyncValidator(
     asyncValidator: (
-      formData: List<Map<keyof F[number], V<F[number]>>>
+      formData: List<Map<keyof F[number], V<F[number]>>>,
+      meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>
     ) => Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>
   ): void {
     if (!this.asyncValidator) {
@@ -560,11 +617,11 @@ export class ImmutableFormControllerImpl<
       const casted = this.cast(connector);
       const stopValidation = this.validatorExecutor(casted);
       const stopAsyncValidation = this.asyncValidatorExecutor(casted);
-      const subscriptions = this.observeExcluded();
+      const stopObserveExcluded = this.observeExcluded();
       return () => {
         stopValidation?.();
         stopAsyncValidation?.();
-        subscriptions?.forEach((s) => s.unsubscribe());
+        stopObserveExcluded?.();
       };
     });
   }

@@ -5,6 +5,7 @@ import {
   Initiator,
   PluginImpl,
   Comparator,
+  RxStore,
 } from "rx-store-types";
 import { bound, shallowClone } from "rx-store-core";
 import {
@@ -27,6 +28,7 @@ import {
   catchError,
   tap,
   Subscription,
+  filter,
 } from "rxjs";
 
 class FormControllerImpl<
@@ -222,7 +224,7 @@ class FormControllerImpl<
 
   private setAsyncState(state: AsyncState) {
     this.safeExecute((connector) => {
-      const casted = connector as unknown as RxNStore<Record<S, () => F>>;
+      const casted = this.cast(connector);
       const cloned = casted.getClonedState(this.id);
       this.getAsyncFields(casted).forEach((field) => {
         const found = cloned.find((c) => c.field === field);
@@ -231,6 +233,20 @@ class FormControllerImpl<
         }
       });
       this.commitMutation(cloned, casted);
+    });
+  }
+
+  private setExcludedState(state: AsyncState, field: string) {
+    this.safeExecute((connector) => {
+      const casted = this.cast(connector);
+      const cloned = casted.getClonedState(this.id);
+      const excluded = cloned.find(
+        (datum) => datum.field === field && datum.type === DatumType.EXCLUDED
+      );
+      if (excluded) {
+        excluded.asyncState = state;
+        this.commitMutation(cloned, casted);
+      }
     });
   }
 
@@ -250,7 +266,7 @@ class FormControllerImpl<
         distinctUntilChanged(compare),
         switchMap((formData) => {
           const oldMeta = this.getMeta();
-          
+
           const asyncFormData = formData.filter(
             ({ type }) => type === DatumType.ASYNC
           ) as {
@@ -337,21 +353,58 @@ class FormControllerImpl<
     );
   }
 
+  private cast(connector: RxStore<Any> & Subscribable<Any>) {
+    const casted = connector as unknown as RxNStore<Record<S, () => F>>;
+    return casted;
+  }
+
+  private getFormData() {
+    return this.safeExecute((connector) => {
+      const casted = this.cast(connector);
+      return casted.getState(this.id)!;
+    })!;
+  }
+
   private observeExcluded() {
-    return this.fields
-      .filter(
-        ({ type, metaEmitter }) => type === DatumType.EXCLUDED && metaEmitter
-      )
-      .reduce((acc, next) => {
-        const $meta = next.metaEmitter!();
-        const converged = $meta instanceof Promise ? from($meta) : $meta;
-        acc.push(
-          converged.subscribe((meta) => {
-            this.setMetaByField(next.field, meta as M[F[number]["field"]]);
-          })
-        );
-        return acc;
-      }, [] as Array<Subscription>);
+    return this.safeExecute((connector) => {
+      const casted = this.cast(connector);
+      const subscriptions = this.fields
+        .filter(
+          ({ type, metaEmitter }) => type === DatumType.EXCLUDED && metaEmitter
+        )
+        .reduce((acc, next) => {
+          const excludedOutput = casted
+            .getDataSource()
+            .pipe(
+              filter((source) =>
+                Boolean(source[this.id].find((d) => d.field === next.field))
+              ),
+              tap(() => this.setExcludedState(AsyncState.PENDING, next.field)),
+              switchMap((data) => {
+                const $meta = next.metaEmitter!(
+                  this.getFormData(),
+                  this.getMeta(),
+                  data
+                );
+                const converged =
+                  $meta instanceof Promise ? from($meta) : $meta;
+                return converged.pipe(
+                  catchError(() => {
+                    this.setExcludedState(AsyncState.ERROR, next.field);
+                    return of(this.getFieldMeta(next.field));
+                  }),
+                  tap(() => this.setExcludedState(AsyncState.DONE, next.field))
+                );
+              })
+            )
+            .subscribe();
+          acc.push(excludedOutput);
+          return acc;
+        }, [] as Array<Subscription>);
+      return () => {
+        subscriptions.forEach((subscription) => subscription.unsubscribe());
+      };
+    });
   }
 
   initiator: Initiator<F> = (connector) => {
@@ -541,11 +594,11 @@ class FormControllerImpl<
         connector as RxNStore<Record<S, () => F>> &
           Subscribable<Record<S, () => F>>
       );
-      const subscriptions = this.observeExcluded();
+      const stopObserveExcluded = this.observeExcluded();
       return () => {
         stopSyncValidation();
         stopAsyncValidation?.();
-        subscriptions.forEach((s) => s.unsubscribe());
+        stopObserveExcluded?.();
       };
     });
   }

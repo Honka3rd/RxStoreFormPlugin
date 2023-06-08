@@ -26,9 +26,17 @@ export enum DatumType {
   SYNC = "Sync",
 }
 
-type MetaEmitter =
-  | (() => Observable<FormControlBasicMetadata>)
-  | (() => Promise<FormControlBasicMetadata>);
+type MetaEmitter<> =
+  | ((
+      formData: any[] | List<any>,
+      meta: any,
+      data: any
+    ) => Observable<Any | Map<string, Any>>)
+  | ((
+      formData: any[] | List<any>,
+      meta: any,
+      data: any
+    ) => Promise<Any | Map<string, Any>>);
 
 type DatumAttr = {
   touched: boolean;
