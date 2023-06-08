@@ -475,6 +475,7 @@ export class ImmutableFormControllerImpl<
     return () => subscription.unsubscribe();
   }
 
+  @bound
   getDatum<At extends number = number>(
     field: F[At]["field"]
   ): Map<keyof F[At], PV<F[At]>> {

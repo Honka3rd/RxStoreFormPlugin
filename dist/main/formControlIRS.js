@@ -55,6 +55,7 @@ exports.ImmutableFormControllerImpl = (() => {
     let _observeFormData_decorators;
     let _observeFormDatum_decorators;
     let _observeFormValue_decorators;
+    let _getDatum_decorators;
     let _getFieldMeta_decorators;
     let _changeFieldType_decorators;
     let _getFieldsMeta_decorators;
@@ -466,6 +467,7 @@ exports.ImmutableFormControllerImpl = (() => {
             _observeFormData_decorators = [rx_store_core_1.bound];
             _observeFormDatum_decorators = [rx_store_core_1.bound];
             _observeFormValue_decorators = [rx_store_core_1.bound];
+            _getDatum_decorators = [rx_store_core_1.bound];
             _getFieldMeta_decorators = [rx_store_core_1.bound];
             _changeFieldType_decorators = [rx_store_core_1.bound];
             _getFieldsMeta_decorators = [rx_store_core_1.bound];
@@ -489,6 +491,7 @@ exports.ImmutableFormControllerImpl = (() => {
             __esDecorate(_a, null, _observeFormData_decorators, { kind: "method", name: "observeFormData", static: false, private: false, access: { has: obj => "observeFormData" in obj, get: obj => obj.observeFormData } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _observeFormDatum_decorators, { kind: "method", name: "observeFormDatum", static: false, private: false, access: { has: obj => "observeFormDatum" in obj, get: obj => obj.observeFormDatum } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _observeFormValue_decorators, { kind: "method", name: "observeFormValue", static: false, private: false, access: { has: obj => "observeFormValue" in obj, get: obj => obj.observeFormValue } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _getDatum_decorators, { kind: "method", name: "getDatum", static: false, private: false, access: { has: obj => "getDatum" in obj, get: obj => obj.getDatum } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getFieldMeta_decorators, { kind: "method", name: "getFieldMeta", static: false, private: false, access: { has: obj => "getFieldMeta" in obj, get: obj => obj.getFieldMeta } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _changeFieldType_decorators, { kind: "method", name: "changeFieldType", static: false, private: false, access: { has: obj => "changeFieldType" in obj, get: obj => obj.changeFieldType } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getFieldsMeta_decorators, { kind: "method", name: "getFieldsMeta", static: false, private: false, access: { has: obj => "getFieldsMeta" in obj, get: obj => obj.getFieldsMeta } }, null, _instanceExtraInitializers);
