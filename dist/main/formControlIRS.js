@@ -177,7 +177,7 @@ exports.ImmutableFormControllerImpl = (() => {
                     .getState(this.id)
                     .filter((datum) => datum.get("type") === interfaces_1.DatumType.EXCLUDED)
                     .map((datum) => datum.get("field"));
-                return this.getFieldsMeta(excluded.toJS());
+                return this.getFieldsMeta(excluded);
             }
             asyncValidatorExecutor(connector) {
                 if (!this.asyncValidator) {
@@ -185,7 +185,8 @@ exports.ImmutableFormControllerImpl = (() => {
                 }
                 const subscription = connector
                     .getDataSource()
-                    .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.distinctUntilChanged)((var1, var2) => (0, immutable_1.is)(var1, var2)), (0, rxjs_1.map)((formData) => formData.filter((datum) => datum.get("type") === interfaces_1.DatumType.ASYNC)), (0, rxjs_1.switchMap)((asyncFormData) => {
+                    .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.distinctUntilChanged)((var1, var2) => (0, immutable_1.is)(var1, var2)), (0, rxjs_1.switchMap)((formData) => {
+                    const asyncFormData = formData.filter((datum) => datum.get("type") === interfaces_1.DatumType.ASYNC);
                     const oldMeta = this.getMeta();
                     if (!asyncFormData.size) {
                         return (0, rxjs_1.of)(oldMeta);
@@ -222,16 +223,47 @@ exports.ImmutableFormControllerImpl = (() => {
                 });
                 return () => subscription.unsubscribe();
             }
+            getFormData() {
+                return this.safeExecute((connector) => {
+                    const casted = this.cast(connector);
+                    return casted.getState(this.id);
+                });
+            }
+            setExcludedState(state, field) {
+                this.safeExecute((connector) => {
+                    const casted = this.cast(connector);
+                    const formData = casted.getState(this.id);
+                    const index = formData.findIndex((datum) => datum.get("field") === field &&
+                        datum.get("type") === interfaces_1.DatumType.EXCLUDED);
+                    if (index >= 0) {
+                        const cloned = formData.set(index, formData.get(index).set("asyncState", state));
+                        this.commitMutation(cloned, casted);
+                    }
+                });
+            }
             observeExcluded() {
-                var _a;
-                return (_a = this.fields) === null || _a === void 0 ? void 0 : _a.filter(({ type, metaEmitter }) => type === interfaces_1.DatumType.EXCLUDED && metaEmitter).reduce((acc, next) => {
-                    const $meta = next.metaEmitter();
-                    const converged = $meta instanceof Promise ? (0, rxjs_1.from)($meta) : $meta;
-                    acc.push(converged.subscribe((meta) => {
-                        this.setMetaByField(next.field, meta);
-                    }));
-                    return acc;
-                }, []);
+                return this.safeExecute((connector) => {
+                    var _a;
+                    const casted = this.cast(connector);
+                    const subscriptions = (_a = this.fields) === null || _a === void 0 ? void 0 : _a.filter(({ type, metaEmitter }) => type === interfaces_1.DatumType.EXCLUDED && metaEmitter).reduce((acc, next) => {
+                        const excludedOutput = casted
+                            .getDataSource()
+                            .pipe((0, rxjs_1.filter)((source) => Boolean(source[this.id].find((d) => d.get("field") === next.field))), (0, rxjs_1.tap)(() => this.setExcludedState(interfaces_1.AsyncState.PENDING, next.field)), (0, rxjs_1.switchMap)((data) => {
+                            const $meta = next.metaEmitter(this.getFormData(), this.getMeta(), data);
+                            const converged = $meta instanceof Promise ? (0, rxjs_1.from)($meta) : $meta;
+                            return converged.pipe((0, rxjs_1.catchError)(() => {
+                                this.setExcludedState(interfaces_1.AsyncState.ERROR, next.field);
+                                return (0, rxjs_1.of)(this.getFieldMeta(next.field));
+                            }), (0, rxjs_1.tap)(() => this.setExcludedState(interfaces_1.AsyncState.DONE, next.field)));
+                        }))
+                            .subscribe();
+                        acc.push(excludedOutput);
+                        return acc;
+                    }, []);
+                    return () => {
+                        subscriptions === null || subscriptions === void 0 ? void 0 : subscriptions.forEach((subscription) => subscription.unsubscribe());
+                    };
+                });
             }
             resetFormDatum(field) {
                 this.safeExecute((connector) => {
@@ -402,11 +434,11 @@ exports.ImmutableFormControllerImpl = (() => {
                     const casted = this.cast(connector);
                     const stopValidation = this.validatorExecutor(casted);
                     const stopAsyncValidation = this.asyncValidatorExecutor(casted);
-                    const subscriptions = this.observeExcluded();
+                    const stopObserveExcluded = this.observeExcluded();
                     return () => {
                         stopValidation === null || stopValidation === void 0 ? void 0 : stopValidation();
                         stopAsyncValidation === null || stopAsyncValidation === void 0 ? void 0 : stopAsyncValidation();
-                        subscriptions === null || subscriptions === void 0 ? void 0 : subscriptions.forEach((s) => s.unsubscribe());
+                        stopObserveExcluded === null || stopObserveExcluded === void 0 ? void 0 : stopObserveExcluded();
                     };
                 });
             }

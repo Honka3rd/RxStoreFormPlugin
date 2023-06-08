@@ -209,7 +209,7 @@ let FormControllerImpl = (() => {
             }
             setAsyncState(state) {
                 this.safeExecute((connector) => {
-                    const casted = connector;
+                    const casted = this.cast(connector);
                     const cloned = casted.getClonedState(this.id);
                     this.getAsyncFields(casted).forEach((field) => {
                         const found = cloned.find((c) => c.field === field);
@@ -218,6 +218,17 @@ let FormControllerImpl = (() => {
                         }
                     });
                     this.commitMutation(cloned, casted);
+                });
+            }
+            setExcludedState(state, field) {
+                this.safeExecute((connector) => {
+                    const casted = this.cast(connector);
+                    const cloned = casted.getClonedState(this.id);
+                    const excluded = cloned.find((datum) => datum.field === field && datum.type === interfaces_1.DatumType.EXCLUDED);
+                    if (excluded) {
+                        excluded.asyncState = state;
+                        this.commitMutation(cloned, casted);
+                    }
                 });
             }
             asyncValidatorExecutor(connector) {
@@ -294,17 +305,42 @@ let FormControllerImpl = (() => {
                     return acc;
                 }, {});
             }
+            cast(connector) {
+                const casted = connector;
+                return casted;
+            }
+            getFormData() {
+                return this.safeExecute((connector) => {
+                    const casted = this.cast(connector);
+                    return casted.getState(this.id);
+                });
+            }
             observeExcluded() {
-                return this.fields
-                    .filter(({ type, metaEmitter }) => type === interfaces_1.DatumType.EXCLUDED && metaEmitter)
-                    .reduce((acc, next) => {
-                    const $meta = next.metaEmitter();
-                    const converged = $meta instanceof Promise ? (0, rxjs_1.from)($meta) : $meta;
-                    acc.push(converged.subscribe((meta) => {
-                        this.setMetaByField(next.field, meta);
-                    }));
-                    return acc;
-                }, []);
+                return this.safeExecute((connector) => {
+                    const casted = this.cast(connector);
+                    const subscriptions = this.fields
+                        .filter(({ type, metaEmitter }) => type === interfaces_1.DatumType.EXCLUDED && metaEmitter)
+                        .reduce((acc, next) => {
+                        var _a;
+                        const connect = next.lazy ? rxjs_1.exhaustMap : rxjs_1.switchMap;
+                        const excludedOutput = casted
+                            .getDataSource()
+                            .pipe((0, rxjs_1.filter)((source) => Boolean(source[this.id].find((d) => d.field === next.field))), (0, rxjs_1.debounceTime)((_a = next.debounce) !== null && _a !== void 0 ? _a : 0), (0, rxjs_1.tap)(() => this.setExcludedState(interfaces_1.AsyncState.PENDING, next.field)), connect((data) => {
+                            const $meta = next.metaEmitter(this.getFormData(), this.getMeta(), data);
+                            const converged = $meta instanceof Promise ? (0, rxjs_1.from)($meta) : $meta;
+                            return converged.pipe((0, rxjs_1.catchError)(() => {
+                                this.setExcludedState(interfaces_1.AsyncState.ERROR, next.field);
+                                return (0, rxjs_1.of)(this.getFieldMeta(next.field));
+                            }), (0, rxjs_1.tap)(() => this.setExcludedState(interfaces_1.AsyncState.DONE, next.field)));
+                        }))
+                            .subscribe();
+                        acc.push(excludedOutput);
+                        return acc;
+                    }, []);
+                    return () => {
+                        subscriptions.forEach((subscription) => subscription.unsubscribe());
+                    };
+                });
             }
             getMeta() {
                 var _a;
@@ -398,11 +434,11 @@ let FormControllerImpl = (() => {
                 return this.safeExecute((connector) => {
                     const stopSyncValidation = this.validatorExecutor(connector);
                     const stopAsyncValidation = this.asyncValidatorExecutor(connector);
-                    const subscriptions = this.observeExcluded();
+                    const stopObserveExcluded = this.observeExcluded();
                     return () => {
                         stopSyncValidation();
                         stopAsyncValidation === null || stopAsyncValidation === void 0 ? void 0 : stopAsyncValidation();
-                        subscriptions.forEach((s) => s.unsubscribe());
+                        stopObserveExcluded === null || stopObserveExcluded === void 0 ? void 0 : stopObserveExcluded();
                     };
                 });
             }

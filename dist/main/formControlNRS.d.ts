@@ -37,9 +37,12 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     private getExcludedMeta;
     private getAsyncFields;
     private setAsyncState;
+    private setExcludedState;
     private asyncValidatorExecutor;
     private cloneMetaByField;
     private cloneMeta;
+    private cast;
+    private getFormData;
     private observeExcluded;
     initiator: Initiator<F>;
     getMeta(): Partial<M>;

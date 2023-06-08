@@ -21,7 +21,7 @@ export declare enum DatumType {
     ASYNC = "Async",
     SYNC = "Sync"
 }
-type MetaEmitter = (() => Observable<FormControlBasicMetadata>) | (() => Promise<FormControlBasicMetadata>);
+type MetaEmitter = ((formData: any[] | List<any>, meta: any, data: any) => Observable<Any | Map<string, Any>>) | ((formData: any[] | List<any>, meta: any, data: any) => Promise<Any | Map<string, Any>>);
 type DatumAttr = {
     touched: boolean;
     changed: boolean;
@@ -49,6 +49,8 @@ export type FormStubs<F extends FormControlBasicDatum[]> = Array<{
     defaultValue?: F[number]["value"];
     type?: DatumType;
     metaEmitter?: MetaEmitter;
+    lazy?: boolean;
+    debounce?: number;
 }>;
 export interface FormController<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> {
     setAsyncValidator(asyncValidator: (formData: F, metadata: Partial<M>) => Observable<Partial<M>> | Promise<Partial<M>>): void;

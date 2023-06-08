@@ -23,6 +23,8 @@ export declare class ImmutableFormControllerImpl<F extends FormControlData, M ex
     private setAsyncState;
     private getExcludedMeta;
     private asyncValidatorExecutor;
+    private getFormData;
+    private setExcludedState;
     private observeExcluded;
     resetFormDatum<N extends number>(field: F[N]["field"]): this;
     resetFormAll(): this;
@@ -34,8 +36,8 @@ export declare class ImmutableFormControllerImpl<F extends FormControlData, M ex
     observeMetaByField<K extends keyof M>(field: K, callback: (metaOne: Map<"errors" | "info" | "warn", Map<string, any>>) => void): () => void | undefined;
     getFieldMeta<N extends number = number>(field: F[N]["field"]): Map<"errors" | "info" | "warn", Map<string, any>>;
     changeFieldType<N extends number>(field: F[N]["field"], type: DatumType): this;
-    getFieldsMeta(fields: F[number]["field"][]): Map<PK<M>, PV<M>>;
-    setAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>) => Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>): void;
+    getFieldsMeta(fields: F[number]["field"][] | List<F[number]["field"]>): Map<PK<M>, PV<M>>;
+    setAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>) => Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>): void;
     changeFormValue<N extends number>(field: F[N]["field"], value: F[N]["value"]): this;
     touchFormField<N extends number>(field: F[N]["field"], touchOrNot: boolean): this;
     emptyFormField<N extends number>(field: F[N]["field"]): this;
