@@ -126,7 +126,6 @@ export class ImmutableFormControllerImpl<
         const datum = Map({
           field,
           touched: false,
-          empty: true,
           changed: false,
           hovered: false,
           focused: false,
@@ -233,9 +232,19 @@ export class ImmutableFormControllerImpl<
       .pipe(
         debounceTime(this.asyncConfig.debounceDuration),
         map((states) =>
-          states[this.id].filter(
-            (datum) => datum.get("type") === DatumType.ASYNC
-          )
+          states[this.id]
+            .filter((datum) => datum.get("type") === DatumType.ASYNC)
+            .map((datum) =>
+              Map({
+                value: datum.get("value"),
+                changed: datum.get("changed"),
+                focused: datum.get("focused"),
+                field: datum.get("field"),
+                type: datum.get("type"),
+                hovered: datum.get("hovered"),
+                touched: datum.get("touched"),
+              })
+            )
         ),
         distinctUntilChanged((var1, var2) => is(var1, var2)),
         connect((formData) => {
