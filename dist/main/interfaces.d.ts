@@ -12,16 +12,15 @@ export type FormControlMetadata<E extends Any, I = any, W = any> = {
     warn?: W;
 };
 export declare enum AsyncState {
-    PENDING = 0,
-    DONE = 1,
-    ERROR = 2
+    PENDING = "PENDING",
+    DONE = "DONE",
+    ERROR = "ERROR"
 }
 export declare enum DatumType {
     EXCLUDED = "Excluded",
     ASYNC = "Async",
     SYNC = "Sync"
 }
-type MetaEmitter = ((formData: any[] | List<any>, meta: any, data: any) => Observable<Any | Map<string, Any>>) | ((formData: any[] | List<any>, meta: any, data: any) => Promise<Any | Map<string, Any>>);
 type DatumAttr = {
     touched: boolean;
     changed: boolean;
@@ -29,7 +28,6 @@ type DatumAttr = {
     hovered: boolean;
     type: DatumType;
     asyncState?: AsyncState;
-    metaEmitter?: MetaEmitter;
 };
 export type FormControlBasicDatum = {
     field: string;
@@ -44,14 +42,18 @@ export type FormControlStrDatum<F> = {
     value: string;
 } & DatumAttr;
 export type FormControlData = FormControlBasicDatum[];
+export type AsyncValidationConfig = {
+    debounceDuration: number;
+    lazy: boolean;
+};
+export interface AsyncValidationNConfig extends AsyncValidationConfig {
+    compare?: (var1: any, var2: any) => boolean;
+}
 export type FormStubs<F extends FormControlBasicDatum[]> = Array<{
     field: F[number]["field"];
     defaultValue?: F[number]["value"];
     compare?: (var1: any, var2: any) => boolean;
     type?: DatumType;
-    metaEmitter?: MetaEmitter;
-    lazy?: boolean;
-    debounce?: number;
 }>;
 export interface FormController<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> {
     setAsyncValidator(asyncValidator: (formData: F, metadata: Partial<M>) => Observable<Partial<M>> | Promise<Partial<M>>): void;
@@ -66,6 +68,7 @@ export interface FormController<F extends FormControlData, M extends Partial<Rec
         [K in keyof Partial<M>]: (metaOne: Partial<M>[K]) => Partial<M>[K];
     }): void;
     setDefaultMeta(meta: Partial<M>): void;
+    setAsyncConfig(cfg: AsyncValidationNConfig): void;
     changeFormValue: <N extends number>(field: F[N]["field"], value: F[N]["value"]) => this;
     touchFormField: <N extends number>(field: F[N]["field"], touchOrNot: boolean) => this;
     emptyFormField: <N extends number>(field: F[N]["field"]) => this;
@@ -115,6 +118,7 @@ export interface ImmutableFormController<F extends FormControlData, M extends Re
     setAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>) => Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>): void;
     setFields(fields: FormStubs<F>): void;
     setDefaultMeta(meta: Partial<M>): void;
+    setAsyncConfig(cfg: AsyncValidationConfig): void;
     changeFormValue<N extends number>(field: F[N]["field"], value: F[N]["value"]): this;
     touchFormField<N extends number>(field: F[N]["field"], touchOrNot: boolean): this;
     emptyFormField<N extends number>(field: F[N]["field"]): this;

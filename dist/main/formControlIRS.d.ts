@@ -1,16 +1,18 @@
 import { Initiator, PluginImpl } from "rx-store-types";
-import { DatumType, FormControlBasicMetadata, FormControlData, FormStubs, ImmutableFormController, K, PK, PV, V } from "./interfaces";
+import { AsyncValidationConfig, DatumType, FormControlBasicMetadata, FormControlData, FormStubs, ImmutableFormController, K, PK, PV, V } from "./interfaces";
 import { List, Map } from "immutable";
 import { Observable } from "rxjs";
 export declare class ImmutableFormControllerImpl<F extends FormControlData, M extends Record<F[number]["field"], FormControlBasicMetadata>, S extends string> extends PluginImpl<S> implements ImmutableFormController<F, M, S> {
     validator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>) => Map<PK<M>, Map<"errors" | "info" | "warn", any>>;
     asyncValidator?: ((formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>) => Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>) | undefined;
+    private asyncConfig;
     private metadata$?;
     private fields?;
     private defaultMeta?;
     constructor(id: S, validator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>) => Map<PK<M>, Map<"errors" | "info" | "warn", any>>, asyncValidator?: ((formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>) => Observable<Map<PK<M>, PV<M>>> | Promise<Map<PK<M>, PV<M>>>) | undefined);
     setFields(fields: FormStubs<F>): void;
     setDefaultMeta(meta: Partial<M>): void;
+    setAsyncConfig(cfg: AsyncValidationConfig): void;
     private removeDataByFields;
     private commitMutation;
     private findDatumByField;
@@ -23,9 +25,7 @@ export declare class ImmutableFormControllerImpl<F extends FormControlData, M ex
     private setAsyncState;
     private getExcludedMeta;
     private asyncValidatorExecutor;
-    private getFormData;
-    private setExcludedState;
-    private observeExcluded;
+    getFormData(): ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]>;
     resetFormDatum<N extends number>(field: F[N]["field"]): this;
     resetFormAll(): this;
     appendFormData(fields: FormStubs<F>): this;

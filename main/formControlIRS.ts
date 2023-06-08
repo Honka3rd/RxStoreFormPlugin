@@ -8,8 +8,8 @@ import {
 } from "rx-store-types";
 import {
   AsyncState,
+  AsyncValidationConfig,
   DatumType,
-  FormControlBasicDatum,
   FormControlBasicMetadata,
   FormControlData,
   FormStubs,
@@ -25,7 +25,9 @@ import {
   Observable,
   Subscription,
   catchError,
+  debounceTime,
   distinctUntilChanged,
+  exhaustMap,
   filter,
   from,
   map,
@@ -43,11 +45,17 @@ export class ImmutableFormControllerImpl<
   extends PluginImpl<S>
   implements ImmutableFormController<F, M, S>
 {
+  private asyncConfig: AsyncValidationConfig = {
+    lazy: false,
+    debounceDuration: 0
+  };
+
   private metadata$?: BehaviorSubject<
     Map<PK<M>, Map<"errors" | "info" | "warn", Map<string, any>>>
   >;
   private fields?: FormStubs<F>;
   private defaultMeta?: Map<PK<M>, Map<"errors" | "info" | "warn", any>>;
+  
 
   constructor(
     id: S,
@@ -74,6 +82,10 @@ export class ImmutableFormControllerImpl<
       PK<M>,
       Map<"errors" | "info" | "warn", any>
     >;
+  }
+
+  setAsyncConfig(cfg: AsyncValidationConfig): void {
+    this.asyncConfig = cfg;
   }
 
   private removeDataByFields(
@@ -110,7 +122,7 @@ export class ImmutableFormControllerImpl<
     data: List<Map<K<F[number]>, V<F[number]>>>
   ) {
     return data.withMutations((mutation) => {
-      fields.forEach(({ defaultValue, field, type, metaEmitter }) => {
+      fields.forEach(({ defaultValue, field, type }) => {
         const datum = Map({
           field,
           touched: false,
@@ -120,7 +132,6 @@ export class ImmutableFormControllerImpl<
           focused: false,
           value: defaultValue,
           type: type ? type : DatumType.SYNC,
-          metaEmitter: type === DatumType.EXCLUDED ? metaEmitter : undefined,
         }) as Map<K<F[number]>, V<F[number]>>;
         mutation.push(datum);
       });
@@ -215,12 +226,15 @@ export class ImmutableFormControllerImpl<
     if (!this.asyncValidator) {
       return;
     }
+
+    const connect = this.asyncConfig.lazy ? exhaustMap : switchMap;
     const subscription = connector
       .getDataSource()
       .pipe(
+        debounceTime(this.asyncConfig.debounceDuration),
         map((states) => states[this.id]),
         distinctUntilChanged((var1, var2) => is(var1, var2)),
-        switchMap((formData) => {
+        connect((formData) => {
           const asyncFormData = formData.filter(
             (datum) => datum.get("type") === DatumType.ASYNC
           );
@@ -275,74 +289,12 @@ export class ImmutableFormControllerImpl<
     return () => subscription.unsubscribe();
   }
 
-  private getFormData() {
+  @bound
+  getFormData() {
     return this.safeExecute((connector) => {
       const casted = this.cast(connector);
       return casted.getState(this.id)!;
     })!;
-  }
-
-  private setExcludedState(state: AsyncState, field: string) {
-    this.safeExecute((connector) => {
-      const casted = this.cast(connector);
-      const formData = casted.getState(this.id);
-      const index = formData.findIndex(
-        (datum) =>
-          datum.get("field") === field &&
-          datum.get("type") === DatumType.EXCLUDED
-      ); 
-      if (index >= 0) {
-        const cloned = formData.set(
-          index,
-          formData.get(index)!.set("asyncState", state as V<F[number]>)
-        );
-        this.commitMutation(cloned, casted);
-      }
-    });
-  }
-
-  private observeExcluded() {
-    return this.safeExecute((connector) => {
-      const casted = this.cast(connector);
-      const subscriptions = this.fields
-        ?.filter(
-          ({ type, metaEmitter }) => type === DatumType.EXCLUDED && metaEmitter
-        )
-        .reduce((acc, next) => {
-          const excludedOutput = casted
-            .getDataSource()
-            .pipe(
-              filter((source) =>
-                Boolean(
-                  source[this.id].find((d) => d.get("field") === next.field)
-                )
-              ),
-              tap(() => this.setExcludedState(AsyncState.PENDING, next.field)),
-              switchMap((data) => {
-                const $meta = next.metaEmitter!(
-                  this.getFormData(),
-                  this.getMeta(),
-                  data
-                );
-                const converged =
-                  $meta instanceof Promise ? from($meta) : $meta;
-                return converged.pipe(
-                  catchError(() => {
-                    this.setExcludedState(AsyncState.ERROR, next.field);
-                    return of(this.getFieldMeta(next.field));
-                  }),
-                  tap(() => this.setExcludedState(AsyncState.DONE, next.field))
-                );
-              })
-            )
-            .subscribe();
-          acc.push(excludedOutput);
-          return acc;
-        }, [] as Array<Subscription>);
-      return () => {
-        subscriptions?.forEach((subscription) => subscription.unsubscribe());
-      };
-    });
   }
 
   @bound
@@ -617,11 +569,9 @@ export class ImmutableFormControllerImpl<
       const casted = this.cast(connector);
       const stopValidation = this.validatorExecutor(casted);
       const stopAsyncValidation = this.asyncValidatorExecutor(casted);
-      const stopObserveExcluded = this.observeExcluded();
       return () => {
         stopValidation?.();
         stopAsyncValidation?.();
-        stopObserveExcluded?.();
       };
     });
   }
@@ -642,7 +592,7 @@ export class ImmutableFormControllerImpl<
 
     if (this.fields) {
       return List(
-        this.fields.map(({ field, defaultValue, type, metaEmitter }) =>
+        this.fields.map(({ field, defaultValue, type }) =>
           Map({
             field,
             touched: false,
@@ -652,7 +602,6 @@ export class ImmutableFormControllerImpl<
             focused: false,
             value: defaultValue,
             type: type ? type : DatumType.SYNC,
-            metaEmitter: type === DatumType.EXCLUDED ? metaEmitter : undefined,
           })
         )
       );

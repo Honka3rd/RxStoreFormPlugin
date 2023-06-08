@@ -3,9 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DatumType = exports.AsyncState = void 0;
 var AsyncState;
 (function (AsyncState) {
-    AsyncState[AsyncState["PENDING"] = 0] = "PENDING";
-    AsyncState[AsyncState["DONE"] = 1] = "DONE";
-    AsyncState[AsyncState["ERROR"] = 2] = "ERROR";
+    AsyncState["PENDING"] = "PENDING";
+    AsyncState["DONE"] = "DONE";
+    AsyncState["ERROR"] = "ERROR";
 })(AsyncState = exports.AsyncState || (exports.AsyncState = {}));
 var DatumType;
 (function (DatumType) {

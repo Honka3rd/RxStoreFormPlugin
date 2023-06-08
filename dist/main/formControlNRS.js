@@ -34,10 +34,10 @@ var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, 
     done = true;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const rx_store_types_1 = require("rx-store-types");
 const rx_store_core_1 = require("rx-store-core");
-const interfaces_1 = require("./interfaces");
+const rx_store_types_1 = require("rx-store-types");
 const rxjs_1 = require("rxjs");
+const interfaces_1 = require("./interfaces");
 let FormControllerImpl = (() => {
     var _a;
     let _instanceExtraInitializers = [];
@@ -72,6 +72,10 @@ let FormControllerImpl = (() => {
                 super(id);
                 this.validator = (__runInitializers(this, _instanceExtraInitializers), validator);
                 this.fields = [];
+                this.asyncConfig = {
+                    lazy: false,
+                    debounceDuration: 0,
+                };
                 this.getAsyncFields = (connector) => {
                     return connector
                         .getState(this.id)
@@ -85,7 +89,7 @@ let FormControllerImpl = (() => {
                         return;
                     }
                     if (this.fields) {
-                        return this.fields.map(({ field, defaultValue, type, metaEmitter }) => ({
+                        return this.fields.map(({ field, defaultValue, type }) => ({
                             field,
                             touched: false,
                             changed: false,
@@ -93,7 +97,6 @@ let FormControllerImpl = (() => {
                             focused: false,
                             value: defaultValue,
                             type: type ? type : interfaces_1.DatumType.SYNC,
-                            metaEmitter: type === interfaces_1.DatumType.EXCLUDED ? metaEmitter : undefined,
                         }));
                     }
                     return [];
@@ -134,6 +137,9 @@ let FormControllerImpl = (() => {
                 if (!this.defaultMeta) {
                     this.defaultMeta = meta;
                 }
+            }
+            setAsyncConfig(cfg) {
+                this.asyncConfig = cfg;
             }
             shallowCloneFormData() {
                 return this.safeExecute((connector) => {
@@ -181,7 +187,7 @@ let FormControllerImpl = (() => {
                 });
             }
             appendDataByFields(fields, data) {
-                fields.forEach(({ defaultValue, field, type, metaEmitter }) => {
+                fields.forEach(({ defaultValue, field, type }) => {
                     data.push({
                         field,
                         touched: false,
@@ -190,7 +196,6 @@ let FormControllerImpl = (() => {
                         focused: false,
                         value: defaultValue,
                         type: type ? type : interfaces_1.DatumType.SYNC,
-                        metaEmitter: type === interfaces_1.DatumType.EXCLUDED ? metaEmitter : undefined,
                     });
                 });
             }
@@ -220,27 +225,21 @@ let FormControllerImpl = (() => {
                     this.commitMutation(cloned, casted);
                 });
             }
-            setExcludedState(state, field) {
-                this.safeExecute((connector) => {
-                    const casted = this.cast(connector);
-                    const cloned = casted.getClonedState(this.id);
-                    const excluded = cloned.find((datum) => datum.field === field && datum.type === interfaces_1.DatumType.EXCLUDED);
-                    if (excluded) {
-                        excluded.asyncState = state;
-                        this.commitMutation(cloned, casted);
-                    }
-                });
+            getComparator(connector) {
+                if (this.asyncConfig.compare) {
+                    return this.asyncConfig.compare;
+                }
+                const comparatorMap = connector.getComparatorMap();
+                const specCompare = comparatorMap === null || comparatorMap === void 0 ? void 0 : comparatorMap[this.id];
+                return specCompare ? specCompare : connector.comparator;
             }
             asyncValidatorExecutor(connector) {
                 if (!this.asyncValidator) {
                     return;
                 }
-                const comparatorMap = connector.getComparatorMap();
-                const specCompare = comparatorMap === null || comparatorMap === void 0 ? void 0 : comparatorMap[this.id];
-                const compare = specCompare ? specCompare : connector.comparator;
                 const subscription = connector
                     .getDataSource()
-                    .pipe((0, rxjs_1.map)((states) => states[this.id].filter(({ type }) => type === interfaces_1.DatumType.ASYNC)), (0, rxjs_1.distinctUntilChanged)(compare), (0, rxjs_1.switchMap)((formData) => {
+                    .pipe((0, rxjs_1.map)((states) => states[this.id].filter(({ type }) => type === interfaces_1.DatumType.ASYNC)), (0, rxjs_1.distinctUntilChanged)(this.getComparator(connector)), (0, rxjs_1.switchMap)((formData) => {
                     const oldMeta = this.getMeta();
                     if (!formData.length) {
                         return (0, rxjs_1.of)(oldMeta);
@@ -312,33 +311,6 @@ let FormControllerImpl = (() => {
                 return this.safeExecute((connector) => {
                     const casted = this.cast(connector);
                     return casted.getState(this.id);
-                });
-            }
-            observeExcluded() {
-                return this.safeExecute((connector) => {
-                    const casted = this.cast(connector);
-                    const subscriptions = this.fields
-                        .filter(({ type, metaEmitter }) => type === interfaces_1.DatumType.EXCLUDED && metaEmitter)
-                        .reduce((acc, next) => {
-                        var _a;
-                        const connect = next.lazy ? rxjs_1.exhaustMap : rxjs_1.switchMap;
-                        const excludedOutput = casted
-                            .getDataSource()
-                            .pipe((0, rxjs_1.map)((source) => source[this.id].find((d) => d.field === next.field)), (0, rxjs_1.debounceTime)((_a = next.debounce) !== null && _a !== void 0 ? _a : 0), (0, rxjs_1.tap)(() => this.setExcludedState(interfaces_1.AsyncState.PENDING, next.field)), connect((data) => {
-                            const $meta = next.metaEmitter(this.getFormData(), this.getMeta(), data);
-                            const converged = $meta instanceof Promise ? (0, rxjs_1.from)($meta) : $meta;
-                            return converged.pipe((0, rxjs_1.catchError)(() => {
-                                this.setExcludedState(interfaces_1.AsyncState.ERROR, next.field);
-                                return (0, rxjs_1.of)(this.getFieldMeta(next.field));
-                            }), (0, rxjs_1.tap)(() => this.setExcludedState(interfaces_1.AsyncState.DONE, next.field)));
-                        }))
-                            .subscribe();
-                        acc.push(excludedOutput);
-                        return acc;
-                    }, []);
-                    return () => {
-                        subscriptions.forEach((subscription) => subscription.unsubscribe());
-                    };
                 });
             }
             getMeta() {
@@ -433,11 +405,9 @@ let FormControllerImpl = (() => {
                 return this.safeExecute((connector) => {
                     const stopSyncValidation = this.validatorExecutor(connector);
                     const stopAsyncValidation = this.asyncValidatorExecutor(connector);
-                    const stopObserveExcluded = this.observeExcluded();
                     return () => {
                         stopSyncValidation();
                         stopAsyncValidation === null || stopAsyncValidation === void 0 ? void 0 : stopAsyncValidation();
-                        stopObserveExcluded === null || stopObserveExcluded === void 0 ? void 0 : stopObserveExcluded();
                     };
                 });
             }

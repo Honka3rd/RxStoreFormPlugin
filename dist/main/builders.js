@@ -38,6 +38,10 @@ class NRFormBuilder {
         this.NRF.setDefaultMeta(meta);
         return this;
     }
+    setAsyncConfig(cfg) {
+        this.NRF.setAsyncConfig(cfg);
+        return this;
+    }
     getInstance() {
         return this.NRF;
     }
@@ -57,6 +61,10 @@ class IRFormBuilder {
     }
     setDefaultMeta(meta) {
         this.IRF.setDefaultMeta(meta);
+        return this;
+    }
+    setAsyncConfig(cfg) {
+        this.IRF.setAsyncConfig(cfg);
         return this;
     }
     getInstance() {

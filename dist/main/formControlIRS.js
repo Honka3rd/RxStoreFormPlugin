@@ -43,6 +43,7 @@ const rx_store_core_1 = require("rx-store-core");
 exports.ImmutableFormControllerImpl = (() => {
     var _a;
     let _instanceExtraInitializers = [];
+    let _getFormData_decorators;
     let _resetFormDatum_decorators;
     let _resetFormAll_decorators;
     let _appendFormData_decorators;
@@ -67,6 +68,10 @@ exports.ImmutableFormControllerImpl = (() => {
                 super(id);
                 this.validator = (__runInitializers(this, _instanceExtraInitializers), validator);
                 this.asyncValidator = asyncValidator;
+                this.asyncConfig = {
+                    lazy: false,
+                    debounceDuration: 0
+                };
                 this.getAsyncFields = (connector) => {
                     return connector
                         .getState(this.id)
@@ -80,7 +85,7 @@ exports.ImmutableFormControllerImpl = (() => {
                         return;
                     }
                     if (this.fields) {
-                        return (0, immutable_1.List)(this.fields.map(({ field, defaultValue, type, metaEmitter }) => (0, immutable_1.Map)({
+                        return (0, immutable_1.List)(this.fields.map(({ field, defaultValue, type }) => (0, immutable_1.Map)({
                             field,
                             touched: false,
                             empty: true,
@@ -89,7 +94,6 @@ exports.ImmutableFormControllerImpl = (() => {
                             focused: false,
                             value: defaultValue,
                             type: type ? type : interfaces_1.DatumType.SYNC,
-                            metaEmitter: type === interfaces_1.DatumType.EXCLUDED ? metaEmitter : undefined,
                         })));
                     }
                     return (0, immutable_1.List)([]);
@@ -102,6 +106,9 @@ exports.ImmutableFormControllerImpl = (() => {
             }
             setDefaultMeta(meta) {
                 this.defaultMeta = (0, immutable_1.fromJS)(meta);
+            }
+            setAsyncConfig(cfg) {
+                this.asyncConfig = cfg;
             }
             removeDataByFields(fields, data) {
                 return data.withMutations((mutation) => {
@@ -120,7 +127,7 @@ exports.ImmutableFormControllerImpl = (() => {
             }
             appendDataByFields(fields, data) {
                 return data.withMutations((mutation) => {
-                    fields.forEach(({ defaultValue, field, type, metaEmitter }) => {
+                    fields.forEach(({ defaultValue, field, type }) => {
                         const datum = (0, immutable_1.Map)({
                             field,
                             touched: false,
@@ -130,7 +137,6 @@ exports.ImmutableFormControllerImpl = (() => {
                             focused: false,
                             value: defaultValue,
                             type: type ? type : interfaces_1.DatumType.SYNC,
-                            metaEmitter: type === interfaces_1.DatumType.EXCLUDED ? metaEmitter : undefined,
                         });
                         mutation.push(datum);
                     });
@@ -183,9 +189,10 @@ exports.ImmutableFormControllerImpl = (() => {
                 if (!this.asyncValidator) {
                     return;
                 }
+                const connect = this.asyncConfig.lazy ? rxjs_1.exhaustMap : rxjs_1.switchMap;
                 const subscription = connector
                     .getDataSource()
-                    .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.distinctUntilChanged)((var1, var2) => (0, immutable_1.is)(var1, var2)), (0, rxjs_1.switchMap)((formData) => {
+                    .pipe((0, rxjs_1.debounceTime)(this.asyncConfig.debounceDuration), (0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.distinctUntilChanged)((var1, var2) => (0, immutable_1.is)(var1, var2)), connect((formData) => {
                     const asyncFormData = formData.filter((datum) => datum.get("type") === interfaces_1.DatumType.ASYNC);
                     const oldMeta = this.getMeta();
                     if (!asyncFormData.size) {
@@ -227,42 +234,6 @@ exports.ImmutableFormControllerImpl = (() => {
                 return this.safeExecute((connector) => {
                     const casted = this.cast(connector);
                     return casted.getState(this.id);
-                });
-            }
-            setExcludedState(state, field) {
-                this.safeExecute((connector) => {
-                    const casted = this.cast(connector);
-                    const formData = casted.getState(this.id);
-                    const index = formData.findIndex((datum) => datum.get("field") === field &&
-                        datum.get("type") === interfaces_1.DatumType.EXCLUDED);
-                    if (index >= 0) {
-                        const cloned = formData.set(index, formData.get(index).set("asyncState", state));
-                        this.commitMutation(cloned, casted);
-                    }
-                });
-            }
-            observeExcluded() {
-                return this.safeExecute((connector) => {
-                    var _a;
-                    const casted = this.cast(connector);
-                    const subscriptions = (_a = this.fields) === null || _a === void 0 ? void 0 : _a.filter(({ type, metaEmitter }) => type === interfaces_1.DatumType.EXCLUDED && metaEmitter).reduce((acc, next) => {
-                        const excludedOutput = casted
-                            .getDataSource()
-                            .pipe((0, rxjs_1.filter)((source) => Boolean(source[this.id].find((d) => d.get("field") === next.field))), (0, rxjs_1.tap)(() => this.setExcludedState(interfaces_1.AsyncState.PENDING, next.field)), (0, rxjs_1.switchMap)((data) => {
-                            const $meta = next.metaEmitter(this.getFormData(), this.getMeta(), data);
-                            const converged = $meta instanceof Promise ? (0, rxjs_1.from)($meta) : $meta;
-                            return converged.pipe((0, rxjs_1.catchError)(() => {
-                                this.setExcludedState(interfaces_1.AsyncState.ERROR, next.field);
-                                return (0, rxjs_1.of)(this.getFieldMeta(next.field));
-                            }), (0, rxjs_1.tap)(() => this.setExcludedState(interfaces_1.AsyncState.DONE, next.field)));
-                        }))
-                            .subscribe();
-                        acc.push(excludedOutput);
-                        return acc;
-                    }, []);
-                    return () => {
-                        subscriptions === null || subscriptions === void 0 ? void 0 : subscriptions.forEach((subscription) => subscription.unsubscribe());
-                    };
                 });
             }
             resetFormDatum(field) {
@@ -434,11 +405,9 @@ exports.ImmutableFormControllerImpl = (() => {
                     const casted = this.cast(connector);
                     const stopValidation = this.validatorExecutor(casted);
                     const stopAsyncValidation = this.asyncValidatorExecutor(casted);
-                    const stopObserveExcluded = this.observeExcluded();
                     return () => {
                         stopValidation === null || stopValidation === void 0 ? void 0 : stopValidation();
                         stopAsyncValidation === null || stopAsyncValidation === void 0 ? void 0 : stopAsyncValidation();
-                        stopObserveExcluded === null || stopObserveExcluded === void 0 ? void 0 : stopObserveExcluded();
                     };
                 });
             }
@@ -448,6 +417,7 @@ exports.ImmutableFormControllerImpl = (() => {
             }
         },
         (() => {
+            _getFormData_decorators = [rx_store_core_1.bound];
             _resetFormDatum_decorators = [rx_store_core_1.bound];
             _resetFormAll_decorators = [rx_store_core_1.bound];
             _appendFormData_decorators = [rx_store_core_1.bound];
@@ -467,6 +437,7 @@ exports.ImmutableFormControllerImpl = (() => {
             _hoverFormField_decorators = [rx_store_core_1.bound];
             _startValidation_decorators = [rx_store_core_1.bound];
             _getMeta_decorators = [rx_store_core_1.bound];
+            __esDecorate(_a, null, _getFormData_decorators, { kind: "method", name: "getFormData", static: false, private: false, access: { has: obj => "getFormData" in obj, get: obj => obj.getFormData } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _resetFormDatum_decorators, { kind: "method", name: "resetFormDatum", static: false, private: false, access: { has: obj => "resetFormDatum" in obj, get: obj => obj.resetFormDatum } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _resetFormAll_decorators, { kind: "method", name: "resetFormAll", static: false, private: false, access: { has: obj => "resetFormAll" in obj, get: obj => obj.resetFormAll } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _appendFormData_decorators, { kind: "method", name: "appendFormData", static: false, private: false, access: { has: obj => "appendFormData" in obj, get: obj => obj.appendFormData } }, null, _instanceExtraInitializers);

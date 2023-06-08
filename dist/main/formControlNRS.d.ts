@@ -1,6 +1,6 @@
-import { Initiator, PluginImpl, Comparator } from "rx-store-types";
-import { FormController, FormControlData, FormControlBasicDatum, FormControlBasicMetadata, FormStubs, DatumType } from "./interfaces";
+import { Comparator, Initiator, PluginImpl } from "rx-store-types";
 import { Observable } from "rxjs";
+import { AsyncValidationNConfig, DatumType, FormControlBasicDatum, FormControlBasicMetadata, FormControlData, FormController, FormStubs } from "./interfaces";
 declare class FormControllerImpl<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> extends PluginImpl<S, F> implements FormController<F, M, S> {
     validator: (formData: F, metadata: Partial<M>) => Partial<M>;
     private metadata$?;
@@ -11,6 +11,7 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     private cloneFunction?;
     private cloneFunctionMap?;
     private defaultMeta?;
+    private asyncConfig;
     constructor(id: S, validator: (formData: F, metadata: Partial<M>) => Partial<M>);
     setAsyncValidator(asyncValidator: (formData: F, metadata: Partial<M>) => Observable<Partial<M>> | Promise<Partial<M>>): void;
     setFields(fields: FormStubs<F>): void;
@@ -24,6 +25,7 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
         [K in keyof Partial<M>]: (metaOne: Partial<M>[K]) => Partial<M>[K];
     }): void;
     setDefaultMeta(meta: Partial<M>): void;
+    setAsyncConfig(cfg: AsyncValidationNConfig): void;
     private shallowCloneFormData;
     private safeClone;
     private findDatumByField;
@@ -37,13 +39,12 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     private getExcludedMeta;
     private getAsyncFields;
     private setAsyncState;
-    private setExcludedState;
+    private getComparator;
     private asyncValidatorExecutor;
     private cloneMetaByField;
     private cloneMeta;
     private cast;
     private getFormData;
-    private observeExcluded;
     initiator: Initiator<F>;
     getMeta(): Partial<M>;
     getDatum<At extends number = number>(field: F[At]["field"]): FormControlBasicDatum | undefined;

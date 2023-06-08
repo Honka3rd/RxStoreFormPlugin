@@ -1,6 +1,7 @@
 import { Observable } from "rxjs";
 import FormControllerImpl from "./formControlNRS";
 import {
+  AsyncValidationConfig,
   FormControlBasicMetadata,
   FormControlData,
   FormController,
@@ -74,6 +75,11 @@ class NRFormBuilder<
     return this;
   }
 
+  setAsyncConfig(cfg: AsyncValidationConfig) {
+    this.NRF.setAsyncConfig(cfg);
+    return this;
+  }
+
   getInstance() {
     return this.NRF;
   }
@@ -112,6 +118,11 @@ class IRFormBuilder<
 
   setDefaultMeta(meta: Partial<M>) {
     this.IRF.setDefaultMeta(meta);
+    return this;
+  }
+
+  setAsyncConfig(cfg: AsyncValidationConfig) {
+    this.IRF.setAsyncConfig(cfg);
     return this;
   }
 
