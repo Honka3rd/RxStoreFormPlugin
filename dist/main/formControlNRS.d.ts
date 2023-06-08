@@ -44,7 +44,7 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     private cloneMetaByField;
     private cloneMeta;
     private cast;
-    private getFormData;
+    getFormData(): ReturnType<Record<S, () => F>[S]>;
     initiator: Initiator<F>;
     getMeta(): Partial<M>;
     getDatum<At extends number = number>(field: F[At]["field"]): FormControlBasicDatum | undefined;

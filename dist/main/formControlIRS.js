@@ -70,7 +70,7 @@ exports.ImmutableFormControllerImpl = (() => {
                 this.asyncValidator = asyncValidator;
                 this.asyncConfig = {
                     lazy: false,
-                    debounceDuration: 0
+                    debounceDuration: 0,
                 };
                 this.getAsyncFields = (connector) => {
                     return connector
@@ -192,14 +192,13 @@ exports.ImmutableFormControllerImpl = (() => {
                 const connect = this.asyncConfig.lazy ? rxjs_1.exhaustMap : rxjs_1.switchMap;
                 const subscription = connector
                     .getDataSource()
-                    .pipe((0, rxjs_1.debounceTime)(this.asyncConfig.debounceDuration), (0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.distinctUntilChanged)((var1, var2) => (0, immutable_1.is)(var1, var2)), connect((formData) => {
-                    const asyncFormData = formData.filter((datum) => datum.get("type") === interfaces_1.DatumType.ASYNC);
+                    .pipe((0, rxjs_1.debounceTime)(this.asyncConfig.debounceDuration), (0, rxjs_1.map)((states) => states[this.id].filter((datum) => datum.get("type") === interfaces_1.DatumType.ASYNC)), (0, rxjs_1.distinctUntilChanged)((var1, var2) => (0, immutable_1.is)(var1, var2)), connect((formData) => {
                     const oldMeta = this.getMeta();
-                    if (!asyncFormData.size) {
+                    if (!formData.size) {
                         return (0, rxjs_1.of)(oldMeta);
                     }
                     this.setAsyncState(interfaces_1.AsyncState.PENDING);
-                    const async$ = this.asyncValidator(asyncFormData, oldMeta);
+                    const async$ = this.asyncValidator(this.getFormData(), oldMeta);
                     const reduced$ = this.isPromise(async$) ? (0, rxjs_1.from)(async$) : async$;
                     return reduced$.pipe((0, rxjs_1.catchError)(() => {
                         return (0, rxjs_1.of)({

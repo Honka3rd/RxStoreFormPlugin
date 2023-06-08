@@ -47,7 +47,7 @@ export class ImmutableFormControllerImpl<
 {
   private asyncConfig: AsyncValidationConfig = {
     lazy: false,
-    debounceDuration: 0
+    debounceDuration: 0,
   };
 
   private metadata$?: BehaviorSubject<
@@ -55,7 +55,6 @@ export class ImmutableFormControllerImpl<
   >;
   private fields?: FormStubs<F>;
   private defaultMeta?: Map<PK<M>, Map<"errors" | "info" | "warn", any>>;
-  
 
   constructor(
     id: S,
@@ -232,19 +231,20 @@ export class ImmutableFormControllerImpl<
       .getDataSource()
       .pipe(
         debounceTime(this.asyncConfig.debounceDuration),
-        map((states) => states[this.id]),
+        map((states) =>
+          states[this.id].filter(
+            (datum) => datum.get("type") === DatumType.ASYNC
+          )
+        ),
         distinctUntilChanged((var1, var2) => is(var1, var2)),
         connect((formData) => {
-          const asyncFormData = formData.filter(
-            (datum) => datum.get("type") === DatumType.ASYNC
-          );
           const oldMeta = this.getMeta();
-          if (!asyncFormData.size) {
+          if (!formData.size) {
             return of(oldMeta);
           }
 
           this.setAsyncState(AsyncState.PENDING);
-          const async$ = this.asyncValidator!(asyncFormData, oldMeta);
+          const async$ = this.asyncValidator!(this.getFormData(), oldMeta);
           const reduced$ = this.isPromise(async$) ? from(async$) : async$;
           return reduced$.pipe(
             catchError(() => {

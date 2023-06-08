@@ -99,6 +99,7 @@ export interface FormController<F extends FormControlData, M extends Partial<Rec
     observeFormData<CompareAts extends readonly number[] = number[]>(fields: F[CompareAts[number]]["field"][], observer: (result: F[CompareAts[number]][]) => void, comparator?: Comparator<F[CompareAts[number]][]>): () => void;
     getDatum<At extends number = number>(field: F[At]["field"]): FormControlBasicDatum | undefined;
     getDatumValue<At extends number = number>(field: F[At]["field"]): F[At]["value"] | undefined;
+    getFormData(): ReturnType<Record<S, () => F>[S]>;
 }
 export type NormalFormPluginBuilderParams<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> = {
     formSelector: S;
@@ -140,6 +141,7 @@ export interface ImmutableFormController<F extends FormControlData, M extends Re
     getFieldsMeta(fields: F[number]["field"][]): Map<PK<M>, PV<M>>;
     observeMeta(callback: (meta: Map<PK<M>, Map<"errors" | "info" | "warn", Map<string, any>>>) => void): () => void | undefined;
     observeMetaByField<K extends keyof M>(field: K, callback: (metaOne: Map<"errors" | "info" | "warn", Map<string, any>>) => void): () => void | undefined;
+    getFormData(): ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]>;
 }
 export type ImmutableFormPluginBuilderParams<F extends FormControlData, M extends Record<F[number]["field"], FormControlBasicMetadata>, S extends string> = {
     formSelector: S;

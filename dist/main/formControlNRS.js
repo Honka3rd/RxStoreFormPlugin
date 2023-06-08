@@ -42,6 +42,7 @@ let FormControllerImpl = (() => {
     var _a;
     let _instanceExtraInitializers = [];
     let _cloneMeta_decorators;
+    let _getFormData_decorators;
     let _getMeta_decorators;
     let _getDatum_decorators;
     let _getDatumValue_decorators;
@@ -403,8 +404,9 @@ let FormControllerImpl = (() => {
             }
             startValidation() {
                 return this.safeExecute((connector) => {
-                    const stopSyncValidation = this.validatorExecutor(connector);
-                    const stopAsyncValidation = this.asyncValidatorExecutor(connector);
+                    const casted = this.cast(connector);
+                    const stopSyncValidation = this.validatorExecutor(casted);
+                    const stopAsyncValidation = this.asyncValidatorExecutor(casted);
                     return () => {
                         stopSyncValidation();
                         stopAsyncValidation === null || stopAsyncValidation === void 0 ? void 0 : stopAsyncValidation();
@@ -510,6 +512,7 @@ let FormControllerImpl = (() => {
         },
         (() => {
             _cloneMeta_decorators = [rx_store_core_1.bound];
+            _getFormData_decorators = [rx_store_core_1.bound];
             _getMeta_decorators = [rx_store_core_1.bound];
             _getDatum_decorators = [rx_store_core_1.bound];
             _getDatumValue_decorators = [rx_store_core_1.bound];
@@ -536,6 +539,7 @@ let FormControllerImpl = (() => {
             _setMetadata_decorators = [rx_store_core_1.bound];
             _setMetaByField_decorators = [rx_store_core_1.bound];
             __esDecorate(_a, null, _cloneMeta_decorators, { kind: "method", name: "cloneMeta", static: false, private: false, access: { has: obj => "cloneMeta" in obj, get: obj => obj.cloneMeta } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _getFormData_decorators, { kind: "method", name: "getFormData", static: false, private: false, access: { has: obj => "getFormData" in obj, get: obj => obj.getFormData } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getMeta_decorators, { kind: "method", name: "getMeta", static: false, private: false, access: { has: obj => "getMeta" in obj, get: obj => obj.getMeta } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getDatum_decorators, { kind: "method", name: "getDatum", static: false, private: false, access: { has: obj => "getDatum" in obj, get: obj => obj.getDatum } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getDatumValue_decorators, { kind: "method", name: "getDatumValue", static: false, private: false, access: { has: obj => "getDatumValue" in obj, get: obj => obj.getDatumValue } }, null, _instanceExtraInitializers);

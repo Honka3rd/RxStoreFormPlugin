@@ -202,6 +202,8 @@ export interface FormController<
   getDatumValue<At extends number = number>(
     field: F[At]["field"]
   ): F[At]["value"] | undefined;
+
+  getFormData(): ReturnType<Record<S, () => F>[S]>
 }
 
 export type NormalFormPluginBuilderParams<
@@ -321,6 +323,8 @@ export interface ImmutableFormController<
       metaOne: Map<"errors" | "info" | "warn", Map<string, any>>
     ) => void
   ): () => void | undefined;
+
+  getFormData(): ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]>
 }
 
 export type ImmutableFormPluginBuilderParams<

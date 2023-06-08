@@ -355,11 +355,13 @@ class FormControllerImpl<
   }
 
   private cast(connector: RxStore<Any> & Subscribable<Any>) {
-    const casted = connector as unknown as RxNStore<Record<S, () => F>>;
+    const casted = connector as unknown as RxNStore<Record<S, () => F>> &
+      Subscribable<Record<S, () => F>>;
     return casted;
   }
 
-  private getFormData() {
+  @bound
+  getFormData() {
     return this.safeExecute((connector) => {
       const casted = this.cast(connector);
       return casted.getState(this.id)!;
@@ -544,14 +546,9 @@ class FormControllerImpl<
   @bound
   startValidation() {
     return this.safeExecute((connector) => {
-      const stopSyncValidation = this.validatorExecutor(
-        connector as RxNStore<Record<S, () => F>> &
-          Subscribable<Record<S, () => F>>
-      );
-      const stopAsyncValidation = this.asyncValidatorExecutor(
-        connector as RxNStore<Record<S, () => F>> &
-          Subscribable<Record<S, () => F>>
-      );
+      const casted = this.cast(connector);
+      const stopSyncValidation = this.validatorExecutor(casted);
+      const stopAsyncValidation = this.asyncValidatorExecutor(casted);
       return () => {
         stopSyncValidation();
         stopAsyncValidation?.();
