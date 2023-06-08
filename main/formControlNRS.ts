@@ -264,18 +264,15 @@ class FormControllerImpl<
     const subscription = connector
       .getDataSource()
       .pipe(
-        map((states) => states[this.id]),
+        map((states) => states[this.id].filter(
+          ({ type }) => type === DatumType.ASYNC
+        ) as {
+          [K in keyof Record<S, () => F>]: ReturnType<Record<S, () => F>[K]>;
+        }[S]),
         distinctUntilChanged(compare),
         switchMap((formData) => {
           const oldMeta = this.getMeta();
-
-          const asyncFormData = formData.filter(
-            ({ type }) => type === DatumType.ASYNC
-          ) as {
-            [K in keyof Record<S, () => F>]: ReturnType<Record<S, () => F>[K]>;
-          }[S];
-
-          if (!asyncFormData.length) {
+          if (!formData.length) {
             return of(oldMeta);
           }
 
@@ -379,8 +376,8 @@ class FormControllerImpl<
           const excludedOutput = casted
             .getDataSource()
             .pipe(
-              filter((source) =>
-                Boolean(source[this.id].find((d) => d.field === next.field))
+              map((source) =>
+                source[this.id].find((d) => d.field === next.field)
               ),
               debounceTime(next.debounce ?? 0),
               tap(() => this.setExcludedState(AsyncState.PENDING, next.field)),

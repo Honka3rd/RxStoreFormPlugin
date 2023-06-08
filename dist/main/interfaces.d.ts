@@ -47,6 +47,7 @@ export type FormControlData = FormControlBasicDatum[];
 export type FormStubs<F extends FormControlBasicDatum[]> = Array<{
     field: F[number]["field"];
     defaultValue?: F[number]["value"];
+    compare?: (var1: any, var2: any) => boolean;
     type?: DatumType;
     metaEmitter?: MetaEmitter;
     lazy?: boolean;

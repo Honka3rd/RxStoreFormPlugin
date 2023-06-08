@@ -240,10 +240,9 @@ let FormControllerImpl = (() => {
                 const compare = specCompare ? specCompare : connector.comparator;
                 const subscription = connector
                     .getDataSource()
-                    .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.distinctUntilChanged)(compare), (0, rxjs_1.switchMap)((formData) => {
+                    .pipe((0, rxjs_1.map)((states) => states[this.id].filter(({ type }) => type === interfaces_1.DatumType.ASYNC)), (0, rxjs_1.distinctUntilChanged)(compare), (0, rxjs_1.switchMap)((formData) => {
                     const oldMeta = this.getMeta();
-                    const asyncFormData = formData.filter(({ type }) => type === interfaces_1.DatumType.ASYNC);
-                    if (!asyncFormData.length) {
+                    if (!formData.length) {
                         return (0, rxjs_1.of)(oldMeta);
                     }
                     this.setAsyncState(interfaces_1.AsyncState.PENDING);
@@ -325,7 +324,7 @@ let FormControllerImpl = (() => {
                         const connect = next.lazy ? rxjs_1.exhaustMap : rxjs_1.switchMap;
                         const excludedOutput = casted
                             .getDataSource()
-                            .pipe((0, rxjs_1.filter)((source) => Boolean(source[this.id].find((d) => d.field === next.field))), (0, rxjs_1.debounceTime)((_a = next.debounce) !== null && _a !== void 0 ? _a : 0), (0, rxjs_1.tap)(() => this.setExcludedState(interfaces_1.AsyncState.PENDING, next.field)), connect((data) => {
+                            .pipe((0, rxjs_1.map)((source) => source[this.id].find((d) => d.field === next.field)), (0, rxjs_1.debounceTime)((_a = next.debounce) !== null && _a !== void 0 ? _a : 0), (0, rxjs_1.tap)(() => this.setExcludedState(interfaces_1.AsyncState.PENDING, next.field)), connect((data) => {
                             const $meta = next.metaEmitter(this.getFormData(), this.getMeta(), data);
                             const converged = $meta instanceof Promise ? (0, rxjs_1.from)($meta) : $meta;
                             return converged.pipe((0, rxjs_1.catchError)(() => {
