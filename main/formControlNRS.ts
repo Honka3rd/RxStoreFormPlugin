@@ -265,7 +265,27 @@ class FormControllerImpl<
       .pipe(
         map(
           (states) =>
-            states[this.id].filter(({ type }) => type === DatumType.ASYNC) as {
+            states[this.id]
+              .filter(({ type }) => type === DatumType.ASYNC)
+              .map(
+                ({
+                  type,
+                  field,
+                  value,
+                  changed,
+                  touched,
+                  focused,
+                  hovered,
+                }) => ({
+                  type,
+                  field,
+                  value,
+                  changed,
+                  touched,
+                  focused,
+                  hovered,
+                })
+              ) as {
               [K in keyof Record<S, () => F>]: ReturnType<
                 Record<S, () => F>[K]
               >;

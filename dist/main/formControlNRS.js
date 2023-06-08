@@ -240,7 +240,17 @@ let FormControllerImpl = (() => {
                 }
                 const subscription = connector
                     .getDataSource()
-                    .pipe((0, rxjs_1.map)((states) => states[this.id].filter(({ type }) => type === interfaces_1.DatumType.ASYNC)), (0, rxjs_1.distinctUntilChanged)(this.getComparator(connector)), (0, rxjs_1.switchMap)((formData) => {
+                    .pipe((0, rxjs_1.map)((states) => states[this.id]
+                    .filter(({ type }) => type === interfaces_1.DatumType.ASYNC)
+                    .map(({ type, field, value, changed, touched, focused, hovered, }) => ({
+                    type,
+                    field,
+                    value,
+                    changed,
+                    touched,
+                    focused,
+                    hovered,
+                }))), (0, rxjs_1.distinctUntilChanged)(this.getComparator(connector)), (0, rxjs_1.switchMap)((formData) => {
                     const oldMeta = this.getMeta();
                     if (!formData.length) {
                         return (0, rxjs_1.of)(oldMeta);
