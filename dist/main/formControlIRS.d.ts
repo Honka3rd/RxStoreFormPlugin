@@ -1,1 +1,36 @@
-export {};
+import { Initiator, PluginImpl } from "rx-store-types";
+import { DatumType, FormControlBasicMetadata, FormControlData, FormStubs, ImmutableFormController, K, PK, PV, V } from "./interfaces";
+import { List, Map } from "immutable";
+import { Observable } from "rxjs";
+export declare class ImmutableFormControllerImpl<F extends FormControlData, M extends Record<F[number]["field"], FormControlBasicMetadata>, S extends string> extends PluginImpl<S> implements ImmutableFormController<F, M, S> {
+    validator: (formData: F) => Map<PK<M>, Map<"errors" | "info" | "warn", any>>;
+    private metadata$?;
+    private fields?;
+    constructor(id: S, validator: (formData: F) => Map<PK<M>, Map<"errors" | "info" | "warn", any>>);
+    private removeDataByFields;
+    private commitMutation;
+    private findDatumByField;
+    private appendDataByFields;
+    resetFormDatum<N extends number>(field: F[N]["field"]): this;
+    resetFormAll(): this;
+    appendFormData(fields: FormStubs<F>): this;
+    removeFormData(fields: F[number]["field"][]): this;
+    setMetadata(meta: Partial<M>): this;
+    setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this;
+    setFields(fields: FormStubs<F>): void;
+    observeMeta(callback: (meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>) => void): () => void | undefined;
+    observeMetaByField<K extends keyof M>(field: K, callback: (metaOne: Map<"errors" | "info" | "warn", any>) => void): () => void | undefined;
+    getFieldMeta<N extends number = number>(field: F[N]["field"]): Map<keyof M, Map<"errors" | "info" | "warn", any>>;
+    changeFieldType<N extends number>(field: F[N]["field"], type: DatumType): this;
+    getFieldsMeta(fields: F[number]["field"][]): Map<PK<M>, PV<M>>;
+    setAsyncValidator(asyncValidator: (formData: F) => Observable<Map<keyof M, Partial<M>[keyof M]>> | Promise<Map<keyof M, Partial<M>[keyof M]>>): void;
+    changeFormDatum<N extends number>(field: F[N]["field"], touchOrNot: boolean): this;
+    touchFormField<N extends number>(field: F[N]["field"], touchOrNot: boolean): this;
+    emptyFormField<N extends number>(field: F[N]["field"]): this;
+    focusFormField<N extends number>(field: F[N]["field"], focusOrNot: boolean): this;
+    hoverFormField<N extends number>(field: F[N]["field"], hoverOrNot: boolean): this;
+    asyncValidator?(formData: F): Observable<Map<keyof M, Partial<M>[keyof M]>> | Promise<Map<keyof M, Partial<M>[keyof M]>>;
+    startValidation(callback: (meta: Map<keyof M, V<M>>) => void): (() => void) | undefined;
+    getMeta(): Map<PK<M>, Map<"errors" | "info" | "warn", any>>;
+    initiator: Initiator<List<Map<K<F[number]>, V<F[number]>>>>;
+}

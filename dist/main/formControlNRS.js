@@ -68,7 +68,6 @@ var rxjs_1 = require("rxjs");
 var FormControllerImpl = function () {
     var _a;
     var _instanceExtraInitializers = [];
-    var _chain_decorators;
     var _getMeta_decorators;
     var _getDatum_decorators;
     var _getDatumValue_decorators;
@@ -319,18 +318,6 @@ var FormControllerImpl = function () {
                     .subscribe(function (meta) { return meta && _this.safeCommitMeta(meta); });
                 return function () { return subscription.unsubscribe(); };
             };
-            FormControllerImpl.prototype.chain = function () {
-                var plugins = [];
-                for (var _i = 0; _i < arguments.length; _i++) {
-                    plugins[_i] = arguments[_i];
-                }
-                this.safeExecute(function (connector) {
-                    Array.from(plugins).forEach(function (plugin) {
-                        plugin.initiator(connector);
-                    });
-                });
-                return this;
-            };
             FormControllerImpl.prototype.getMeta = function () {
                 var _a;
                 return __assign({}, (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.value);
@@ -556,7 +543,6 @@ var FormControllerImpl = function () {
             return FormControllerImpl;
         }(rx_store_types_1.PluginImpl)),
         (function () {
-            _chain_decorators = [rx_store_core_1.bound];
             _getMeta_decorators = [rx_store_core_1.bound];
             _getDatum_decorators = [rx_store_core_1.bound];
             _getDatumValue_decorators = [rx_store_core_1.bound];
@@ -581,7 +567,6 @@ var FormControllerImpl = function () {
             _removeFormData_decorators = [rx_store_core_1.bound];
             _setMetadata_decorators = [rx_store_core_1.bound];
             _setMetaByField_decorators = [rx_store_core_1.bound];
-            __esDecorate(_a, null, _chain_decorators, { kind: "method", name: "chain", static: false, private: false, access: { has: function (obj) { return "chain" in obj; }, get: function (obj) { return obj.chain; } } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getMeta_decorators, { kind: "method", name: "getMeta", static: false, private: false, access: { has: function (obj) { return "getMeta" in obj; }, get: function (obj) { return obj.getMeta; } } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getDatum_decorators, { kind: "method", name: "getDatum", static: false, private: false, access: { has: function (obj) { return "getDatum" in obj; }, get: function (obj) { return obj.getDatum; } } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getDatumValue_decorators, { kind: "method", name: "getDatumValue", static: false, private: false, access: { has: function (obj) { return "getDatumValue" in obj; }, get: function (obj) { return obj.getDatumValue; } } }, null, _instanceExtraInitializers);
