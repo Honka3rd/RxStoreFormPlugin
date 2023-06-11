@@ -34,15 +34,18 @@ var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, 
     done = true;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.installNRFComponents = void 0;
+exports.installNRFComponents = exports.NRFormComponent = exports.NRFormFieldComponent = void 0;
 const rxjs_1 = require("rxjs");
 const interfaces_1 = require("./interfaces");
 const rx_store_core_1 = require("rx-store-core");
-let NRFormFieldComponent = (() => {
+exports.NRFormFieldComponent = (() => {
     var _a;
     let _instanceExtraInitializers = [];
     let _attrSetter_decorators;
     return _a = class NRFormFieldComponent extends HTMLElement {
+            isValidDirectChild(target) {
+                return target instanceof HTMLElement && target.parentNode === this;
+            }
             setDirectChildFromMutations(mutationList) {
                 const mutations = mutationList.filter((mutation) => mutation.type === "childList");
                 if (this.unBind) {
@@ -52,14 +55,14 @@ let NRFormFieldComponent = (() => {
                         });
                         return acc;
                     }, []);
-                    const removed = removedAll.find((rm) => { var _a; return rm && ((_a = this.directChildEmitter) === null || _a === void 0 ? void 0 : _a.value) === rm; });
+                    const removed = removedAll.find((rm) => rm && this.directChildEmitter.value === rm);
                     if (removed) {
                         this.unBind();
                     }
                 }
                 if (!this.dataset.targetSelector && !this.dataset.targetId) {
                     const first = mutations[0].addedNodes.item(0);
-                    if (!(first instanceof HTMLElement)) {
+                    if (!this.isValidDirectChild(first)) {
                         return;
                     }
                     this.directChildEmitter.next(first);
@@ -75,17 +78,15 @@ let NRFormFieldComponent = (() => {
                     const added = allAdded.find((a) => {
                         a instanceof HTMLElement && a.id === this.dataset.targetId;
                     });
-                    if (!added) {
+                    if (!this.isValidDirectChild(added)) {
                         return;
                     }
-                    if (this.dataset.targetId === added.id) {
-                        added instanceof HTMLElement && this.directChildEmitter.next(added);
-                    }
+                    this.directChildEmitter.next(added);
                     return;
                 }
                 if (this.dataset.targetSelector) {
                     const target = this.querySelector(this.dataset.targetSelector);
-                    if (!(target instanceof HTMLElement)) {
+                    if (!(this.isValidDirectChild(target))) {
                         return;
                     }
                     this.directChildEmitter.next(target);
@@ -286,7 +287,7 @@ let NRFormFieldComponent = (() => {
         })(),
         _a;
 })();
-let NRFormComponent = (() => {
+exports.NRFormComponent = (() => {
     var _a;
     let _instanceExtraInitializers_1 = [];
     let _setFieldListFromMutationRecords_decorators;
@@ -308,9 +309,7 @@ let NRFormComponent = (() => {
                     .asObservable()
                     .pipe((0, rxjs_1.switchMap)((controller) => this.fieldListEmitter.asObservable().pipe((0, rxjs_1.tap)((nodeList) => {
                     if (controller) {
-                        /*  nodeList.forEach((node) =>
-                          node.setNRFormController(controller)
-                        ) */
+                        nodeList.forEach((node) => node.setNRFormController(controller));
                     }
                 }))))
                     .subscribe();

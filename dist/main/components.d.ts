@@ -1,2 +1,52 @@
-import { InstallDefinition } from "./interfaces";
+import { AttributeChangedCallback, ConnectedCallback, CustomerAttrs, DatumType, DisconnectedCallback, FormControlBasicDatum, FormControlBasicMetadata, FormControlData, FormController, InstallDefinition, K, NRFieldAttributeBinderInjector, NRFieldDataMapperInjector, NRFieldMetaBinderInjector, NRFormControllerInjector, V } from "./interfaces";
+export declare class NRFormFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends HTMLElement implements ConnectedCallback, DisconnectedCallback, AttributeChangedCallback<HTMLElement, CustomerAttrs>, NRFieldDataMapperInjector<F, N>, NRFormControllerInjector<F, M, S>, NRFieldAttributeBinderInjector, NRFieldMetaBinderInjector {
+    private field?;
+    private type?;
+    private mapper?;
+    private attributeBinder?;
+    private metaDataBinder?;
+    private formControllerEmitter;
+    private directChildEmitter;
+    private subscription;
+    private unBind?;
+    private isValidDirectChild;
+    private setDirectChildFromMutations;
+    private directChildIsTarget;
+    private observer;
+    private setValue;
+    private setTouched;
+    private setFocused;
+    private setHovered;
+    private attachChildEventListeners;
+    private attrSetter;
+    private valuesBinding;
+    private metaBinding;
+    private setField;
+    private setDatumType;
+    private makeControl;
+    private setRequiredProperties;
+    constructor();
+    setMetaBinder(binder: <M extends FormControlBasicMetadata>(attributeSetter: (k: string, v: any) => void, meta: M) => void): void;
+    setAttrBinder(binder: <D extends FormControlBasicDatum>(attributeSetter: (k: string, v: any) => void, attrs: D) => void): void;
+    setDataMapper(mapper: (ev: any) => F[N]["value"]): void;
+    setNRFormController(controller: FormController<F, M, S>): void;
+    getField(): F[N]["field"] | undefined;
+    getDatumType(): DatumType | undefined;
+    connectedCallback(): void;
+    disconnectedCallback(): void;
+    attributeChangedCallback(key: K<HTMLElement & CustomerAttrs>, prev: V<HTMLElement & CustomerAttrs>, next: V<HTMLElement & CustomerAttrs>): void;
+    static get observedAttributes(): string[];
+}
+export declare class NRFormComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string> extends HTMLFormElement implements ConnectedCallback, DisconnectedCallback, NRFormControllerInjector<F, M, S> {
+    private fieldListEmitter;
+    private formControllerEmitter;
+    private subscription;
+    private setFieldListFromMutationRecords;
+    private observer;
+    private controlAll;
+    constructor();
+    connectedCallback(): void;
+    disconnectedCallback(): void;
+    setNRFormController(controller: FormController<F, M, S>): void;
+}
 export declare const installNRFComponents: ({ formSelector, fieldSelector, }?: InstallDefinition) => void;

@@ -1,4 +1,14 @@
 import { NRFormBuilder, IRFormBuilder } from "./main/builders";
-import { installNRFComponents } from "./main/components";
+import {
+  installNRFComponents,
+  NRFormComponent,
+  NRFormFieldComponent,
+} from "./main/components";
 
-export { NRFormBuilder, IRFormBuilder, installNRFComponents };
+export {
+  NRFormBuilder,
+  IRFormBuilder,
+  installNRFComponents,
+  NRFormComponent,
+  NRFormFieldComponent,
+};

@@ -26,7 +26,7 @@ import {
 } from "./interfaces";
 import { bound } from "rx-store-core";
 
-class NRFormFieldComponent<
+export class NRFormFieldComponent<
     F extends FormControlData,
     M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
     S extends string = string,
@@ -64,6 +64,10 @@ class NRFormFieldComponent<
   private subscription: Subscription;
   private unBind?: () => void;
 
+  private isValidDirectChild(target?: Node | null): target is HTMLElement {
+    return target instanceof HTMLElement && target.parentNode === this;
+  }
+
   private setDirectChildFromMutations(mutationList: MutationRecord[]) {
     const mutations = mutationList.filter(
       (mutation) => mutation.type === "childList"
@@ -77,7 +81,7 @@ class NRFormFieldComponent<
         return acc;
       }, [] as Node[]);
       const removed = removedAll.find(
-        (rm) => rm && this.directChildEmitter?.value === rm
+        (rm) => rm && this.directChildEmitter.value === rm
       );
       if (removed) {
         this.unBind();
@@ -86,7 +90,7 @@ class NRFormFieldComponent<
 
     if (!this.dataset.targetSelector && !this.dataset.targetId) {
       const first = mutations[0].addedNodes.item(0);
-      if (!(first instanceof HTMLElement)) {
+      if (!this.isValidDirectChild(first)) {
         return;
       }
       this.directChildEmitter.next(first);
@@ -103,18 +107,16 @@ class NRFormFieldComponent<
       const added = allAdded.find((a) => {
         a instanceof HTMLElement && a.id === this.dataset.targetId;
       });
-      if (!added) {
+      if (!this.isValidDirectChild(added)) {
         return;
       }
-      if (this.dataset.targetId === (added as HTMLElement).id) {
-        added instanceof HTMLElement && this.directChildEmitter.next(added);
-      }
+      this.directChildEmitter.next(added);
       return;
     }
 
     if (this.dataset.targetSelector) {
       const target = this.querySelector(this.dataset.targetSelector);
-      if (!(target instanceof HTMLElement)) {
+      if (!(this.isValidDirectChild(target))) {
         return;
       }
       this.directChildEmitter.next(target);
@@ -395,7 +397,7 @@ class NRFormFieldComponent<
   }
 }
 
-class NRFormComponent<
+export class NRFormComponent<
     F extends FormControlData,
     M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
     S extends string = string
@@ -439,9 +441,9 @@ class NRFormComponent<
           this.fieldListEmitter.asObservable().pipe(
             tap((nodeList) => {
               if (controller) {
-                /*  nodeList.forEach((node) =>
+                nodeList.forEach((node) =>
                   node.setNRFormController(controller)
-                ) */
+                );
               }
             })
           )
