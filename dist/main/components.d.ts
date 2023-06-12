@@ -1,4 +1,4 @@
-import { BehaviorSubject, Subject, Subscription } from "rxjs";
+import { BehaviorSubject, Subscription } from "rxjs";
 import { AttributeChangedCallback, ConnectedCallback, CustomerAttrs, DatumType, DisconnectedCallback, FieldDataMapperInjector, FormControlBasicMetadata, FormControlData, FormController, ImmutableFormController, K, FormControllerInjector, V } from "./interfaces";
 export declare class FormFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends HTMLElement implements ConnectedCallback, DisconnectedCallback, AttributeChangedCallback<HTMLElement, CustomerAttrs>, FieldDataMapperInjector<F, N>, FormControllerInjector<F, M, S> {
     protected field?: F[N]["field"];
@@ -26,14 +26,14 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     attributeChangedCallback(key: K<HTMLElement & CustomerAttrs>, prev: V<HTMLElement & CustomerAttrs>, next: V<HTMLElement & CustomerAttrs>): void;
     static get observedAttributes(): string[];
 }
-export declare class FormControlComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string> extends HTMLFormElement implements ConnectedCallback, DisconnectedCallback, FormControllerInjector<F, M, S> {
-    protected fieldListEmitter: Subject<FormFieldComponent<F, M, S>[]>;
-    protected formControllerEmitter: Subject<FormController<F, M, S> | ImmutableFormController<F, M, S> | null>;
-    protected subscription: Subscription;
-    protected setFieldListFromMutationRecords(mutationList: MutationRecord[]): void;
-    protected observer: MutationObserver;
-    protected controlAll(): Subscription;
-    constructor();
+export declare class FormControlComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string> extends HTMLElement implements ConnectedCallback, DisconnectedCallback, FormControllerInjector<F, M, S> {
+    private fieldListEmitter;
+    private formControllerEmitter;
+    private subscription?;
+    private setFieldListFromMutationRecords;
+    private observer;
+    private controlAll;
+    private insertActualForm;
     connectedCallback(): void;
     disconnectedCallback(): void;
     setNRFormController(controller: FormController<F, M, S>): void;

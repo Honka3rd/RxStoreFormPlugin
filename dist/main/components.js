@@ -146,7 +146,6 @@ exports.FormFieldComponent = (() => {
             setRequiredProperties() {
                 var _a;
                 const field = this.getAttribute("data-field");
-                console.log({ field });
                 if (!field || !field.length) {
                     throw new Error("Form field is not set");
                 }
@@ -218,7 +217,13 @@ exports.FormControlComponent = (() => {
     var _a;
     let _instanceExtraInitializers_1 = [];
     let _setFieldListFromMutationRecords_decorators;
-    return _a = class FormControlComponent extends HTMLFormElement {
+    return _a = class FormControlComponent extends HTMLElement {
+            constructor() {
+                super(...arguments);
+                this.fieldListEmitter = (__runInitializers(this, _instanceExtraInitializers_1), new rxjs_1.BehaviorSubject([]));
+                this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
+                this.observer = new MutationObserver(this.setFieldListFromMutationRecords);
+            }
             setFieldListFromMutationRecords(mutationList) {
                 const nodes = [];
                 mutationList
@@ -241,26 +246,27 @@ exports.FormControlComponent = (() => {
                 }))))
                     .subscribe();
             }
-            constructor() {
-                super();
-                this.fieldListEmitter = (__runInitializers(this, _instanceExtraInitializers_1), new rxjs_1.BehaviorSubject([]));
-                this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
-                this.observer = new MutationObserver(this.setFieldListFromMutationRecords);
-                this.subscription = this.controlAll();
+            insertActualForm() {
+                const formElement = document.createElement("form");
+                this.append(formElement);
+                return formElement;
             }
             connectedCallback() {
-                this.observer.observe(this, {
+                this.observer.observe(this.insertActualForm(), {
                     subtree: true,
                     childList: true,
                     attributes: false,
                 });
+                this.subscription = this.controlAll();
             }
             disconnectedCallback() {
+                var _a;
                 this.observer.disconnect();
-                this.subscription.unsubscribe();
+                (_a = this.subscription) === null || _a === void 0 ? void 0 : _a.unsubscribe();
             }
             setNRFormController(controller) {
-                this.setAttribute("data-selector", controller.selector());
+                var _a;
+                (_a = this.querySelector("form")) === null || _a === void 0 ? void 0 : _a.setAttribute("data-selector", controller.selector());
                 this.formControllerEmitter.next(controller);
             }
         },
