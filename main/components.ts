@@ -48,6 +48,14 @@ export class FormFieldComponent<
     return target instanceof HTMLElement && target.parentNode === this;
   }
 
+  private reportMultiChildError() {
+    if (this.children.length > 1) {
+      throw new Error(
+        `${this.dataset.field} has multiple child, only accept one child`
+      );
+    }
+  }
+
   protected setDirectChildFromMutations(mutationList: MutationRecord[]) {
     const mutations = mutationList.filter(
       (mutation) => mutation.type === "childList"
@@ -73,6 +81,7 @@ export class FormFieldComponent<
       if (!this.isValidDirectChild(first)) {
         return;
       }
+      this.reportMultiChildError();
       this.directChildEmitter.next(first);
       return;
     }
@@ -84,6 +93,7 @@ export class FormFieldComponent<
         });
         return acc;
       }, [] as Node[]);
+      this.reportMultiChildError();
       const added = allAdded.find((a) => {
         a instanceof HTMLElement && a.id === this.dataset.targetId;
       });
@@ -93,6 +103,7 @@ export class FormFieldComponent<
 
     if (this.dataset.targetSelector) {
       const target = this.querySelector(this.dataset.targetSelector);
+      this.reportMultiChildError();
       target && this.directChildEmitter.next(target as HTMLElement);
     }
   }
@@ -146,6 +157,85 @@ export class FormFieldComponent<
     }
   }
 
+  private setInputDefault(target: Node, key: string, next: string) {
+    if (
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement
+    ) {
+      if (this.directChildIsTarget()) {
+        return;
+      }
+      target.setAttribute(key, next);
+    }
+  }
+
+  private setInputDefaults(target: Node | null, key: string, next: string) {
+    if (!target) {
+      return;
+    }
+
+    if (key === "placeholder") {
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement
+      ) {
+        this.setInputDefault(target, key, next);
+        return;
+      }
+    }
+
+    if (key === "defaultValue") {
+      this.setInputDefault(target, key, next);
+    }
+  }
+
+  private setInputDefaultsOnMount() {
+    const first = this.directChildEmitter.value;
+    if (!first) {
+      return;
+    }
+
+    const placeholder = this.getAttribute("placeholder");
+    placeholder && this.setInputDefault(first, "placeholder", placeholder);
+
+    const defaultValue = this.getAttribute("defaultValue");
+    defaultValue && this.setInputDefault(first, "defaultValue", defaultValue);
+  }
+
+  private emitOnlyChildOnMount() {
+    if (!this.dataset.targetSelector && !this.dataset.targetId) {
+      const first = this.children.item(0);
+      if (!this.isValidDirectChild(first)) {
+        return this;
+      }
+
+      this.directChildEmitter.next(first);
+      return this;
+    }
+
+    if (this.dataset.targetId) {
+      const first = this.children
+        .item(0)
+        ?.querySelector(`#${this.dataset.targetId}`);
+      if (!this.isValidDirectChild(first)) {
+        return this;
+      }
+      this.directChildEmitter.next(first as HTMLElement);
+      return this;
+    }
+
+    if (this.dataset.targetSelector) {
+      const target = this.children
+        .item(0)
+        ?.querySelector(this.dataset.targetSelector);
+      if (!this.isValidDirectChild(target)) {
+        return this;
+      }
+      this.directChildEmitter.next(target as HTMLElement);
+    }
+    return this;
+  }
+
   @bound
   protected attrSetter(target: HTMLElement) {
     return (k: string, v: any) => target.setAttribute(k, v);
@@ -179,7 +269,7 @@ export class FormFieldComponent<
     this.mapper = mapper;
   }
 
-  setNRFormController(
+  setFormController(
     controller: FormController<F, M, S> | ImmutableFormController<F, M, S>
   ): void {
     this.formControllerEmitter.next(controller);
@@ -194,6 +284,8 @@ export class FormFieldComponent<
   }
 
   connectedCallback(): void {
+    this.reportMultiChildError();
+    this.emitOnlyChildOnMount().setInputDefaultsOnMount();
     this.observer.observe(this, {
       subtree: true,
       childList: true,
@@ -214,33 +306,7 @@ export class FormFieldComponent<
     next: V<HTMLElement & CustomerAttrs>
   ) {
     const target = this.directChildEmitter.value;
-    if (!target) {
-      return;
-    }
-
-    if (key === "placeholder") {
-      if (
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement
-      ) {
-        if (this.directChildIsTarget()) {
-          return;
-        }
-        target.setAttribute(key, next);
-      }
-    }
-
-    if (key === "defaultValue") {
-      if (
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement
-      ) {
-        if (this.directChildIsTarget()) {
-          return;
-        }
-        target.setAttribute(key, next);
-      }
-    }
+    this.setInputDefaults(target, key, next);
   }
 
   static get observedAttributes() {
@@ -304,9 +370,7 @@ export class FormControlComponent<
           this.fieldListEmitter.asObservable().pipe(
             tap((nodeList) => {
               if (controller) {
-                nodeList.forEach((node) =>
-                  node.setNRFormController(controller)
-                );
+                nodeList.forEach((node) => node.setFormController(controller));
               }
             })
           )
@@ -329,14 +393,13 @@ export class FormControlComponent<
     }
   }
 
-  constructor() {
-    super();
+  private overwriteEventListener() {
     this.addEventListener = <K extends keyof HTMLElementEventMap>(
       type: K,
       listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any,
       options?: boolean | AddEventListenerOptions
     ) => {
-      this.formElement.addEventListener(type, listener, options)
+      this.formElement.addEventListener(type, listener, options);
     };
 
     this.removeEventListener = <K extends keyof HTMLElementEventMap>(
@@ -344,11 +407,16 @@ export class FormControlComponent<
       listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any,
       options?: boolean | AddEventListenerOptions
     ) => {
-      this.formElement.removeEventListener(type, listener, options)
+      this.formElement.removeEventListener(type, listener, options);
     };
   }
 
-  setNRFormController(controller: FormController<F, M, S>): void {
+  constructor() {
+    super();
+    this.overwriteEventListener();
+  }
+
+  setFormController(controller: FormController<F, M, S>): void {
     this.formElement.setAttribute("data-selector", controller.selector());
     this.formControllerEmitter.next(controller);
   }

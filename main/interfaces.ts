@@ -391,7 +391,7 @@ export interface FormControllerInjector<
   M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
   S extends string
 > {
-  setNRFormController(controller: FormController<F, M, S>): void;
+  setFormController(controller: FormController<F, M, S>): void;
 }
 
 export interface FieldDataMapperInjector<

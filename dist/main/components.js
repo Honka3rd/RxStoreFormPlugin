@@ -54,6 +54,11 @@ exports.FormFieldComponent = (() => {
             isValidDirectChild(target) {
                 return target instanceof HTMLElement && target.parentNode === this;
             }
+            reportMultiChildError() {
+                if (this.children.length > 1) {
+                    throw new Error(`${this.dataset.field} has multiple child, only accept one child`);
+                }
+            }
             setDirectChildFromMutations(mutationList) {
                 const mutations = mutationList.filter((mutation) => mutation.type === "childList");
                 if (this.unBind) {
@@ -73,6 +78,7 @@ exports.FormFieldComponent = (() => {
                     if (!this.isValidDirectChild(first)) {
                         return;
                     }
+                    this.reportMultiChildError();
                     this.directChildEmitter.next(first);
                     return;
                 }
@@ -83,6 +89,7 @@ exports.FormFieldComponent = (() => {
                         });
                         return acc;
                     }, []);
+                    this.reportMultiChildError();
                     const added = allAdded.find((a) => {
                         a instanceof HTMLElement && a.id === this.dataset.targetId;
                     });
@@ -91,6 +98,7 @@ exports.FormFieldComponent = (() => {
                 }
                 if (this.dataset.targetSelector) {
                     const target = this.querySelector(this.dataset.targetSelector);
+                    this.reportMultiChildError();
                     target && this.directChildEmitter.next(target);
                 }
             }
@@ -128,6 +136,69 @@ exports.FormFieldComponent = (() => {
                     });
                 }
             }
+            setInputDefault(target, key, next) {
+                if (target instanceof HTMLInputElement ||
+                    target instanceof HTMLTextAreaElement) {
+                    if (this.directChildIsTarget()) {
+                        return;
+                    }
+                    target.setAttribute(key, next);
+                }
+            }
+            setInputDefaults(target, key, next) {
+                if (!target) {
+                    return;
+                }
+                if (key === "placeholder") {
+                    if (target instanceof HTMLInputElement ||
+                        target instanceof HTMLTextAreaElement) {
+                        this.setInputDefault(target, key, next);
+                        return;
+                    }
+                }
+                if (key === "defaultValue") {
+                    this.setInputDefault(target, key, next);
+                }
+            }
+            setInputDefaultsOnMount() {
+                const first = this.directChildEmitter.value;
+                if (!first) {
+                    return;
+                }
+                const placeholder = this.getAttribute("placeholder");
+                placeholder && this.setInputDefault(first, "placeholder", placeholder);
+                const defaultValue = this.getAttribute("defaultValue");
+                defaultValue && this.setInputDefault(first, "defaultValue", defaultValue);
+            }
+            emitOnlyChildOnMount() {
+                var _a, _b;
+                if (!this.dataset.targetSelector && !this.dataset.targetId) {
+                    const first = this.children.item(0);
+                    if (!this.isValidDirectChild(first)) {
+                        return this;
+                    }
+                    this.directChildEmitter.next(first);
+                    return this;
+                }
+                if (this.dataset.targetId) {
+                    const first = (_a = this.children
+                        .item(0)) === null || _a === void 0 ? void 0 : _a.querySelector(`#${this.dataset.targetId}`);
+                    if (!this.isValidDirectChild(first)) {
+                        return this;
+                    }
+                    this.directChildEmitter.next(first);
+                    return this;
+                }
+                if (this.dataset.targetSelector) {
+                    const target = (_b = this.children
+                        .item(0)) === null || _b === void 0 ? void 0 : _b.querySelector(this.dataset.targetSelector);
+                    if (!this.isValidDirectChild(target)) {
+                        return this;
+                    }
+                    this.directChildEmitter.next(target);
+                }
+                return this;
+            }
             attrSetter(target) {
                 return (k, v) => target.setAttribute(k, v);
             }
@@ -156,7 +227,7 @@ exports.FormFieldComponent = (() => {
             setDataMapper(mapper) {
                 this.mapper = mapper;
             }
-            setNRFormController(controller) {
+            setFormController(controller) {
                 this.formControllerEmitter.next(controller);
             }
             getField() {
@@ -166,6 +237,8 @@ exports.FormFieldComponent = (() => {
                 return this.type;
             }
             connectedCallback() {
+                this.reportMultiChildError();
+                this.emitOnlyChildOnMount().setInputDefaultsOnMount();
                 this.observer.observe(this, {
                     subtree: true,
                     childList: true,
@@ -181,27 +254,7 @@ exports.FormFieldComponent = (() => {
             }
             attributeChangedCallback(key, prev, next) {
                 const target = this.directChildEmitter.value;
-                if (!target) {
-                    return;
-                }
-                if (key === "placeholder") {
-                    if (target instanceof HTMLInputElement ||
-                        target instanceof HTMLTextAreaElement) {
-                        if (this.directChildIsTarget()) {
-                            return;
-                        }
-                        target.setAttribute(key, next);
-                    }
-                }
-                if (key === "defaultValue") {
-                    if (target instanceof HTMLInputElement ||
-                        target instanceof HTMLTextAreaElement) {
-                        if (this.directChildIsTarget()) {
-                            return;
-                        }
-                        target.setAttribute(key, next);
-                    }
-                }
+                this.setInputDefaults(target, key, next);
             }
             static get observedAttributes() {
                 return ["placeholder", "defaultValue"];
@@ -240,7 +293,7 @@ exports.FormControlComponent = (() => {
                     .asObservable()
                     .pipe((0, rxjs_1.switchMap)((controller) => this.fieldListEmitter.asObservable().pipe((0, rxjs_1.tap)((nodeList) => {
                     if (controller) {
-                        nodeList.forEach((node) => node.setNRFormController(controller));
+                        nodeList.forEach((node) => node.setFormController(controller));
                     }
                 }))))
                     .subscribe();
@@ -257,12 +310,7 @@ exports.FormControlComponent = (() => {
                     this.formElement.setAttribute(attribute.name, attribute.value);
                 }
             }
-            constructor() {
-                super();
-                this.fieldListEmitter = (__runInitializers(this, _instanceExtraInitializers_1), new rxjs_1.BehaviorSubject([]));
-                this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
-                this.formElement = document.createElement("form");
-                this.observer = new MutationObserver(this.setFieldListFromMutationRecords);
+            overwriteEventListener() {
                 this.addEventListener = (type, listener, options) => {
                     this.formElement.addEventListener(type, listener, options);
                 };
@@ -270,7 +318,15 @@ exports.FormControlComponent = (() => {
                     this.formElement.removeEventListener(type, listener, options);
                 };
             }
-            setNRFormController(controller) {
+            constructor() {
+                super();
+                this.fieldListEmitter = (__runInitializers(this, _instanceExtraInitializers_1), new rxjs_1.BehaviorSubject([]));
+                this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
+                this.formElement = document.createElement("form");
+                this.observer = new MutationObserver(this.setFieldListFromMutationRecords);
+                this.overwriteEventListener();
+            }
+            setFormController(controller) {
                 this.formElement.setAttribute("data-selector", controller.selector());
                 this.formControllerEmitter.next(controller);
             }

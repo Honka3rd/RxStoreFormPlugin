@@ -161,7 +161,7 @@ export interface AttributeChangedCallback<E extends HTMLElement, P extends Any =
     attributeChangedCallback(key: K<E & P>, prev: V<E & P>, next: V<E & P>): void;
 }
 export interface FormControllerInjector<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> {
-    setNRFormController(controller: FormController<F, M, S>): void;
+    setFormController(controller: FormController<F, M, S>): void;
 }
 export interface FieldDataMapperInjector<F extends FormControlData, N extends number = number> {
     setDataMapper(mapper: (ev: any) => F[N]["value"]): void;
