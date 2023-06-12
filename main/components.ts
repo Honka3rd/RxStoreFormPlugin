@@ -180,7 +180,6 @@ export class FormFieldComponent<
 
   private setInputDefaultsOnMount() {
     const first = this.directChildEmitter.value;
-    debugger
     if (!first) {
       return;
     }
@@ -251,6 +250,8 @@ export class FormFieldComponent<
       throw new Error("Form field is not set");
     }
     this.setField(field);
+    const first = this.directChildEmitter.value;
+    first && this.setInputDefault(first, "name", field);
     const type = this.getAttribute("data-type") ?? DatumType.SYNC;
     this.setDatumType(type as DatumType);
   }
