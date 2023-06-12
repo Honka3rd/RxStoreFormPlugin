@@ -31,6 +31,7 @@ export declare class FormControlComponent<F extends FormControlData, M extends P
     private formControllerEmitter;
     private subscription?;
     private formElement;
+    private drillDownChild;
     private setFieldListFromMutationRecords;
     private observer;
     private controlAll;

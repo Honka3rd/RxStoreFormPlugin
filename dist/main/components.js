@@ -216,6 +216,7 @@ exports.FormFieldComponent = (() => {
 exports.FormControlComponent = (() => {
     var _a;
     let _instanceExtraInitializers_1 = [];
+    let _drillDownChild_decorators;
     let _setFieldListFromMutationRecords_decorators;
     return _a = class FormControlComponent extends HTMLElement {
             constructor() {
@@ -225,13 +226,15 @@ exports.FormControlComponent = (() => {
                 this.formElement = document.createElement("form");
                 this.observer = new MutationObserver(this.setFieldListFromMutationRecords);
             }
+            drillDownChild(node) {
+                this.formElement.appendChild(this.removeChild(node));
+            }
             setFieldListFromMutationRecords(mutationList) {
                 const nodes = [];
                 mutationList
                     .filter((mutation) => mutation.type === "childList")
                     .forEach((mutation) => Array.from(mutation.addedNodes).forEach((node) => {
-                    this.removeChild(node);
-                    this.formElement.appendChild(node);
+                    this.drillDownChild(node);
                     if (!(node instanceof FormFieldComponent)) {
                         return;
                     }
@@ -250,8 +253,7 @@ exports.FormControlComponent = (() => {
                     .subscribe();
             }
             handleFirstRenderInForm() {
-                const filtered = Array.from(this.children).filter((node) => node !== this.formElement);
-                filtered.forEach((node) => this.formElement.appendChild(node));
+                Array.from(this.children).forEach(this.drillDownChild);
                 this.appendChild(this.formElement);
             }
             connectedCallback() {
@@ -274,7 +276,9 @@ exports.FormControlComponent = (() => {
             }
         },
         (() => {
+            _drillDownChild_decorators = [rx_store_core_1.bound];
             _setFieldListFromMutationRecords_decorators = [rx_store_core_1.bound];
+            __esDecorate(_a, null, _drillDownChild_decorators, { kind: "method", name: "drillDownChild", static: false, private: false, access: { has: obj => "drillDownChild" in obj, get: obj => obj.drillDownChild } }, null, _instanceExtraInitializers_1);
             __esDecorate(_a, null, _setFieldListFromMutationRecords_decorators, { kind: "method", name: "setFieldListFromMutationRecords", static: false, private: false, access: { has: obj => "setFieldListFromMutationRecords" in obj, get: obj => obj.setFieldListFromMutationRecords } }, null, _instanceExtraInitializers_1);
         })(),
         _a;

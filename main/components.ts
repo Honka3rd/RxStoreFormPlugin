@@ -272,14 +272,18 @@ export class FormControlComponent<
   private formElement = document.createElement("form");
 
   @bound
+  private drillDownChild(node: Node) {
+    this.formElement.appendChild(this.removeChild(node));
+  }
+
+  @bound
   private setFieldListFromMutationRecords(mutationList: MutationRecord[]) {
     const nodes: FormFieldComponent<F, M, S>[] = [];
     mutationList
       .filter((mutation) => mutation.type === "childList")
       .forEach((mutation) =>
         Array.from(mutation.addedNodes).forEach((node) => {
-          this.removeChild(node);
-          this.formElement.appendChild(node);
+          this.drillDownChild(node);
           if (!(node instanceof FormFieldComponent)) {
             return;
           }
@@ -311,10 +315,7 @@ export class FormControlComponent<
   }
 
   private handleFirstRenderInForm() {
-    const filtered = Array.from(this.children).filter(
-      (node) => node !== this.formElement
-    );
-    filtered.forEach((node) => this.formElement.appendChild(node));
+    Array.from(this.children).forEach(this.drillDownChild);
     this.appendChild(this.formElement);
   }
 
