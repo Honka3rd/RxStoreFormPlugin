@@ -78,18 +78,12 @@ exports.FormFieldComponent = (() => {
                     const added = allAdded.find((a) => {
                         a instanceof HTMLElement && a.id === this.dataset.targetId;
                     });
-                    if (!this.isValidDirectChild(added)) {
-                        return;
-                    }
-                    this.directChildEmitter.next(added);
+                    added && this.directChildEmitter.next(added);
                     return;
                 }
                 if (this.dataset.targetSelector) {
                     const target = this.querySelector(this.dataset.targetSelector);
-                    if (!this.isValidDirectChild(target)) {
-                        return;
-                    }
-                    this.directChildEmitter.next(target);
+                    target && this.directChildEmitter.next(target);
                 }
             }
             directChildIsTarget() {

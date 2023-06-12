@@ -30,7 +30,7 @@ export const installNRFComponents = ({
 export {
   NRFormBuilder,
   IRFormBuilder,
-  /*   installNRFComponents,
-  NRFormComponent,
-  NRFormFieldComponent, */
+  NRFieldComponent,
+  IRFieldComponent,
+  FormComponent
 };
