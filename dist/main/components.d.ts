@@ -43,6 +43,8 @@ export declare class FormControlComponent<F extends FormControlData, M extends P
     private handleFirstRenderInForm;
     private applyParentAttrs;
     private overwriteEventListener;
+    private fillFields;
+    private emitFieldChildrenOnMount;
     constructor();
     setFormController(controller: FormController<F, M, S>): void;
     connectedCallback(): void;

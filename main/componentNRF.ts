@@ -5,6 +5,7 @@ import {
   FormControlBasicMetadata,
   FormControlData,
   FormController,
+  FormControllerInjector,
   NRFieldAttributeBinderInjector,
   NRFieldMetaBinderInjector,
 } from "./interfaces";
@@ -16,7 +17,7 @@ export class NRFieldComponent<
     N extends number = number
   >
   extends FormFieldComponent<F, M, S, N>
-  implements NRFieldAttributeBinderInjector, NRFieldMetaBinderInjector
+  implements NRFieldAttributeBinderInjector, NRFieldMetaBinderInjector, FormControllerInjector<F, M, S>
 {
   private attributeBinder?: <D extends FormControlBasicDatum>(
     attributeSetter: (k: string, v: any) => void,
@@ -109,6 +110,12 @@ export class NRFieldComponent<
   constructor() {
     super();
     this.subscription = this.makeControl();
+  }
+
+  setFormController(
+    controller: FormController<F, M, S>
+  ): void {
+    this.formControllerEmitter.next(controller);
   }
 
   setMetaBinder(

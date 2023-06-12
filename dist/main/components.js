@@ -309,6 +309,22 @@ exports.FormControlComponent = (() => {
                 this.removeEventListener = (type, listener, options) => {
                     this.formElement.removeEventListener(type, listener, options);
                 };
+                return this;
+            }
+            fillFields(fields, all = this.children) {
+                for (const node of Array.from(all)) {
+                    if (node instanceof FormFieldComponent) {
+                        fields.push(node);
+                    }
+                    else {
+                        this.fillFields(fields, node.children);
+                    }
+                }
+            }
+            emitFieldChildrenOnMount() {
+                const fields = [];
+                this.fillFields(fields);
+                this.fieldListEmitter.next(fields);
             }
             constructor() {
                 super();
@@ -316,7 +332,7 @@ exports.FormControlComponent = (() => {
                 this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
                 this.formElement = document.createElement("form");
                 this.observer = new MutationObserver(this.setFieldListFromMutationRecords);
-                this.overwriteEventListener();
+                this.overwriteEventListener().emitFieldChildrenOnMount();
             }
             setFormController(controller) {
                 this.formElement.setAttribute("data-selector", controller.selector());

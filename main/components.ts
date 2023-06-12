@@ -400,11 +400,32 @@ export class FormControlComponent<
     ) => {
       this.formElement.removeEventListener(type, listener, options);
     };
+
+    return this;
+  }
+
+  private fillFields(
+    fields: FormFieldComponent<F, M, S, number>[],
+    all = this.children
+  ) {
+    for (const node of Array.from(all)) {
+      if (node instanceof FormFieldComponent) {
+        fields.push(node);
+      } else {
+        this.fillFields(fields, node.children);
+      }
+    }
+  }
+
+  private emitFieldChildrenOnMount() {
+    const fields: FormFieldComponent<F, M, S, number>[] = [];
+    this.fillFields(fields);
+    this.fieldListEmitter.next(fields);
   }
 
   constructor() {
     super();
-    this.overwriteEventListener();
+    this.overwriteEventListener().emitFieldChildrenOnMount();
   }
 
   setFormController(controller: FormController<F, M, S>): void {
