@@ -218,6 +218,13 @@ exports.FormControlComponent = (() => {
     let _instanceExtraInitializers_1 = [];
     let _setFieldListFromMutationRecords_decorators;
     return _a = class FormControlComponent extends HTMLElement {
+            constructor() {
+                super(...arguments);
+                this.fieldListEmitter = (__runInitializers(this, _instanceExtraInitializers_1), new rxjs_1.BehaviorSubject([]));
+                this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
+                this.formElement = document.createElement("form");
+                this.observer = new MutationObserver(this.setFieldListFromMutationRecords);
+            }
             setFieldListFromMutationRecords(mutationList) {
                 const nodes = [];
                 mutationList
@@ -245,13 +252,6 @@ exports.FormControlComponent = (() => {
             handleFirstRenderInForm() {
                 const filtered = Array.from(this.children).filter((node) => node !== this.formElement);
                 filtered.forEach((node) => this.formElement.appendChild(node));
-            }
-            constructor() {
-                super();
-                this.fieldListEmitter = (__runInitializers(this, _instanceExtraInitializers_1), new rxjs_1.BehaviorSubject([]));
-                this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
-                this.formElement = document.createElement("form");
-                this.observer = new MutationObserver(this.setFieldListFromMutationRecords);
                 this.appendChild(this.formElement);
             }
             connectedCallback() {

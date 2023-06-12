@@ -315,10 +315,6 @@ export class FormControlComponent<
       (node) => node !== this.formElement
     );
     filtered.forEach((node) => this.formElement.appendChild(node));
-  }
-
-  constructor() {
-    super();
     this.appendChild(this.formElement);
   }
 
