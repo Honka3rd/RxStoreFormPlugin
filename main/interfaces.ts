@@ -386,7 +386,7 @@ export interface AttributeChangedCallback<
   attributeChangedCallback(key: K<E & P>, prev: V<E & P>, next: V<E & P>): void;
 }
 
-export interface NRFormControllerInjector<
+export interface FormControllerInjector<
   F extends FormControlData,
   M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
   S extends string
@@ -430,7 +430,7 @@ export interface IRFieldAttributeBinderInjector<F extends FormControlData> {
 
 export interface IRFieldMetaBinderInjector {
   setMetaBinder(
-    binder: <M extends FormControlBasicMetadata>(
+    binder: (
       attributeSetter: (k: string, v: any) => void,
       meta: Map<"errors" | "info" | "warn", Map<string, any>>
     ) => void

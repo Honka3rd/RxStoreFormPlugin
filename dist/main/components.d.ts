@@ -1,6 +1,6 @@
 import { BehaviorSubject, Subject, Subscription } from "rxjs";
-import { AttributeChangedCallback, ConnectedCallback, CustomerAttrs, DatumType, DisconnectedCallback, FieldDataMapperInjector, FormControlBasicMetadata, FormControlData, FormController, ImmutableFormController, K, NRFormControllerInjector, V } from "./interfaces";
-export declare class FormFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends HTMLElement implements ConnectedCallback, DisconnectedCallback, AttributeChangedCallback<HTMLElement, CustomerAttrs>, FieldDataMapperInjector<F, N>, NRFormControllerInjector<F, M, S> {
+import { AttributeChangedCallback, ConnectedCallback, CustomerAttrs, DatumType, DisconnectedCallback, FieldDataMapperInjector, FormControlBasicMetadata, FormControlData, FormController, ImmutableFormController, K, FormControllerInjector, V } from "./interfaces";
+export declare class FormFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends HTMLElement implements ConnectedCallback, DisconnectedCallback, AttributeChangedCallback<HTMLElement, CustomerAttrs>, FieldDataMapperInjector<F, N>, FormControllerInjector<F, M, S> {
     protected field?: F[N]["field"];
     protected type?: DatumType;
     protected mapper?: (ev: any) => F[N]["value"];
@@ -27,7 +27,7 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     attributeChangedCallback(key: K<HTMLElement & CustomerAttrs>, prev: V<HTMLElement & CustomerAttrs>, next: V<HTMLElement & CustomerAttrs>): void;
     static get observedAttributes(): string[];
 }
-export declare class FormComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string> extends HTMLFormElement implements ConnectedCallback, DisconnectedCallback, NRFormControllerInjector<F, M, S> {
+export declare class FormControlComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string> extends HTMLFormElement implements ConnectedCallback, DisconnectedCallback, FormControllerInjector<F, M, S> {
     protected fieldListEmitter: Subject<FormFieldComponent<F, M, S>[]>;
     protected formControllerEmitter: Subject<FormController<F, M, S> | ImmutableFormController<F, M, S> | null>;
     protected subscription: Subscription;

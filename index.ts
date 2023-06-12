@@ -1,7 +1,7 @@
 import { NRFormBuilder, IRFormBuilder } from "./main/builders";
 import { NRFieldComponent } from "./main/componentNRF";
 import { IRFieldComponent } from "./main/componentIRF";
-import { FormComponent } from "./main/components";
+import { FormControlComponent } from "./main/components";
 import { InstallDefinition } from "./main/interfaces";
 
 export const installNRFComponents = ({
@@ -23,7 +23,7 @@ export const installNRFComponents = ({
   }
 
   if (!window.customElements.get(formId)) {
-    window.customElements.define(formId, FormComponent);
+    window.customElements.define(formId, FormControlComponent);
   }
 };
 
@@ -32,5 +32,5 @@ export {
   IRFormBuilder,
   NRFieldComponent,
   IRFieldComponent,
-  FormComponent
+  FormControlComponent
 };

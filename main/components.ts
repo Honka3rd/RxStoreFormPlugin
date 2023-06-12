@@ -12,7 +12,7 @@ import {
   FormController,
   ImmutableFormController,
   K,
-  NRFormControllerInjector,
+  FormControllerInjector,
   V,
 } from "./interfaces";
 
@@ -28,7 +28,7 @@ export class FormFieldComponent<
     DisconnectedCallback,
     AttributeChangedCallback<HTMLElement, CustomerAttrs>,
     FieldDataMapperInjector<F, N>,
-    NRFormControllerInjector<F, M, S>
+    FormControllerInjector<F, M, S>
 {
   protected field?: F[N]["field"];
   protected type?: DatumType;
@@ -252,7 +252,7 @@ export class FormFieldComponent<
   }
 }
 
-export class FormComponent<
+export class FormControlComponent<
     F extends FormControlData,
     M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
     S extends string = string
@@ -261,7 +261,7 @@ export class FormComponent<
   implements
     ConnectedCallback,
     DisconnectedCallback,
-    NRFormControllerInjector<F, M, S>
+    FormControllerInjector<F, M, S>
 {
   protected fieldListEmitter: Subject<FormFieldComponent<F, M, S>[]> =
     new BehaviorSubject<FormFieldComponent<F, M, S>[]>([]);

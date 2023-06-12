@@ -160,7 +160,7 @@ export interface DisconnectedCallback {
 export interface AttributeChangedCallback<E extends HTMLElement, P extends Any = {}> {
     attributeChangedCallback(key: K<E & P>, prev: V<E & P>, next: V<E & P>): void;
 }
-export interface NRFormControllerInjector<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> {
+export interface FormControllerInjector<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> {
     setNRFormController(controller: FormController<F, M, S>): void;
 }
 export interface FieldDataMapperInjector<F extends FormControlData, N extends number = number> {
@@ -176,7 +176,7 @@ export interface IRFieldAttributeBinderInjector<F extends FormControlData> {
     setAttrBinder(binder: (attributeSetter: (k: string, v: any) => void, attrs: Map<K<F[number]>, V<F[number]>>) => void): void;
 }
 export interface IRFieldMetaBinderInjector {
-    setMetaBinder(binder: <M extends FormControlBasicMetadata>(attributeSetter: (k: string, v: any) => void, meta: Map<"errors" | "info" | "warn", Map<string, any>>) => void): void;
+    setMetaBinder(binder: (attributeSetter: (k: string, v: any) => void, meta: Map<"errors" | "info" | "warn", Map<string, any>>) => void): void;
 }
 export type InstallDefinition = Partial<{
     formSelector: string;

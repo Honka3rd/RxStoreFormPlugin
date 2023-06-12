@@ -34,7 +34,7 @@ var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, 
     done = true;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.FormComponent = exports.FormFieldComponent = void 0;
+exports.FormControlComponent = exports.FormFieldComponent = void 0;
 const rx_store_core_1 = require("rx-store-core");
 const rxjs_1 = require("rxjs");
 const interfaces_1 = require("./interfaces");
@@ -213,11 +213,11 @@ exports.FormFieldComponent = (() => {
         })(),
         _a;
 })();
-exports.FormComponent = (() => {
+exports.FormControlComponent = (() => {
     var _a;
     let _instanceExtraInitializers_1 = [];
     let _setFieldListFromMutationRecords_decorators;
-    return _a = class FormComponent extends HTMLFormElement {
+    return _a = class FormControlComponent extends HTMLFormElement {
             setFieldListFromMutationRecords(mutationList) {
                 const nodes = [];
                 mutationList
