@@ -14,6 +14,7 @@ import {
   K,
   FormControllerInjector,
   V,
+  FormEventHandler,
 } from "./interfaces";
 
 export class FormFieldComponent<
@@ -258,7 +259,8 @@ export class FormControlComponent<
     ConnectedCallback,
     DisconnectedCallback,
     FormControllerInjector<F, M, S>,
-    AttributeChangedCallback<HTMLElement>
+    AttributeChangedCallback<HTMLElement>,
+    FormEventHandler
 {
   private fieldListEmitter: Subject<FormFieldComponent<F, M, S>[]> =
     new BehaviorSubject<FormFieldComponent<F, M, S>[]>([]);
@@ -324,6 +326,9 @@ export class FormControlComponent<
     const attributes = this.attributes;
     for (let i = 0; i < attributes.length; i++) {
       const attribute = attributes[i];
+      if (!this.hasAttribute(attribute.name)) {
+        this.removeAttribute(attribute.name);
+      }
       this.formElement.setAttribute(attribute.name, attribute.value);
     }
   }
@@ -354,7 +359,23 @@ export class FormControlComponent<
     prev: V<HTMLElement>,
     next: V<HTMLElement>
   ): void {
-    console.log({ key, prev, next });
-    if (typeof next === "string") this.formElement.setAttribute(key, next);
+    console.log({key, prev, next})
+    if (typeof next === "string") {
+      return this.formElement.setAttribute(key, next);
+    }
+  }
+
+  attachFormHandler<K extends keyof HTMLElementEventMap>(
+    type: K,
+    listener: (this: HTMLFormElement, ev: HTMLElementEventMap[K]) => any
+  ): void {
+    this.formElement.addEventListener(type, listener);
+  }
+
+  deletedFormHandler<K extends keyof HTMLElementEventMap>(
+    type: K,
+    listener: (this: HTMLFormElement, ev: HTMLElementEventMap[K]) => any
+  ): void {
+    this.formElement.removeEventListener(type, listener);
   }
 }
