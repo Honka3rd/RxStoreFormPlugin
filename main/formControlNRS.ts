@@ -128,7 +128,7 @@ class FormControllerImpl<
 
   private shallowCloneFormData() {
     return this.safeExecute((connector) => {
-      const casted = connector as unknown as RxNStore<Record<S, () => F>>;
+      const casted = this.cast(connector)
       return casted.getClonedState(this.id) as F;
     });
   }
@@ -169,8 +169,7 @@ class FormControllerImpl<
           const cloned = { ...found };
           data.splice(data.indexOf(found), 1, cloned);
           callback(cloned, data);
-          const casted = connector as unknown as RxNStore<Record<S, () => F>>;
-          this.commitMutation(data, casted);
+          this.commitMutation(data, this.cast(connector));
         });
       });
     });
@@ -430,7 +429,7 @@ class FormControllerImpl<
   @bound
   getDatumValue<At extends number = number>(field: F[At]["field"]) {
     return this.safeExecute((connector) => {
-      const casted = connector as unknown as RxNStore<Record<S, () => F>>;
+      const casted = this.cast(connector);
       const value = this.findDatumByField(
         casted.getState(this.id),
         field
@@ -663,7 +662,7 @@ class FormControllerImpl<
   @bound
   appendFormData(fields: FormStubs<F>) {
     this.safeExecute((connector) => {
-      const casted = connector as unknown as RxNStore<Record<S, () => F>>;
+      const casted = this.cast(connector);
       const data = casted.getClonedState(this.id);
       this.appendDataByFields(fields, data);
       this.commitMutation(data, casted);
@@ -674,7 +673,7 @@ class FormControllerImpl<
   @bound
   removeFormData(fields: Array<F[number]["field"]>) {
     this.safeExecute((connector) => {
-      const casted = connector as unknown as RxNStore<Record<S, () => F>>;
+      const casted = this.cast(connector);
       const data = casted.getClonedState(this.id);
       this.removeDataByFields(fields, data);
       this.commitMutation(data, casted);

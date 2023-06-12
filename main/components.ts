@@ -1,11 +1,5 @@
 import { bound } from "rx-store-core";
-import {
-  BehaviorSubject,
-  Subject,
-  Subscription,
-  switchMap,
-  tap
-} from "rxjs";
+import { BehaviorSubject, Subject, Subscription, switchMap, tap } from "rxjs";
 import {
   AttributeChangedCallback,
   ConnectedCallback,
@@ -19,7 +13,7 @@ import {
   ImmutableFormController,
   K,
   NRFormControllerInjector,
-  V
+  V,
 } from "./interfaces";
 
 export class FormFieldComponent<
@@ -39,7 +33,6 @@ export class FormFieldComponent<
   protected field?: F[N]["field"];
   protected type?: DatumType;
   protected mapper?: (ev: any) => F[N]["value"];
-
 
   protected formControllerEmitter: BehaviorSubject<
     FormController<F, M, S> | ImmutableFormController<F, M, S> | null
@@ -114,38 +107,6 @@ export class FormFieldComponent<
 
   protected observer = new MutationObserver(this.setDirectChildFromMutations);
 
-  protected setValue(
-    value: F[N]["value"],
-    formController: FormController<F, M, S> | ImmutableFormController<F, M, S>,
-    field: F[N]["field"]
-  ) {
-    formController.changeFormValue(field, value);
-  }
-
-  protected setTouched(
-    value: boolean,
-    formController: FormController<F, M, S> | ImmutableFormController<F, M, S>,
-    field: F[N]["field"]
-  ) {
-    formController.touchFormField(field, value);
-  }
-
-  protected setFocused(
-    value: boolean,
-    formController: FormController<F, M, S> | ImmutableFormController<F, M, S>,
-    field: F[N]["field"]
-  ) {
-    formController.focusFormField(field, value);
-  }
-
-  protected setHovered(
-    value: boolean,
-    formController: FormController<F, M, S> | ImmutableFormController<F, M, S>,
-    field: F[N]["field"]
-  ) {
-    formController.hoverFormField(field, value);
-  }
-
   protected attachChildEventListeners(
     target: Node | null,
     formController:
@@ -159,29 +120,28 @@ export class FormFieldComponent<
     }
 
     if (target instanceof HTMLElement) {
-      target.addEventListener("mouseover", () =>
-        this.setHovered(true, formController, field)
-      );
+      target.addEventListener("mouseover", () => {
+        formController.hoverFormField(field, true);
+      });
 
-      target.addEventListener("mouseleave", () =>
-        this.setHovered(false, formController, field)
-      );
+      target.addEventListener("mouseleave", () => {
+        formController.hoverFormField(field, false);
+      });
 
-      target.addEventListener("focus", () =>
-        this.setFocused(true, formController, field)
-      );
+      target.addEventListener("focus", () => {
+        formController.focusFormField(field, true);
+      });
 
       target.addEventListener("blur", () => {
-        this.setFocused(false, formController, field);
-        this.setTouched(true, formController, field);
+        formController.focusFormField(field, false).touchFormField(field, true);
       });
 
       target.addEventListener("change", (event: any) => {
         if (this.mapper) {
-          this.setValue(this.mapper(event), formController, field);
+          formController.changeFormValue(field, this.mapper(event));
           return;
         }
-        this.setValue(event.target.value, formController, field);
+        formController.changeFormValue(field, event.target.value);
       });
     }
   }

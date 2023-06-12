@@ -93,37 +93,30 @@ exports.FormFieldComponent = (() => {
                 }
                 return this.directChildEmitter.value === this.children.item(0);
             }
-            setValue(value, formController, field) {
-                formController.changeFormValue(field, value);
-            }
-            setTouched(value, formController, field) {
-                formController.touchFormField(field, value);
-            }
-            setFocused(value, formController, field) {
-                formController.focusFormField(field, value);
-            }
-            setHovered(value, formController, field) {
-                formController.hoverFormField(field, value);
-            }
             attachChildEventListeners(target, formController) {
                 const { field } = this;
                 if (!formController || !field) {
                     return;
                 }
                 if (target instanceof HTMLElement) {
-                    target.addEventListener("mouseover", () => this.setHovered(true, formController, field));
-                    target.addEventListener("mouseleave", () => this.setHovered(false, formController, field));
-                    target.addEventListener("focus", () => this.setFocused(true, formController, field));
+                    target.addEventListener("mouseover", () => {
+                        formController.hoverFormField(field, true);
+                    });
+                    target.addEventListener("mouseleave", () => {
+                        formController.hoverFormField(field, false);
+                    });
+                    target.addEventListener("focus", () => {
+                        formController.focusFormField(field, true);
+                    });
                     target.addEventListener("blur", () => {
-                        this.setFocused(false, formController, field);
-                        this.setTouched(true, formController, field);
+                        formController.focusFormField(field, false).touchFormField(field, true);
                     });
                     target.addEventListener("change", (event) => {
                         if (this.mapper) {
-                            this.setValue(this.mapper(event), formController, field);
+                            formController.changeFormValue(field, this.mapper(event));
                             return;
                         }
-                        this.setValue(event.target.value, formController, field);
+                        formController.changeFormValue(field, event.target.value);
                     });
                 }
             }

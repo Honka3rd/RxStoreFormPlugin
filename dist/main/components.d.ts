@@ -12,10 +12,6 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     protected setDirectChildFromMutations(mutationList: MutationRecord[]): void;
     protected directChildIsTarget(): boolean;
     protected observer: MutationObserver;
-    protected setValue(value: F[N]["value"], formController: FormController<F, M, S> | ImmutableFormController<F, M, S>, field: F[N]["field"]): void;
-    protected setTouched(value: boolean, formController: FormController<F, M, S> | ImmutableFormController<F, M, S>, field: F[N]["field"]): void;
-    protected setFocused(value: boolean, formController: FormController<F, M, S> | ImmutableFormController<F, M, S>, field: F[N]["field"]): void;
-    protected setHovered(value: boolean, formController: FormController<F, M, S> | ImmutableFormController<F, M, S>, field: F[N]["field"]): void;
     protected attachChildEventListeners(target: Node | null, formController: FormController<F, M, S> | ImmutableFormController<F, M, S> | null): void;
     protected attrSetter(target: HTMLElement): (k: string, v: any) => void;
     protected setField(field: F[N]["field"]): void;

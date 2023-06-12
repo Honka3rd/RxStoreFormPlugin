@@ -144,7 +144,7 @@ let FormControllerImpl = (() => {
             }
             shallowCloneFormData() {
                 return this.safeExecute((connector) => {
-                    const casted = connector;
+                    const casted = this.cast(connector);
                     return casted.getClonedState(this.id);
                 });
             }
@@ -173,8 +173,7 @@ let FormControllerImpl = (() => {
                             const cloned = Object.assign({}, found);
                             data.splice(data.indexOf(found), 1, cloned);
                             callback(cloned, data);
-                            const casted = connector;
-                            this.commitMutation(data, casted);
+                            this.commitMutation(data, this.cast(connector));
                         });
                     });
                 });
@@ -337,7 +336,7 @@ let FormControllerImpl = (() => {
             getDatumValue(field) {
                 return this.safeExecute((connector) => {
                     var _a;
-                    const casted = connector;
+                    const casted = this.cast(connector);
                     const value = (_a = this.findDatumByField(casted.getState(this.id), field)) === null || _a === void 0 ? void 0 : _a.value;
                     return value;
                 });
@@ -487,7 +486,7 @@ let FormControllerImpl = (() => {
             }
             appendFormData(fields) {
                 this.safeExecute((connector) => {
-                    const casted = connector;
+                    const casted = this.cast(connector);
                     const data = casted.getClonedState(this.id);
                     this.appendDataByFields(fields, data);
                     this.commitMutation(data, casted);
@@ -496,7 +495,7 @@ let FormControllerImpl = (() => {
             }
             removeFormData(fields) {
                 this.safeExecute((connector) => {
-                    const casted = connector;
+                    const casted = this.cast(connector);
                     const data = casted.getClonedState(this.id);
                     this.removeDataByFields(fields, data);
                     this.commitMutation(data, casted);
