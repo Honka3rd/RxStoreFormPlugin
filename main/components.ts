@@ -257,7 +257,8 @@ export class FormControlComponent<
   implements
     ConnectedCallback,
     DisconnectedCallback,
-    FormControllerInjector<F, M, S>
+    FormControllerInjector<F, M, S>,
+    AttributeChangedCallback<HTMLElement>
 {
   private fieldListEmitter: Subject<FormFieldComponent<F, M, S>[]> =
     new BehaviorSubject<FormFieldComponent<F, M, S>[]>([]);
@@ -319,8 +320,22 @@ export class FormControlComponent<
     this.appendChild(this.formElement);
   }
 
+  private applyParentAttrs() {
+    const attributes = this.attributes;
+    for (let i = 0; i < attributes.length; i++) {
+      const attribute = attributes[i];
+      this.formElement.setAttribute(attribute.name, attribute.value);
+    }
+  }
+
+  setNRFormController(controller: FormController<F, M, S>): void {
+    this.formElement.setAttribute("data-selector", controller.selector());
+    this.formControllerEmitter.next(controller);
+  }
+
   connectedCallback(): void {
     this.handleFirstRenderInForm();
+    this.applyParentAttrs();
     this.observer.observe(this.formElement, {
       subtree: true,
       childList: true,
@@ -334,8 +349,12 @@ export class FormControlComponent<
     this.subscription?.unsubscribe();
   }
 
-  setNRFormController(controller: FormController<F, M, S>): void {
-    this.formElement.setAttribute("data-selector", controller.selector());
-    this.formControllerEmitter.next(controller);
+  attributeChangedCallback(
+    key: keyof HTMLElement,
+    prev: V<HTMLElement>,
+    next: V<HTMLElement>
+  ): void {
+    console.log({ key, prev, next });
+    if (typeof next === "string") this.formElement.setAttribute(key, next);
   }
 }

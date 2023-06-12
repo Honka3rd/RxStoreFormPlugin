@@ -256,8 +256,20 @@ exports.FormControlComponent = (() => {
                 Array.from(this.children).forEach(this.drillDownChild);
                 this.appendChild(this.formElement);
             }
+            applyParentAttrs() {
+                const attributes = this.attributes;
+                for (let i = 0; i < attributes.length; i++) {
+                    const attribute = attributes[i];
+                    this.formElement.setAttribute(attribute.name, attribute.value);
+                }
+            }
+            setNRFormController(controller) {
+                this.formElement.setAttribute("data-selector", controller.selector());
+                this.formControllerEmitter.next(controller);
+            }
             connectedCallback() {
                 this.handleFirstRenderInForm();
+                this.applyParentAttrs();
                 this.observer.observe(this.formElement, {
                     subtree: true,
                     childList: true,
@@ -270,9 +282,10 @@ exports.FormControlComponent = (() => {
                 this.observer.disconnect();
                 (_a = this.subscription) === null || _a === void 0 ? void 0 : _a.unsubscribe();
             }
-            setNRFormController(controller) {
-                this.formElement.setAttribute("data-selector", controller.selector());
-                this.formControllerEmitter.next(controller);
+            attributeChangedCallback(key, prev, next) {
+                console.log({ key, prev, next });
+                if (typeof next === "string")
+                    this.formElement.setAttribute(key, next);
             }
         },
         (() => {

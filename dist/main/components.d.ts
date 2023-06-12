@@ -26,7 +26,7 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     attributeChangedCallback(key: K<HTMLElement & CustomerAttrs>, prev: V<HTMLElement & CustomerAttrs>, next: V<HTMLElement & CustomerAttrs>): void;
     static get observedAttributes(): string[];
 }
-export declare class FormControlComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string> extends HTMLElement implements ConnectedCallback, DisconnectedCallback, FormControllerInjector<F, M, S> {
+export declare class FormControlComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string> extends HTMLElement implements ConnectedCallback, DisconnectedCallback, FormControllerInjector<F, M, S>, AttributeChangedCallback<HTMLElement> {
     private fieldListEmitter;
     private formControllerEmitter;
     private subscription?;
@@ -36,7 +36,9 @@ export declare class FormControlComponent<F extends FormControlData, M extends P
     private observer;
     private controlAll;
     private handleFirstRenderInForm;
+    private applyParentAttrs;
+    setNRFormController(controller: FormController<F, M, S>): void;
     connectedCallback(): void;
     disconnectedCallback(): void;
-    setNRFormController(controller: FormController<F, M, S>): void;
+    attributeChangedCallback(key: keyof HTMLElement, prev: V<HTMLElement>, next: V<HTMLElement>): void;
 }
