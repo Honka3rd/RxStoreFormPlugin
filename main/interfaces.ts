@@ -233,7 +233,7 @@ export type ImmutableFormStubs = List<Map<K<FormStub>, V<FormStub>>>;
 
 export interface ImmutableFormController<
   F extends FormControlData,
-  M extends Record<F[number]["field"], FormControlBasicMetadata>,
+  M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
   S extends string
 > {
   setAsyncValidator(
@@ -350,7 +350,7 @@ export interface ImmutableFormController<
     field: F[CompareAt]["field"],
     observer: (
       result: ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]
-    ) => void,
+    ) => void
   ): () => void;
 
   getFormData(): ReturnType<
@@ -359,7 +359,7 @@ export interface ImmutableFormController<
 
   getDatum<At extends number = number>(
     field: F[At]["field"]
-  ): Map<PK<F[At]>, PV<F[At]>>
+  ): Map<PK<F[At]>, PV<F[At]>>;
 }
 
 export type ImmutableFormPluginBuilderParams<
@@ -394,7 +394,7 @@ export interface NRFormControllerInjector<
   setNRFormController(controller: FormController<F, M, S>): void;
 }
 
-export interface NRFieldDataMapperInjector<
+export interface FieldDataMapperInjector<
   F extends FormControlData,
   N extends number = number
 > {
@@ -419,9 +419,28 @@ export interface NRFieldMetaBinderInjector {
   ): void;
 }
 
+export interface IRFieldAttributeBinderInjector<F extends FormControlData> {
+  setAttrBinder(
+    binder: (
+      attributeSetter: (k: string, v: any) => void,
+      attrs: Map<K<F[number]>, V<F[number]>>
+    ) => void
+  ): void;
+}
+
+export interface IRFieldMetaBinderInjector {
+  setMetaBinder(
+    binder: <M extends FormControlBasicMetadata>(
+      attributeSetter: (k: string, v: any) => void,
+      meta: Map<"errors" | "info" | "warn", Map<string, any>>
+    ) => void
+  ): void;
+}
+
 export type InstallDefinition = Partial<{
   formSelector: string;
-  fieldSelector: string;
+  fieldNrSelector: string;
+  fieldIrSelector: string;
 }>;
 
 export type CustomerAttrs = {

@@ -1,10 +1,10 @@
+import { bound } from "rx-store-core";
 import {
   BehaviorSubject,
   Subject,
   Subscription,
-  distinctUntilChanged,
   switchMap,
-  tap,
+  tap
 } from "rxjs";
 import {
   AttributeChangedCallback,
@@ -12,21 +12,17 @@ import {
   CustomerAttrs,
   DatumType,
   DisconnectedCallback,
-  FormControlBasicDatum,
+  FieldDataMapperInjector,
   FormControlBasicMetadata,
   FormControlData,
   FormController,
-  InstallDefinition,
+  ImmutableFormController,
   K,
-  NRFieldAttributeBinderInjector,
-  NRFieldDataMapperInjector,
-  NRFieldMetaBinderInjector,
   NRFormControllerInjector,
-  V,
+  V
 } from "./interfaces";
-import { bound } from "rx-store-core";
 
-export class NRFormFieldComponent<
+export class FormFieldComponent<
     F extends FormControlData,
     M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
     S extends string = string,
@@ -37,38 +33,29 @@ export class NRFormFieldComponent<
     ConnectedCallback,
     DisconnectedCallback,
     AttributeChangedCallback<HTMLElement, CustomerAttrs>,
-    NRFieldDataMapperInjector<F, N>,
-    NRFormControllerInjector<F, M, S>,
-    NRFieldAttributeBinderInjector,
-    NRFieldMetaBinderInjector
+    FieldDataMapperInjector<F, N>,
+    NRFormControllerInjector<F, M, S>
 {
-  private field?: F[N]["field"];
-  private type?: DatumType;
-  private mapper?: (ev: any) => F[N]["value"];
-  private attributeBinder?: <D extends FormControlBasicDatum>(
-    attributeSetter: (k: string, v: any) => void,
-    attrs: D
-  ) => void;
-  private metaDataBinder?: <M extends FormControlBasicMetadata>(
-    attributeSetter: (k: string, v: any) => void,
-    meta: M
-  ) => void;
+  protected field?: F[N]["field"];
+  protected type?: DatumType;
+  protected mapper?: (ev: any) => F[N]["value"];
 
-  private formControllerEmitter: BehaviorSubject<FormController<
-    F,
-    M,
-    S
-  > | null> = new BehaviorSubject<FormController<F, M, S> | null>(null);
-  private directChildEmitter: BehaviorSubject<HTMLElement | null> =
+
+  protected formControllerEmitter: BehaviorSubject<
+    FormController<F, M, S> | ImmutableFormController<F, M, S> | null
+  > = new BehaviorSubject<
+    FormController<F, M, S> | ImmutableFormController<F, M, S> | null
+  >(null);
+  protected directChildEmitter: BehaviorSubject<HTMLElement | null> =
     new BehaviorSubject<HTMLElement | null>(null);
-  private subscription: Subscription;
-  private unBind?: () => void;
+  protected subscription: Subscription | null = null;
+  protected unBind?: () => void;
 
-  private isValidDirectChild(target?: Node | null): target is HTMLElement {
+  protected isValidDirectChild(target?: Node | null): target is HTMLElement {
     return target instanceof HTMLElement && target.parentNode === this;
   }
 
-  private setDirectChildFromMutations(mutationList: MutationRecord[]) {
+  protected setDirectChildFromMutations(mutationList: MutationRecord[]) {
     const mutations = mutationList.filter(
       (mutation) => mutation.type === "childList"
     );
@@ -116,14 +103,14 @@ export class NRFormFieldComponent<
 
     if (this.dataset.targetSelector) {
       const target = this.querySelector(this.dataset.targetSelector);
-      if (!(this.isValidDirectChild(target))) {
+      if (!this.isValidDirectChild(target)) {
         return;
       }
       this.directChildEmitter.next(target);
     }
   }
 
-  private directChildIsTarget() {
+  protected directChildIsTarget() {
     if (!this.directChildEmitter?.value && !this.children.item(0)) {
       return false;
     }
@@ -131,43 +118,46 @@ export class NRFormFieldComponent<
     return this.directChildEmitter.value === this.children.item(0);
   }
 
-  private observer = new MutationObserver(this.setDirectChildFromMutations);
+  protected observer = new MutationObserver(this.setDirectChildFromMutations);
 
-  private setValue(
+  protected setValue(
     value: F[N]["value"],
-    formController: FormController<F, M, S>,
+    formController: FormController<F, M, S> | ImmutableFormController<F, M, S>,
     field: F[N]["field"]
   ) {
     formController.changeFormValue(field, value);
   }
 
-  private setTouched(
+  protected setTouched(
     value: boolean,
-    formController: FormController<F, M, S>,
+    formController: FormController<F, M, S> | ImmutableFormController<F, M, S>,
     field: F[N]["field"]
   ) {
     formController.touchFormField(field, value);
   }
 
-  private setFocused(
+  protected setFocused(
     value: boolean,
-    formController: FormController<F, M, S>,
+    formController: FormController<F, M, S> | ImmutableFormController<F, M, S>,
     field: F[N]["field"]
   ) {
     formController.focusFormField(field, value);
   }
 
-  private setHovered(
+  protected setHovered(
     value: boolean,
-    formController: FormController<F, M, S>,
+    formController: FormController<F, M, S> | ImmutableFormController<F, M, S>,
     field: F[N]["field"]
   ) {
     formController.hoverFormField(field, value);
   }
 
-  private attachChildEventListeners(
+  protected attachChildEventListeners(
     target: Node | null,
-    formController: FormController<F, M, S> | null
+    formController:
+      | FormController<F, M, S>
+      | ImmutableFormController<F, M, S>
+      | null
   ) {
     const { field } = this;
     if (!formController || !field) {
@@ -203,97 +193,25 @@ export class NRFormFieldComponent<
   }
 
   @bound
-  private attrSetter(target: HTMLElement) {
+  protected attrSetter(target: HTMLElement) {
     return (k: string, v: any) => target.setAttribute(k, v);
   }
 
-  private valuesBinding(
-    target: Node | null,
-    formController: FormController<F, M, S> | null
-  ) {
-    const { field } = this;
-    if (!formController || !field) {
-      return;
-    }
-
-    if (target instanceof HTMLElement) {
-      return formController.observeFormDatum(field, (datum) => {
-        this.setAttribute("data-focused", String(datum.focused));
-        this.setAttribute("data-changed", String(datum.changed));
-        this.setAttribute("data-touched", String(datum.touched));
-        this.setAttribute("data-hovered", String(datum.hovered));
-        datum.asyncState &&
-          this.setAttribute("data-asyncState", String(datum.asyncState));
-        this.setAttribute("data-value", datum.value);
-        if (this.attributeBinder) {
-          this.attributeBinder(this.attrSetter(target), datum);
-          return;
-        }
-        if ("value" in target) {
-          target.setAttribute("value", datum.value);
-          return;
-        }
-        target.setAttribute("data-value", String(datum.value));
-      });
-    }
-  }
-
-  private metaBinding(
-    target: Node | null,
-    formController: FormController<F, M, S> | null
-  ) {
-    const { field } = this;
-    if (!formController || !field || !this.metaDataBinder) {
-      return;
-    }
-
-    if (target instanceof HTMLElement) {
-      return formController.observeMetaByField(field, (meta) => {
-        if (!meta) {
-          return;
-        }
-        this.metaDataBinder?.(this.attrSetter(target), meta);
-      });
-    }
-  }
-
-  private setField(field: F[N]["field"]): void {
+  protected setField(field: F[N]["field"]): void {
     if (this.field) {
       return;
     }
     this.field = field;
   }
 
-  private setDatumType(type: DatumType): void {
+  protected setDatumType(type: DatumType): void {
     if (this.type) {
       return;
     }
     this.type = type;
   }
 
-  private makeControl() {
-    return this.formControllerEmitter
-      .asObservable()
-      .pipe(
-        switchMap((controller) =>
-          this.directChildEmitter.asObservable().pipe(
-            distinctUntilChanged(),
-            tap((firstChild) => {
-              this.attachChildEventListeners(firstChild, controller);
-              const unbindV = this.valuesBinding(firstChild, controller);
-              const unbindM = this.metaBinding(firstChild, controller);
-              this.unBind = () => {
-                unbindV?.();
-                unbindM?.();
-              };
-            })
-          )
-        )
-      )
-      .subscribe();
-  }
-
-  private setRequiredProperties() {
+  protected setRequiredProperties() {
     const field = this.getAttribute("data-field") as F[N]["field"];
     if (!field || !field.length) {
       throw new Error("Form field is not set");
@@ -306,32 +224,15 @@ export class NRFormFieldComponent<
   constructor() {
     super();
     this.setRequiredProperties();
-    this.subscription = this.makeControl();
-  }
-
-  setMetaBinder(
-    binder: <M extends FormControlBasicMetadata>(
-      attributeSetter: (k: string, v: any) => void,
-      meta: M
-    ) => void
-  ): void {
-    this.metaDataBinder = binder;
-  }
-
-  setAttrBinder(
-    binder: <D extends FormControlBasicDatum>(
-      attributeSetter: (k: string, v: any) => void,
-      attrs: D
-    ) => void
-  ): void {
-    this.attributeBinder = binder;
   }
 
   setDataMapper(mapper: (ev: any) => F[N]["value"]): void {
     this.mapper = mapper;
   }
 
-  setNRFormController(controller: FormController<F, M, S>): void {
+  setNRFormController(
+    controller: FormController<F, M, S> | ImmutableFormController<F, M, S>
+  ): void {
     this.formControllerEmitter.next(controller);
   }
 
@@ -353,7 +254,7 @@ export class NRFormFieldComponent<
 
   disconnectedCallback(): void {
     this.observer.disconnect();
-    this.subscription.unsubscribe();
+    this.subscription?.unsubscribe();
     this.unBind?.();
   }
 
@@ -397,7 +298,7 @@ export class NRFormFieldComponent<
   }
 }
 
-export class NRFormComponent<
+export class FormComponent<
     F extends FormControlData,
     M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
     S extends string = string
@@ -408,21 +309,24 @@ export class NRFormComponent<
     DisconnectedCallback,
     NRFormControllerInjector<F, M, S>
 {
-  private fieldListEmitter: Subject<NRFormFieldComponent<F, M, S>[]> =
-    new BehaviorSubject<NRFormFieldComponent<F, M, S>[]>([]);
-  private formControllerEmitter: Subject<FormController<F, M, S> | null> =
-    new BehaviorSubject<FormController<F, M, S> | null>(null);
+  protected fieldListEmitter: Subject<FormFieldComponent<F, M, S>[]> =
+    new BehaviorSubject<FormFieldComponent<F, M, S>[]>([]);
+  protected formControllerEmitter: Subject<
+    FormController<F, M, S> | ImmutableFormController<F, M, S> | null
+  > = new BehaviorSubject<
+    FormController<F, M, S> | ImmutableFormController<F, M, S> | null
+  >(null);
 
-  private subscription: Subscription;
+  protected subscription: Subscription;
 
   @bound
-  private setFieldListFromMutationRecords(mutationList: MutationRecord[]) {
-    const nodes: NRFormFieldComponent<F, M, S>[] = [];
+  protected setFieldListFromMutationRecords(mutationList: MutationRecord[]) {
+    const nodes: FormFieldComponent<F, M, S>[] = [];
     mutationList
       .filter((mutation) => mutation.type === "childList")
       .forEach((mutation) =>
         Array.from(mutation.addedNodes).forEach((node) => {
-          if (!(node instanceof NRFormFieldComponent)) {
+          if (!(node instanceof FormFieldComponent)) {
             return;
           }
           nodes.push(node);
@@ -431,9 +335,11 @@ export class NRFormComponent<
     this.fieldListEmitter.next(nodes);
   }
 
-  private observer = new MutationObserver(this.setFieldListFromMutationRecords);
+  protected observer = new MutationObserver(
+    this.setFieldListFromMutationRecords
+  );
 
-  private controlAll() {
+  protected controlAll() {
     return this.formControllerEmitter
       .asObservable()
       .pipe(
@@ -475,17 +381,3 @@ export class NRFormComponent<
     this.formControllerEmitter.next(controller);
   }
 }
-
-export const installNRFComponents = ({
-  formSelector,
-  fieldSelector,
-}: InstallDefinition = {}) => {
-  const fieldId = fieldSelector ? fieldSelector : "rx-field-component";
-  const formId = formSelector ? formSelector : "rx-form-component";
-  if (!window.customElements.get(fieldId)) {
-    window.customElements.define(fieldId, NRFormFieldComponent);
-  }
-  if (!window.customElements.get(formId)) {
-    window.customElements.define(formId, NRFormComponent);
-  }
-};

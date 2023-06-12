@@ -115,7 +115,7 @@ export type V<T> = T[keyof T];
 export type PK<T> = keyof Partial<T>;
 export type PV<T> = Partial<T>[keyof Partial<T>];
 export type ImmutableFormStubs = List<Map<K<FormStub>, V<FormStub>>>;
-export interface ImmutableFormController<F extends FormControlData, M extends Record<F[number]["field"], FormControlBasicMetadata>, S extends string> {
+export interface ImmutableFormController<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> {
     setAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>) => Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>> | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>): void;
     setFields(fields: FormStubs<F>): void;
     setDefaultMeta(meta: Partial<M>): void;
@@ -163,7 +163,7 @@ export interface AttributeChangedCallback<E extends HTMLElement, P extends Any =
 export interface NRFormControllerInjector<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> {
     setNRFormController(controller: FormController<F, M, S>): void;
 }
-export interface NRFieldDataMapperInjector<F extends FormControlData, N extends number = number> {
+export interface FieldDataMapperInjector<F extends FormControlData, N extends number = number> {
     setDataMapper(mapper: (ev: any) => F[N]["value"]): void;
 }
 export interface NRFieldAttributeBinderInjector {
@@ -172,9 +172,16 @@ export interface NRFieldAttributeBinderInjector {
 export interface NRFieldMetaBinderInjector {
     setMetaBinder(binder: <M extends FormControlBasicMetadata>(attributeSetter: (k: string, v: any) => void, meta: M) => void): void;
 }
+export interface IRFieldAttributeBinderInjector<F extends FormControlData> {
+    setAttrBinder(binder: (attributeSetter: (k: string, v: any) => void, attrs: Map<K<F[number]>, V<F[number]>>) => void): void;
+}
+export interface IRFieldMetaBinderInjector {
+    setMetaBinder(binder: <M extends FormControlBasicMetadata>(attributeSetter: (k: string, v: any) => void, meta: Map<"errors" | "info" | "warn", Map<string, any>>) => void): void;
+}
 export type InstallDefinition = Partial<{
     formSelector: string;
-    fieldSelector: string;
+    fieldNrSelector: string;
+    fieldIrSelector: string;
 }>;
 export type CustomerAttrs = {
     placeholder?: boolean;

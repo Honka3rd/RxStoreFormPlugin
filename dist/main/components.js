@@ -34,15 +34,15 @@ var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, 
     done = true;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.installNRFComponents = exports.NRFormComponent = exports.NRFormFieldComponent = void 0;
+exports.FormComponent = exports.FormFieldComponent = void 0;
+const rx_store_core_1 = require("rx-store-core");
 const rxjs_1 = require("rxjs");
 const interfaces_1 = require("./interfaces");
-const rx_store_core_1 = require("rx-store-core");
-exports.NRFormFieldComponent = (() => {
+exports.FormFieldComponent = (() => {
     var _a;
     let _instanceExtraInitializers = [];
     let _attrSetter_decorators;
-    return _a = class NRFormFieldComponent extends HTMLElement {
+    return _a = class FormFieldComponent extends HTMLElement {
             isValidDirectChild(target) {
                 return target instanceof HTMLElement && target.parentNode === this;
             }
@@ -86,7 +86,7 @@ exports.NRFormFieldComponent = (() => {
                 }
                 if (this.dataset.targetSelector) {
                     const target = this.querySelector(this.dataset.targetSelector);
-                    if (!(this.isValidDirectChild(target))) {
+                    if (!this.isValidDirectChild(target)) {
                         return;
                     }
                     this.directChildEmitter.next(target);
@@ -136,47 +136,6 @@ exports.NRFormFieldComponent = (() => {
             attrSetter(target) {
                 return (k, v) => target.setAttribute(k, v);
             }
-            valuesBinding(target, formController) {
-                const { field } = this;
-                if (!formController || !field) {
-                    return;
-                }
-                if (target instanceof HTMLElement) {
-                    return formController.observeFormDatum(field, (datum) => {
-                        this.setAttribute("data-focused", String(datum.focused));
-                        this.setAttribute("data-changed", String(datum.changed));
-                        this.setAttribute("data-touched", String(datum.touched));
-                        this.setAttribute("data-hovered", String(datum.hovered));
-                        datum.asyncState &&
-                            this.setAttribute("data-asyncState", String(datum.asyncState));
-                        this.setAttribute("data-value", datum.value);
-                        if (this.attributeBinder) {
-                            this.attributeBinder(this.attrSetter(target), datum);
-                            return;
-                        }
-                        if ("value" in target) {
-                            target.setAttribute("value", datum.value);
-                            return;
-                        }
-                        target.setAttribute("data-value", String(datum.value));
-                    });
-                }
-            }
-            metaBinding(target, formController) {
-                const { field } = this;
-                if (!formController || !field || !this.metaDataBinder) {
-                    return;
-                }
-                if (target instanceof HTMLElement) {
-                    return formController.observeMetaByField(field, (meta) => {
-                        var _a;
-                        if (!meta) {
-                            return;
-                        }
-                        (_a = this.metaDataBinder) === null || _a === void 0 ? void 0 : _a.call(this, this.attrSetter(target), meta);
-                    });
-                }
-            }
             setField(field) {
                 if (this.field) {
                     return;
@@ -188,20 +147,6 @@ exports.NRFormFieldComponent = (() => {
                     return;
                 }
                 this.type = type;
-            }
-            makeControl() {
-                return this.formControllerEmitter
-                    .asObservable()
-                    .pipe((0, rxjs_1.switchMap)((controller) => this.directChildEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.tap)((firstChild) => {
-                    this.attachChildEventListeners(firstChild, controller);
-                    const unbindV = this.valuesBinding(firstChild, controller);
-                    const unbindM = this.metaBinding(firstChild, controller);
-                    this.unBind = () => {
-                        unbindV === null || unbindV === void 0 ? void 0 : unbindV();
-                        unbindM === null || unbindM === void 0 ? void 0 : unbindM();
-                    };
-                }))))
-                    .subscribe();
             }
             setRequiredProperties() {
                 var _a;
@@ -218,15 +163,9 @@ exports.NRFormFieldComponent = (() => {
                 this.field = (__runInitializers(this, _instanceExtraInitializers), void 0);
                 this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
                 this.directChildEmitter = new rxjs_1.BehaviorSubject(null);
+                this.subscription = null;
                 this.observer = new MutationObserver(this.setDirectChildFromMutations);
                 this.setRequiredProperties();
-                this.subscription = this.makeControl();
-            }
-            setMetaBinder(binder) {
-                this.metaDataBinder = binder;
-            }
-            setAttrBinder(binder) {
-                this.attributeBinder = binder;
             }
             setDataMapper(mapper) {
                 this.mapper = mapper;
@@ -248,10 +187,10 @@ exports.NRFormFieldComponent = (() => {
                 });
             }
             disconnectedCallback() {
-                var _a;
+                var _a, _b;
                 this.observer.disconnect();
-                this.subscription.unsubscribe();
-                (_a = this.unBind) === null || _a === void 0 ? void 0 : _a.call(this);
+                (_a = this.subscription) === null || _a === void 0 ? void 0 : _a.unsubscribe();
+                (_b = this.unBind) === null || _b === void 0 ? void 0 : _b.call(this);
             }
             attributeChangedCallback(key, prev, next) {
                 const target = this.directChildEmitter.value;
@@ -287,17 +226,17 @@ exports.NRFormFieldComponent = (() => {
         })(),
         _a;
 })();
-exports.NRFormComponent = (() => {
+exports.FormComponent = (() => {
     var _a;
     let _instanceExtraInitializers_1 = [];
     let _setFieldListFromMutationRecords_decorators;
-    return _a = class NRFormComponent extends HTMLFormElement {
+    return _a = class FormComponent extends HTMLFormElement {
             setFieldListFromMutationRecords(mutationList) {
                 const nodes = [];
                 mutationList
                     .filter((mutation) => mutation.type === "childList")
                     .forEach((mutation) => Array.from(mutation.addedNodes).forEach((node) => {
-                    if (!(node instanceof NRFormFieldComponent)) {
+                    if (!(node instanceof FormFieldComponent)) {
                         return;
                     }
                     nodes.push(node);
@@ -343,14 +282,3 @@ exports.NRFormComponent = (() => {
         })(),
         _a;
 })();
-const installNRFComponents = ({ formSelector, fieldSelector, } = {}) => {
-    const fieldId = fieldSelector ? fieldSelector : "rx-field-component";
-    const formId = formSelector ? formSelector : "rx-form-component";
-    if (!window.customElements.get(fieldId)) {
-        window.customElements.define(fieldId, NRFormFieldComponent);
-    }
-    if (!window.customElements.get(formId)) {
-        window.customElements.define(formId, NRFormComponent);
-    }
-};
-exports.installNRFComponents = installNRFComponents;

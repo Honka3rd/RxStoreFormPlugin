@@ -38,7 +38,7 @@ import { bound } from "rx-store-core";
 
 export class ImmutableFormControllerImpl<
     F extends FormControlData,
-    M extends Record<F[number]["field"], FormControlBasicMetadata>,
+    M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
     S extends string
   >
   extends PluginImpl<S>

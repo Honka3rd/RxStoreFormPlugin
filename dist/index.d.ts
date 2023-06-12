@@ -1,3 +1,4 @@
 import { NRFormBuilder, IRFormBuilder } from "./main/builders";
-import { installNRFComponents, NRFormComponent, NRFormFieldComponent } from "./main/components";
-export { NRFormBuilder, IRFormBuilder, installNRFComponents, NRFormComponent, NRFormFieldComponent, };
+import { InstallDefinition } from "./main/interfaces";
+export declare const installNRFComponents: ({ formSelector, fieldNrSelector, fieldIrSelector, }?: InstallDefinition) => void;
+export { NRFormBuilder, IRFormBuilder, };
