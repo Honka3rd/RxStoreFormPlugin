@@ -17,7 +17,6 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     protected setField(field: F[N]["field"]): void;
     protected setDatumType(type: DatumType): void;
     protected setRequiredProperties(): void;
-    constructor();
     setDataMapper(mapper: (ev: any) => F[N]["value"]): void;
     setNRFormController(controller: FormController<F, M, S> | ImmutableFormController<F, M, S>): void;
     getField(): F[N]["field"] | undefined;

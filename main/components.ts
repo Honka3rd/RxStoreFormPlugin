@@ -167,17 +167,13 @@ export class FormFieldComponent<
 
   protected setRequiredProperties() {
     const field = this.getAttribute("data-field") as F[N]["field"];
+    console.log({ field });
     if (!field || !field.length) {
       throw new Error("Form field is not set");
     }
     this.setField(field);
     const type = this.getAttribute("data-type") ?? DatumType.SYNC;
     this.setDatumType(type as DatumType);
-  }
-
-  constructor() {
-    super();
-    this.setRequiredProperties();
   }
 
   setDataMapper(mapper: (ev: any) => F[N]["value"]): void {
@@ -204,6 +200,7 @@ export class FormFieldComponent<
       childList: true,
       attributes: false,
     });
+    this.setRequiredProperties();
   }
 
   disconnectedCallback(): void {

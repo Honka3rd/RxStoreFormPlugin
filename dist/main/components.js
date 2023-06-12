@@ -43,6 +43,14 @@ exports.FormFieldComponent = (() => {
     let _instanceExtraInitializers = [];
     let _attrSetter_decorators;
     return _a = class FormFieldComponent extends HTMLElement {
+            constructor() {
+                super(...arguments);
+                this.field = (__runInitializers(this, _instanceExtraInitializers), void 0);
+                this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
+                this.directChildEmitter = new rxjs_1.BehaviorSubject(null);
+                this.subscription = null;
+                this.observer = new MutationObserver(this.setDirectChildFromMutations);
+            }
             isValidDirectChild(target) {
                 return target instanceof HTMLElement && target.parentNode === this;
             }
@@ -138,21 +146,13 @@ exports.FormFieldComponent = (() => {
             setRequiredProperties() {
                 var _a;
                 const field = this.getAttribute("data-field");
+                console.log({ field });
                 if (!field || !field.length) {
                     throw new Error("Form field is not set");
                 }
                 this.setField(field);
                 const type = (_a = this.getAttribute("data-type")) !== null && _a !== void 0 ? _a : interfaces_1.DatumType.SYNC;
                 this.setDatumType(type);
-            }
-            constructor() {
-                super();
-                this.field = (__runInitializers(this, _instanceExtraInitializers), void 0);
-                this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
-                this.directChildEmitter = new rxjs_1.BehaviorSubject(null);
-                this.subscription = null;
-                this.observer = new MutationObserver(this.setDirectChildFromMutations);
-                this.setRequiredProperties();
             }
             setDataMapper(mapper) {
                 this.mapper = mapper;
@@ -172,6 +172,7 @@ exports.FormFieldComponent = (() => {
                     childList: true,
                     attributes: false,
                 });
+                this.setRequiredProperties();
             }
             disconnectedCallback() {
                 var _a, _b;
