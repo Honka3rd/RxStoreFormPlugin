@@ -218,17 +218,13 @@ exports.FormControlComponent = (() => {
     let _instanceExtraInitializers_1 = [];
     let _setFieldListFromMutationRecords_decorators;
     return _a = class FormControlComponent extends HTMLElement {
-            constructor() {
-                super(...arguments);
-                this.fieldListEmitter = (__runInitializers(this, _instanceExtraInitializers_1), new rxjs_1.BehaviorSubject([]));
-                this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
-                this.observer = new MutationObserver(this.setFieldListFromMutationRecords);
-            }
             setFieldListFromMutationRecords(mutationList) {
                 const nodes = [];
                 mutationList
                     .filter((mutation) => mutation.type === "childList")
                     .forEach((mutation) => Array.from(mutation.addedNodes).forEach((node) => {
+                    this.removeChild(node);
+                    this.formElement.appendChild(node);
                     if (!(node instanceof FormFieldComponent)) {
                         return;
                     }
@@ -246,13 +242,21 @@ exports.FormControlComponent = (() => {
                 }))))
                     .subscribe();
             }
-            insertActualForm() {
-                const formElement = document.createElement("form");
-                this.append(formElement);
-                return formElement;
+            handleFirstRenderInForm() {
+                const filtered = Array.from(this.children).filter((node) => node !== this.formElement);
+                filtered.forEach((node) => this.formElement.appendChild(node));
+            }
+            constructor() {
+                super();
+                this.fieldListEmitter = (__runInitializers(this, _instanceExtraInitializers_1), new rxjs_1.BehaviorSubject([]));
+                this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
+                this.formElement = document.createElement("form");
+                this.observer = new MutationObserver(this.setFieldListFromMutationRecords);
+                this.appendChild(this.formElement);
             }
             connectedCallback() {
-                this.observer.observe(this.insertActualForm(), {
+                this.handleFirstRenderInForm();
+                this.observer.observe(this.formElement, {
                     subtree: true,
                     childList: true,
                     attributes: false,
@@ -265,8 +269,7 @@ exports.FormControlComponent = (() => {
                 (_a = this.subscription) === null || _a === void 0 ? void 0 : _a.unsubscribe();
             }
             setNRFormController(controller) {
-                var _a;
-                (_a = this.querySelector("form")) === null || _a === void 0 ? void 0 : _a.setAttribute("data-selector", controller.selector());
+                this.formElement.setAttribute("data-selector", controller.selector());
                 this.formControllerEmitter.next(controller);
             }
         },

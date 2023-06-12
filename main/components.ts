@@ -269,6 +269,8 @@ export class FormControlComponent<
 
   private subscription?: Subscription;
 
+  private formElement = document.createElement("form");
+
   @bound
   private setFieldListFromMutationRecords(mutationList: MutationRecord[]) {
     const nodes: FormFieldComponent<F, M, S>[] = [];
@@ -276,6 +278,8 @@ export class FormControlComponent<
       .filter((mutation) => mutation.type === "childList")
       .forEach((mutation) =>
         Array.from(mutation.addedNodes).forEach((node) => {
+          this.removeChild(node);
+          this.formElement.appendChild(node);
           if (!(node instanceof FormFieldComponent)) {
             return;
           }
@@ -306,14 +310,21 @@ export class FormControlComponent<
       .subscribe();
   }
 
-  private insertActualForm() {
-    const formElement = document.createElement("form");
-    this.append(formElement);
-    return formElement;
+  private handleFirstRenderInForm() {
+    const filtered = Array.from(this.children).filter(
+      (node) => node !== this.formElement
+    );
+    filtered.forEach((node) => this.formElement.appendChild(node));
+  }
+
+  constructor() {
+    super();
+    this.appendChild(this.formElement);
   }
 
   connectedCallback(): void {
-    this.observer.observe(this.insertActualForm(), {
+    this.handleFirstRenderInForm();
+    this.observer.observe(this.formElement, {
       subtree: true,
       childList: true,
       attributes: false,
@@ -327,10 +338,7 @@ export class FormControlComponent<
   }
 
   setNRFormController(controller: FormController<F, M, S>): void {
-    this.querySelector("form")?.setAttribute(
-      "data-selector",
-      controller.selector()
-    );
+    this.formElement.setAttribute("data-selector", controller.selector());
     this.formControllerEmitter.next(controller);
   }
 }

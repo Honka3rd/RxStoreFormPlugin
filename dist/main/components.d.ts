@@ -30,10 +30,12 @@ export declare class FormControlComponent<F extends FormControlData, M extends P
     private fieldListEmitter;
     private formControllerEmitter;
     private subscription?;
+    private formElement;
     private setFieldListFromMutationRecords;
     private observer;
     private controlAll;
-    private insertActualForm;
+    private handleFirstRenderInForm;
+    constructor();
     connectedCallback(): void;
     disconnectedCallback(): void;
     setNRFormController(controller: FormController<F, M, S>): void;
