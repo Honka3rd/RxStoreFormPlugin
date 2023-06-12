@@ -253,9 +253,7 @@ exports.FormControlComponent = (() => {
                 const attributes = this.attributes;
                 for (let i = 0; i < attributes.length; i++) {
                     const attribute = attributes[i];
-                    if (!this.hasAttribute(attribute.name)) {
-                        this.removeAttribute(attribute.name);
-                    }
+                    this.removeAttribute(attribute.name);
                     this.formElement.setAttribute(attribute.name, attribute.value);
                 }
             }
@@ -292,16 +290,9 @@ exports.FormControlComponent = (() => {
                 (_a = this.subscription) === null || _a === void 0 ? void 0 : _a.unsubscribe();
             }
             attributeChangedCallback(key, prev, next) {
-                console.log({ key, prev, next });
                 if (typeof next === "string") {
                     return this.formElement.setAttribute(key, next);
                 }
-            }
-            attachFormHandler(type, listener) {
-                this.formElement.addEventListener(type, listener);
-            }
-            deletedFormHandler(type, listener) {
-                this.formElement.removeEventListener(type, listener);
             }
         },
         (() => {

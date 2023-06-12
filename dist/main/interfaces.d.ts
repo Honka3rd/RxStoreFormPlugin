@@ -178,10 +178,6 @@ export interface IRFieldAttributeBinderInjector<F extends FormControlData> {
 export interface IRFieldMetaBinderInjector {
     setMetaBinder(binder: (attributeSetter: (k: string, v: any) => void, meta: Map<"errors" | "info" | "warn", Map<string, any>>) => void): void;
 }
-export interface FormEventHandler {
-    attachFormHandler<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLFormElement, ev: HTMLElementEventMap[K]) => any): void;
-    deletedFormHandler<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLFormElement, ev: HTMLElementEventMap[K]) => any): void;
-}
 export type InstallDefinition = Partial<{
     formSelector: string;
     fieldNrSelector: string;

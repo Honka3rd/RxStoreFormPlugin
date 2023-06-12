@@ -437,18 +437,6 @@ export interface IRFieldMetaBinderInjector {
   ): void;
 }
 
-export interface FormEventHandler {
-  attachFormHandler<K extends keyof HTMLElementEventMap>(
-    type: K,
-    listener: (this: HTMLFormElement, ev: HTMLElementEventMap[K]) => any
-  ): void;
-
-  deletedFormHandler<K extends keyof HTMLElementEventMap>(
-    type: K,
-    listener: (this: HTMLFormElement, ev: HTMLElementEventMap[K]) => any
-  ): void;
-}
-
 export type InstallDefinition = Partial<{
   formSelector: string;
   fieldNrSelector: string;
