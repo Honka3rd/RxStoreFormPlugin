@@ -37,6 +37,7 @@ export declare class FormControlComponent<F extends FormControlData, M extends P
     private controlAll;
     private handleFirstRenderInForm;
     private applyParentAttrs;
+    constructor();
     setNRFormController(controller: FormController<F, M, S>): void;
     connectedCallback(): void;
     disconnectedCallback(): void;

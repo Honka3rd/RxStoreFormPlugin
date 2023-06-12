@@ -219,13 +219,6 @@ exports.FormControlComponent = (() => {
     let _drillDownChild_decorators;
     let _setFieldListFromMutationRecords_decorators;
     return _a = class FormControlComponent extends HTMLElement {
-            constructor() {
-                super(...arguments);
-                this.fieldListEmitter = (__runInitializers(this, _instanceExtraInitializers_1), new rxjs_1.BehaviorSubject([]));
-                this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
-                this.formElement = document.createElement("form");
-                this.observer = new MutationObserver(this.setFieldListFromMutationRecords);
-            }
             drillDownChild(node) {
                 this.formElement.appendChild(this.removeChild(node));
             }
@@ -265,6 +258,19 @@ exports.FormControlComponent = (() => {
                     }
                     this.formElement.setAttribute(attribute.name, attribute.value);
                 }
+            }
+            constructor() {
+                super();
+                this.fieldListEmitter = (__runInitializers(this, _instanceExtraInitializers_1), new rxjs_1.BehaviorSubject([]));
+                this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
+                this.formElement = document.createElement("form");
+                this.observer = new MutationObserver(this.setFieldListFromMutationRecords);
+                this.addEventListener = (type, listener, options) => {
+                    this.formElement.addEventListener(type, listener, options);
+                };
+                this.removeEventListener = (type, listener, options) => {
+                    this.formElement.removeEventListener(type, listener, options);
+                };
             }
             setNRFormController(controller) {
                 this.formElement.setAttribute("data-selector", controller.selector());

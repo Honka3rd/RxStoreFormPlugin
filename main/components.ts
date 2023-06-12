@@ -333,6 +333,25 @@ export class FormControlComponent<
     }
   }
 
+  constructor() {
+    super();
+    this.addEventListener = <K extends keyof HTMLElementEventMap>(
+      type: K,
+      listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any,
+      options?: boolean | AddEventListenerOptions
+    ) => {
+      this.formElement.addEventListener(type, listener, options)
+    };
+
+    this.removeEventListener = <K extends keyof HTMLElementEventMap>(
+      type: K,
+      listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any,
+      options?: boolean | AddEventListenerOptions
+    ) => {
+      this.formElement.removeEventListener(type, listener, options)
+    };
+  }
+
   setNRFormController(controller: FormController<F, M, S>): void {
     this.formElement.setAttribute("data-selector", controller.selector());
     this.formControllerEmitter.next(controller);
@@ -359,7 +378,7 @@ export class FormControlComponent<
     prev: V<HTMLElement>,
     next: V<HTMLElement>
   ): void {
-    console.log({key, prev, next})
+    console.log({ key, prev, next });
     if (typeof next === "string") {
       return this.formElement.setAttribute(key, next);
     }
