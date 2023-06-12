@@ -103,11 +103,8 @@ exports.FormFieldComponent = (() => {
                 }
             }
             directChildIsTarget() {
-                var _a;
-                if (!((_a = this.directChildEmitter) === null || _a === void 0 ? void 0 : _a.value) && !this.children.item(0)) {
-                    return false;
-                }
-                return this.directChildEmitter.value === this.children.item(0);
+                const { value } = this.directChildEmitter;
+                return value && value === this.children.item(0);
             }
             attachChildEventListeners(target, formController) {
                 const { field } = this;
@@ -139,9 +136,6 @@ exports.FormFieldComponent = (() => {
             setInputDefault(target, key, next) {
                 if (target instanceof HTMLInputElement ||
                     target instanceof HTMLTextAreaElement) {
-                    if (this.directChildIsTarget()) {
-                        return;
-                    }
                     target.setAttribute(key, next);
                 }
             }
@@ -150,11 +144,7 @@ exports.FormFieldComponent = (() => {
                     return;
                 }
                 if (key === "placeholder") {
-                    if (target instanceof HTMLInputElement ||
-                        target instanceof HTMLTextAreaElement) {
-                        this.setInputDefault(target, key, next);
-                        return;
-                    }
+                    this.setInputDefault(target, key, next);
                 }
                 if (key === "defaultValue") {
                     this.setInputDefault(target, key, next);
@@ -162,6 +152,7 @@ exports.FormFieldComponent = (() => {
             }
             setInputDefaultsOnMount() {
                 const first = this.directChildEmitter.value;
+                debugger;
                 if (!first) {
                     return;
                 }

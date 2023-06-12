@@ -109,11 +109,9 @@ export class FormFieldComponent<
   }
 
   protected directChildIsTarget() {
-    if (!this.directChildEmitter?.value && !this.children.item(0)) {
-      return false;
-    }
+    const { value } = this.directChildEmitter;
 
-    return this.directChildEmitter.value === this.children.item(0);
+    return value && value === this.children.item(0);
   }
 
   protected observer = new MutationObserver(this.setDirectChildFromMutations);
@@ -162,9 +160,6 @@ export class FormFieldComponent<
       target instanceof HTMLInputElement ||
       target instanceof HTMLTextAreaElement
     ) {
-      if (this.directChildIsTarget()) {
-        return;
-      }
       target.setAttribute(key, next);
     }
   }
@@ -175,13 +170,7 @@ export class FormFieldComponent<
     }
 
     if (key === "placeholder") {
-      if (
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement
-      ) {
-        this.setInputDefault(target, key, next);
-        return;
-      }
+      this.setInputDefault(target, key, next);
     }
 
     if (key === "defaultValue") {
@@ -191,6 +180,7 @@ export class FormFieldComponent<
 
   private setInputDefaultsOnMount() {
     const first = this.directChildEmitter.value;
+    debugger
     if (!first) {
       return;
     }

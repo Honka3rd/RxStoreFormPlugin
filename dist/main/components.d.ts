@@ -11,7 +11,7 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     protected isValidDirectChild(target?: Node | null): target is HTMLElement;
     private reportMultiChildError;
     protected setDirectChildFromMutations(mutationList: MutationRecord[]): void;
-    protected directChildIsTarget(): boolean;
+    protected directChildIsTarget(): boolean | null;
     protected observer: MutationObserver;
     protected attachChildEventListeners(target: Node | null, formController: FormController<F, M, S> | ImmutableFormController<F, M, S> | null): void;
     private setInputDefault;
