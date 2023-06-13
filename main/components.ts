@@ -388,6 +388,10 @@ export class FormControlComponent<
         })
       )
       .subscribe(([controller, fields]) => {
+        console.log([controller, fields])
+        if(!controller || !fields) {
+          return;
+        }
         fields.forEach((node) => node.setFormController(controller));
       });
   }
