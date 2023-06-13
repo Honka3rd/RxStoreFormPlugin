@@ -98,14 +98,14 @@ export class FormFieldComponent<
       }, [] as Node[]);
       this.reportMultiChildError();
       const added = allAdded.find((a) => {
-        a instanceof HTMLElement && a.id === this.dataset.targetId;
+        a instanceof HTMLElement && a.id === this.dataset.target_id;
       });
       added && this.directChildEmitter.next(added as HTMLElement);
       return;
     }
 
-    if (this.dataset.targetSelector) {
-      const target = this.querySelector(this.dataset.targetSelector);
+    if (this.dataset.target_selector) {
+      const target = this.querySelector(this.dataset.target_selector);
       this.reportMultiChildError();
       target && this.directChildEmitter.next(target as HTMLElement);
     }
@@ -195,7 +195,7 @@ export class FormFieldComponent<
   }
 
   private emitOnlyChildOnMount() {
-    if (!this.dataset.targetSelector && !this.dataset.targetId) {
+    if (!this.dataset.target_selector && !this.dataset.target_id) {
       const first = this.children.item(0);
       if (!this.isValidDirectChild(first)) {
         return this;
@@ -205,10 +205,10 @@ export class FormFieldComponent<
       return this;
     }
 
-    if (this.dataset.targetId) {
+    if (this.dataset.target_id) {
       const first = this.children
         .item(0)
-        ?.querySelector(`#${this.dataset.targetId}`);
+        ?.querySelector(`#${this.dataset.target_id}`);
       if (!this.isValidDirectChild(first)) {
         return this;
       }
@@ -216,10 +216,10 @@ export class FormFieldComponent<
       return this;
     }
 
-    if (this.dataset.targetSelector) {
+    if (this.dataset.target_selector) {
       const target = this.children
         .item(0)
-        ?.querySelector(this.dataset.targetSelector);
+        ?.querySelector(this.dataset.target_selector);
       if (!this.isValidDirectChild(target)) {
         return this;
       }

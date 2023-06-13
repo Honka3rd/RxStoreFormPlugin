@@ -4,7 +4,7 @@ import {
   Subject,
   Subscription,
   combineLatest,
-  distinctUntilChanged
+  distinctUntilChanged,
 } from "rxjs";
 import { FormFieldComponent } from "./field";
 import {
@@ -45,7 +45,12 @@ export class FormControlComponent<
 
   @bound
   private drillDownChild(node: Node) {
-    this.formElement.appendChild(this.removeChild(node));
+    if (this.contains(node)) {
+      this.removeChild(node);
+    }
+    if (!this.formElement.contains(node)) {
+      this.formElement.appendChild(node);
+    }
   }
 
   @bound
@@ -129,7 +134,6 @@ export class FormControlComponent<
   private emitFieldChildrenOnMount() {
     const fields: FormFieldComponent<F, M, S, number>[] = [];
     this.fillFields(fields);
-    console.log("filled", fields);
     this.fieldListEmitter.next(fields);
   }
 

@@ -45,7 +45,12 @@ exports.FormControlComponent = (() => {
     let _setFieldListFromMutationRecords_decorators;
     return _a = class FormControlComponent extends HTMLElement {
             drillDownChild(node) {
-                this.formElement.appendChild(this.removeChild(node));
+                if (this.contains(node)) {
+                    this.removeChild(node);
+                }
+                if (!this.formElement.contains(node)) {
+                    this.formElement.appendChild(node);
+                }
             }
             setFieldListFromMutationRecords(mutationList) {
                 const nodes = [];
@@ -105,7 +110,6 @@ exports.FormControlComponent = (() => {
             emitFieldChildrenOnMount() {
                 const fields = [];
                 this.fillFields(fields);
-                console.log("filled", fields);
                 this.fieldListEmitter.next(fields);
             }
             constructor() {

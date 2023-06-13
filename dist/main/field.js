@@ -91,13 +91,13 @@ exports.FormFieldComponent = (() => {
                     }, []);
                     this.reportMultiChildError();
                     const added = allAdded.find((a) => {
-                        a instanceof HTMLElement && a.id === this.dataset.targetId;
+                        a instanceof HTMLElement && a.id === this.dataset.target_id;
                     });
                     added && this.directChildEmitter.next(added);
                     return;
                 }
-                if (this.dataset.targetSelector) {
-                    const target = this.querySelector(this.dataset.targetSelector);
+                if (this.dataset.target_selector) {
+                    const target = this.querySelector(this.dataset.target_selector);
                     this.reportMultiChildError();
                     target && this.directChildEmitter.next(target);
                 }
@@ -162,7 +162,7 @@ exports.FormFieldComponent = (() => {
             }
             emitOnlyChildOnMount() {
                 var _a, _b;
-                if (!this.dataset.targetSelector && !this.dataset.targetId) {
+                if (!this.dataset.target_selector && !this.dataset.target_id) {
                     const first = this.children.item(0);
                     if (!this.isValidDirectChild(first)) {
                         return this;
@@ -170,18 +170,18 @@ exports.FormFieldComponent = (() => {
                     this.directChildEmitter.next(first);
                     return this;
                 }
-                if (this.dataset.targetId) {
+                if (this.dataset.target_id) {
                     const first = (_a = this.children
-                        .item(0)) === null || _a === void 0 ? void 0 : _a.querySelector(`#${this.dataset.targetId}`);
+                        .item(0)) === null || _a === void 0 ? void 0 : _a.querySelector(`#${this.dataset.target_id}`);
                     if (!this.isValidDirectChild(first)) {
                         return this;
                     }
                     this.directChildEmitter.next(first);
                     return this;
                 }
-                if (this.dataset.targetSelector) {
+                if (this.dataset.target_selector) {
                     const target = (_b = this.children
-                        .item(0)) === null || _b === void 0 ? void 0 : _b.querySelector(this.dataset.targetSelector);
+                        .item(0)) === null || _b === void 0 ? void 0 : _b.querySelector(this.dataset.target_selector);
                     if (!this.isValidDirectChild(target)) {
                         return this;
                     }
