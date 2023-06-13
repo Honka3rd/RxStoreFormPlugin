@@ -291,7 +291,7 @@ exports.FormControlComponent = (() => {
                     console.log({ paired });
                     const controller = paired.find((target) => target instanceof formControlNRS_1.default ||
                         target instanceof formControlIRS_1.ImmutableFormControllerImpl);
-                    const fields = paired.find((target) => target instanceof HTMLElement);
+                    const fields = paired.find((target) => Array.isArray(target));
                     return [controller, fields];
                 }))
                     .subscribe(([controller, fields]) => {
@@ -336,6 +336,7 @@ exports.FormControlComponent = (() => {
             emitFieldChildrenOnMount() {
                 const fields = [];
                 this.fillFields(fields);
+                console.log("filled", fields);
                 this.fieldListEmitter.next(fields);
             }
             constructor() {
@@ -358,6 +359,7 @@ exports.FormControlComponent = (() => {
                     childList: true,
                     attributes: false,
                 });
+                Array.from(this.children).forEach(console.log);
                 this.subscription = this.controlAll();
             }
             disconnectedCallback() {

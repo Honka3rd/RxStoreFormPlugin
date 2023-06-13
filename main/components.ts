@@ -381,15 +381,15 @@ export class FormControlComponent<
               target instanceof ImmutableFormControllerImpl
           ) as FormController<F, M, S> | ImmutableFormController<F, M, S>;
 
-          const fields = paired.find(
-            (target) => target instanceof HTMLElement
+          const fields = paired.find((target) =>
+            Array.isArray(target)
           ) as FormFieldComponent<F, M, S>[];
           return [controller, fields] as const;
         })
       )
       .subscribe(([controller, fields]) => {
-        console.log([controller, fields])
-        if(!controller || !fields) {
+        console.log([controller, fields]);
+        if (!controller || !fields) {
           return;
         }
         fields.forEach((node) => node.setFormController(controller));
@@ -446,6 +446,7 @@ export class FormControlComponent<
   private emitFieldChildrenOnMount() {
     const fields: FormFieldComponent<F, M, S, number>[] = [];
     this.fillFields(fields);
+    console.log("filled", fields)
     this.fieldListEmitter.next(fields);
   }
 
@@ -467,6 +468,7 @@ export class FormControlComponent<
       childList: true,
       attributes: false,
     });
+    Array.from(this.children).forEach(console.log)
     this.subscription = this.controlAll();
   }
 
