@@ -435,7 +435,6 @@ export class FormControlComponent<
     all = this.formElement.children
   ) {
     for (const node of Array.from(all)) {
-      debugger
       if (node instanceof FormFieldComponent) {
         fields.push(node);
       } else {
@@ -453,7 +452,7 @@ export class FormControlComponent<
 
   constructor() {
     super();
-    this.overwriteEventListener().emitFieldChildrenOnMount();
+    this.overwriteEventListener();
   }
 
   setFormController(controller: FormController<F, M, S>): void {
@@ -469,7 +468,7 @@ export class FormControlComponent<
       childList: true,
       attributes: false,
     });
-    Array.from(this.formElement.children).forEach(console.log)
+    this.emitFieldChildrenOnMount();
     this.subscription = this.controlAll();
   }
 

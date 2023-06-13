@@ -325,7 +325,6 @@ exports.FormControlComponent = (() => {
             }
             fillFields(fields, all = this.formElement.children) {
                 for (const node of Array.from(all)) {
-                    debugger;
                     if (node instanceof FormFieldComponent) {
                         fields.push(node);
                     }
@@ -346,7 +345,7 @@ exports.FormControlComponent = (() => {
                 this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
                 this.formElement = document.createElement("form");
                 this.observer = new MutationObserver(this.setFieldListFromMutationRecords);
-                this.overwriteEventListener().emitFieldChildrenOnMount();
+                this.overwriteEventListener();
             }
             setFormController(controller) {
                 this.formElement.setAttribute("data-selector", controller.selector());
@@ -360,7 +359,7 @@ exports.FormControlComponent = (() => {
                     childList: true,
                     attributes: false,
                 });
-                Array.from(this.formElement.children).forEach(console.log);
+                this.emitFieldChildrenOnMount();
                 this.subscription = this.controlAll();
             }
             disconnectedCallback() {
