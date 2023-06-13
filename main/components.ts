@@ -382,7 +382,7 @@ export class FormControlComponent<
           ) as FormController<F, M, S> | ImmutableFormController<F, M, S>;
 
           const fields = paired.find(
-            (target) => target instanceof FormFieldComponent
+            (target) => target instanceof HTMLElement
           ) as FormFieldComponent<F, M, S>[];
           return [controller, fields] as const;
         })

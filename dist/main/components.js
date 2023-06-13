@@ -291,7 +291,7 @@ exports.FormControlComponent = (() => {
                     console.log({ paired });
                     const controller = paired.find((target) => target instanceof formControlNRS_1.default ||
                         target instanceof formControlIRS_1.ImmutableFormControllerImpl);
-                    const fields = paired.find((target) => target instanceof FormFieldComponent);
+                    const fields = paired.find((target) => target instanceof HTMLElement);
                     return [controller, fields];
                 }))
                     .subscribe(([controller, fields]) => {
