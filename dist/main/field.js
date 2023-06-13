@@ -173,7 +173,7 @@ exports.FormFieldComponent = (() => {
                 if (this.dataset.target_id) {
                     const first = (_a = this.children
                         .item(0)) === null || _a === void 0 ? void 0 : _a.querySelector(`#${this.dataset.target_id}`);
-                    if (!this.isValidDirectChild(first)) {
+                    if (!(first instanceof HTMLElement)) {
                         return this;
                     }
                     this.directChildEmitter.next(first);
@@ -182,7 +182,7 @@ exports.FormFieldComponent = (() => {
                 if (this.dataset.target_selector) {
                     const target = (_b = this.children
                         .item(0)) === null || _b === void 0 ? void 0 : _b.querySelector(this.dataset.target_selector);
-                    if (!this.isValidDirectChild(target)) {
+                    if (!(target instanceof HTMLElement)) {
                         return this;
                     }
                     this.directChildEmitter.next(target);

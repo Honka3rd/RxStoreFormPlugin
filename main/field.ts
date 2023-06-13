@@ -209,10 +209,10 @@ export class FormFieldComponent<
       const first = this.children
         .item(0)
         ?.querySelector(`#${this.dataset.target_id}`);
-      if (!this.isValidDirectChild(first)) {
+      if (!(first instanceof HTMLElement)) {
         return this;
       }
-      this.directChildEmitter.next(first as HTMLElement);
+      this.directChildEmitter.next(first);
       return this;
     }
 
@@ -220,10 +220,10 @@ export class FormFieldComponent<
       const target = this.children
         .item(0)
         ?.querySelector(this.dataset.target_selector);
-      if (!this.isValidDirectChild(target)) {
+      if (!(target instanceof HTMLElement)) {
         return this;
       }
-      this.directChildEmitter.next(target as HTMLElement);
+      this.directChildEmitter.next(target);
     }
     return this;
   }
