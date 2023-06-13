@@ -17,7 +17,10 @@ export class NRFieldComponent<
     N extends number = number
   >
   extends FormFieldComponent<F, M, S, N>
-  implements NRFieldAttributeBinderInjector, NRFieldMetaBinderInjector, FormControllerInjector<F, M, S>
+  implements
+    NRFieldAttributeBinderInjector,
+    NRFieldMetaBinderInjector,
+    FormControllerInjector<F, M, S>
 {
   private attributeBinder?: <D extends FormControlBasicDatum>(
     attributeSetter: (k: string, v: any) => void,
@@ -88,18 +91,17 @@ export class NRFieldComponent<
             distinctUntilChanged(),
             tap((firstChild) => {
               this.attachChildEventListeners(firstChild, controller);
-              const unbindV = this.valuesBinding(
-                firstChild,
-                controller as FormController<F, M, S>
-              );
-              const unbindM = this.metaBinding(
-                firstChild,
-                controller as FormController<F, M, S>
-              );
-              this.unBind = () => {
-                unbindV?.();
-                unbindM?.();
-              };
+              const unListens = [
+                this.valuesBinding(
+                  firstChild,
+                  controller as FormController<F, M, S>
+                ),
+                this.metaBinding(
+                  firstChild,
+                  controller as FormController<F, M, S>
+                ),
+              ];
+              this.unBind = () => unListens.forEach((fn) => fn?.());
             })
           )
         )
@@ -112,9 +114,7 @@ export class NRFieldComponent<
     this.subscription = this.makeControl();
   }
 
-  setFormController(
-    controller: FormController<F, M, S>
-  ): void {
+  setFormController(controller: FormController<F, M, S>): void {
     this.formControllerEmitter.next(controller);
   }
 

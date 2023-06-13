@@ -33,11 +33,16 @@ var __esDecorate = (this && this.__esDecorate) || function (ctor, descriptorIn, 
     if (target) Object.defineProperty(target, contextIn.name, descriptor);
     done = true;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FormControlComponent = exports.FormFieldComponent = void 0;
 const rx_store_core_1 = require("rx-store-core");
 const rxjs_1 = require("rxjs");
 const interfaces_1 = require("./interfaces");
+const formControlNRS_1 = __importDefault(require("./formControlNRS"));
+const formControlIRS_1 = require("./formControlIRS");
 exports.FormFieldComponent = (() => {
     var _a;
     let _instanceExtraInitializers = [];
@@ -281,14 +286,17 @@ exports.FormControlComponent = (() => {
                 this.fieldListEmitter.next(nodes);
             }
             controlAll() {
-                return this.formControllerEmitter
-                    .asObservable()
-                    .pipe((0, rxjs_1.switchMap)((controller) => this.fieldListEmitter.asObservable().pipe((0, rxjs_1.tap)((nodeList) => {
-                    if (controller) {
-                        nodeList.forEach((node) => node.setFormController(controller));
-                    }
-                }))))
-                    .subscribe();
+                return (0, rxjs_1.merge)(this.formControllerEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)()), this.fieldListEmitter.asObservable(), 2)
+                    .pipe((0, rxjs_1.pairwise)(), (0, rxjs_1.map)((paired) => {
+                    console.log({ paired });
+                    const controller = paired.find((target) => target instanceof formControlNRS_1.default ||
+                        target instanceof formControlIRS_1.ImmutableFormControllerImpl);
+                    const fields = paired.find((target) => target instanceof FormFieldComponent);
+                    return [controller, fields];
+                }))
+                    .subscribe(([controller, fields]) => {
+                    fields.forEach((node) => node.setFormController(controller));
+                });
             }
             handleFirstRenderInForm() {
                 Array.from(this.children).forEach(this.drillDownChild);

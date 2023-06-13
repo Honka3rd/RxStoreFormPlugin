@@ -1,5 +1,15 @@
 import { bound } from "rx-store-core";
-import { BehaviorSubject, Subject, Subscription, switchMap, tap } from "rxjs";
+import {
+  BehaviorSubject,
+  Subject,
+  Subscription,
+  distinctUntilChanged,
+  map,
+  merge,
+  pairwise,
+  switchMap,
+  tap,
+} from "rxjs";
 import {
   AttributeChangedCallback,
   ConnectedCallback,
@@ -15,6 +25,8 @@ import {
   FormControllerInjector,
   V,
 } from "./interfaces";
+import FormControllerImpl from "./formControlNRS";
+import { ImmutableFormControllerImpl } from "./formControlIRS";
 
 export class FormFieldComponent<
     F extends FormControlData,
@@ -354,20 +366,30 @@ export class FormControlComponent<
   private observer = new MutationObserver(this.setFieldListFromMutationRecords);
 
   private controlAll() {
-    return this.formControllerEmitter
-      .asObservable()
+    return merge(
+      this.formControllerEmitter.asObservable().pipe(distinctUntilChanged()),
+      this.fieldListEmitter.asObservable(),
+      2
+    )
       .pipe(
-        switchMap((controller) =>
-          this.fieldListEmitter.asObservable().pipe(
-            tap((nodeList) => {
-              if (controller) {
-                nodeList.forEach((node) => node.setFormController(controller));
-              }
-            })
-          )
-        )
+        pairwise(),
+        map((paired) => {
+          console.log({ paired });
+          const controller = paired.find(
+            (target) =>
+              target instanceof FormControllerImpl ||
+              target instanceof ImmutableFormControllerImpl
+          ) as FormController<F, M, S> | ImmutableFormController<F, M, S>;
+
+          const fields = paired.find(
+            (target) => target instanceof FormFieldComponent
+          ) as FormFieldComponent<F, M, S>[];
+          return [controller, fields] as const;
+        })
       )
-      .subscribe();
+      .subscribe(([controller, fields]) => {
+        fields.forEach((node) => node.setFormController(controller));
+      });
   }
 
   private handleFirstRenderInForm() {

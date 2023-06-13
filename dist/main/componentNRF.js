@@ -50,12 +50,11 @@ class NRFieldComponent extends components_1.FormFieldComponent {
             .asObservable()
             .pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.switchMap)((controller) => this.directChildEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.tap)((firstChild) => {
             this.attachChildEventListeners(firstChild, controller);
-            const unbindV = this.valuesBinding(firstChild, controller);
-            const unbindM = this.metaBinding(firstChild, controller);
-            this.unBind = () => {
-                unbindV === null || unbindV === void 0 ? void 0 : unbindV();
-                unbindM === null || unbindM === void 0 ? void 0 : unbindM();
-            };
+            const unListens = [
+                this.valuesBinding(firstChild, controller),
+                this.metaBinding(firstChild, controller),
+            ];
+            this.unBind = () => unListens.forEach((fn) => fn === null || fn === void 0 ? void 0 : fn());
         }))))
             .subscribe();
     }

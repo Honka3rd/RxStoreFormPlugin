@@ -93,18 +93,17 @@ export class IRFieldComponent<
             distinctUntilChanged(),
             tap((firstChild) => {
               this.attachChildEventListeners(firstChild, controller);
-              const unbindV = this.valuesBinding(
-                firstChild,
-                controller as ImmutableFormController<F, M, S>
-              );
-              const unbindM = this.metaBinding(
-                firstChild,
-                controller as ImmutableFormController<F, M, S>
-              );
-              this.unBind = () => {
-                unbindV?.();
-                unbindM?.();
-              };
+              const unListens = [
+                this.valuesBinding(
+                  firstChild,
+                  controller as ImmutableFormController<F, M, S>
+                ),
+                this.metaBinding(
+                  firstChild,
+                  controller as ImmutableFormController<F, M, S>
+                ),
+              ];
+              this.unBind = () => unListens.forEach((fn) => fn?.());
             })
           )
         )
