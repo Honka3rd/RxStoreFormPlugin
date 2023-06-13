@@ -3,14 +3,10 @@ import {
   BehaviorSubject,
   Subject,
   Subscription,
-  distinctUntilChanged,
-  map,
-  merge,
-  pairwise
+  combineLatest,
+  distinctUntilChanged
 } from "rxjs";
 import { FormFieldComponent } from "./field";
-import { ImmutableFormControllerImpl } from "./formControlIRS";
-import FormControllerImpl from "./formControlNRS";
 import {
   AttributeChangedCallback,
   ConnectedCallback,
@@ -20,7 +16,7 @@ import {
   FormController,
   FormControllerInjector,
   ImmutableFormController,
-  V
+  V,
 } from "./interfaces";
 
 export class FormControlComponent<
@@ -72,34 +68,15 @@ export class FormControlComponent<
   private observer = new MutationObserver(this.setFieldListFromMutationRecords);
 
   private controlAll() {
-    return merge(
+    return combineLatest([
       this.formControllerEmitter.asObservable().pipe(distinctUntilChanged()),
-      this.fieldListEmitter.asObservable(),
-      2
-    )
-      .pipe(
-        pairwise(),
-        map((paired) => {
-          console.log({ paired });
-          const controller = paired.find(
-            (target) =>
-              target instanceof FormControllerImpl ||
-              target instanceof ImmutableFormControllerImpl
-          ) as FormController<F, M, S> | ImmutableFormController<F, M, S>;
-
-          const fields = paired.find((target) =>
-            Array.isArray(target)
-          ) as FormFieldComponent<F, M, S>[];
-          return [controller, fields] as const;
-        })
-      )
-      .subscribe(([controller, fields]) => {
-        console.log([controller, fields]);
-        if (!controller || !fields) {
-          return;
-        }
-        fields.forEach((node) => node.setFormController(controller));
-      });
+      this.fieldListEmitter.asObservable().pipe(distinctUntilChanged()),
+    ] as const).subscribe(([controller, fields]) => {
+      if (!controller || !fields) {
+        return;
+      }
+      fields.forEach((node) => node.setFormController(controller));
+    });
   }
 
   private handleFirstRenderInForm() {
@@ -152,7 +129,7 @@ export class FormControlComponent<
   private emitFieldChildrenOnMount() {
     const fields: FormFieldComponent<F, M, S, number>[] = [];
     this.fillFields(fields);
-    console.log("filled", fields)
+    console.log("filled", fields);
     this.fieldListEmitter.next(fields);
   }
 
