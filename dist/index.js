@@ -8,8 +8,8 @@ const componentNRF_1 = require("./main/componentNRF");
 Object.defineProperty(exports, "NRFieldComponent", { enumerable: true, get: function () { return componentNRF_1.NRFieldComponent; } });
 const componentIRF_1 = require("./main/componentIRF");
 Object.defineProperty(exports, "IRFieldComponent", { enumerable: true, get: function () { return componentIRF_1.IRFieldComponent; } });
-const components_1 = require("./main/components");
-Object.defineProperty(exports, "FormControlComponent", { enumerable: true, get: function () { return components_1.FormControlComponent; } });
+const form_1 = require("./main/form");
+Object.defineProperty(exports, "FormControlComponent", { enumerable: true, get: function () { return form_1.FormControlComponent; } });
 const installNRFComponents = ({ formSelector, fieldNrSelector, fieldIrSelector, } = {}) => {
     const fieldNrId = fieldNrSelector ? fieldNrSelector : "rx-field-component";
     const fieldIrId = fieldIrSelector
@@ -23,7 +23,7 @@ const installNRFComponents = ({ formSelector, fieldNrSelector, fieldIrSelector, 
         window.customElements.define(fieldIrId, componentIRF_1.IRFieldComponent);
     }
     if (!window.customElements.get(formId)) {
-        window.customElements.define(formId, components_1.FormControlComponent);
+        window.customElements.define(formId, form_1.FormControlComponent);
     }
 };
 exports.installNRFComponents = installNRFComponents;

@@ -1,4 +1,4 @@
-import { FormFieldComponent } from "./components";
+import { FormFieldComponent } from "./field";
 import { FormControlBasicMetadata, FormControlData, IRFieldAttributeBinderInjector, IRFieldMetaBinderInjector, ImmutableFormController, K, V } from "./interfaces";
 import { Map } from "immutable";
 export declare class IRFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends FormFieldComponent<F, M, S, N> implements IRFieldAttributeBinderInjector<F>, IRFieldMetaBinderInjector {

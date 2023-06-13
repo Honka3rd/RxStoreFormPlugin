@@ -2,10 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.IRFieldComponent = void 0;
 const rxjs_1 = require("rxjs");
-const components_1 = require("./components");
-class IRFieldComponent extends components_1.FormFieldComponent {
-    attributeBinder;
-    metaDataBinder;
+const field_1 = require("./field");
+class IRFieldComponent extends field_1.FormFieldComponent {
     valuesBinding(target, formController) {
         const { field } = this;
         if (!formController || !field) {
@@ -40,10 +38,11 @@ class IRFieldComponent extends components_1.FormFieldComponent {
         }
         if (target instanceof HTMLElement) {
             return formController.observeMetaByField(field, (meta) => {
+                var _a;
                 if (!meta) {
                     return;
                 }
-                this.metaDataBinder?.(this.attrSetter(target), meta);
+                (_a = this.metaDataBinder) === null || _a === void 0 ? void 0 : _a.call(this, this.attrSetter(target), meta);
             });
         }
     }
@@ -56,7 +55,7 @@ class IRFieldComponent extends components_1.FormFieldComponent {
                 this.valuesBinding(firstChild, controller),
                 this.metaBinding(firstChild, controller),
             ];
-            this.unBind = () => unListens.forEach((fn) => fn?.());
+            this.unBind = () => unListens.forEach((fn) => fn === null || fn === void 0 ? void 0 : fn());
         }))))
             .subscribe();
     }

@@ -1,5 +1,5 @@
 import { BehaviorSubject, Subscription } from "rxjs";
-import { AttributeChangedCallback, ConnectedCallback, CustomerAttrs, DatumType, DisconnectedCallback, FieldDataMapperInjector, FormControlBasicMetadata, FormControlData, FormController, ImmutableFormController, K, FormControllerInjector, V } from "./interfaces";
+import { AttributeChangedCallback, ConnectedCallback, CustomerAttrs, DatumType, DisconnectedCallback, FieldDataMapperInjector, FormControlBasicMetadata, FormControlData, FormController, FormControllerInjector, ImmutableFormController, K, V } from "./interfaces";
 export declare class FormFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends HTMLElement implements ConnectedCallback, DisconnectedCallback, AttributeChangedCallback<HTMLElement, CustomerAttrs>, FieldDataMapperInjector<F, N>, FormControllerInjector<F, M, S> {
     protected field?: F[N]["field"];
     protected type?: DatumType;
@@ -30,24 +30,4 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     disconnectedCallback(): void;
     attributeChangedCallback(key: K<HTMLElement & CustomerAttrs>, prev: V<HTMLElement & CustomerAttrs>, next: V<HTMLElement & CustomerAttrs>): void;
     static get observedAttributes(): string[];
-}
-export declare class FormControlComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string> extends HTMLElement implements ConnectedCallback, DisconnectedCallback, FormControllerInjector<F, M, S>, AttributeChangedCallback<HTMLElement> {
-    private fieldListEmitter;
-    private formControllerEmitter;
-    private subscription?;
-    private formElement;
-    private drillDownChild;
-    private setFieldListFromMutationRecords;
-    private observer;
-    private controlAll;
-    private handleFirstRenderInForm;
-    private applyParentAttrs;
-    private overwriteEventListener;
-    private fillFields;
-    private emitFieldChildrenOnMount;
-    constructor();
-    setFormController(controller: FormController<F, M, S>): void;
-    connectedCallback(): void;
-    disconnectedCallback(): void;
-    attributeChangedCallback(key: keyof HTMLElement, prev: V<HTMLElement>, next: V<HTMLElement>): void;
 }

@@ -1,5 +1,5 @@
 import { distinctUntilChanged, switchMap, tap } from "rxjs";
-import { FormFieldComponent } from "./components";
+import { FormFieldComponent } from "./field";
 import {
   FormControlBasicDatum,
   FormControlBasicMetadata,
