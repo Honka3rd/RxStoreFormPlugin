@@ -323,8 +323,9 @@ exports.FormControlComponent = (() => {
                 };
                 return this;
             }
-            fillFields(fields, all = this.children) {
+            fillFields(fields, all = this.formElement.children) {
                 for (const node of Array.from(all)) {
+                    debugger;
                     if (node instanceof FormFieldComponent) {
                         fields.push(node);
                     }
@@ -359,7 +360,7 @@ exports.FormControlComponent = (() => {
                     childList: true,
                     attributes: false,
                 });
-                Array.from(this.children).forEach(console.log);
+                Array.from(this.formElement.children).forEach(console.log);
                 this.subscription = this.controlAll();
             }
             disconnectedCallback() {

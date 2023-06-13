@@ -432,9 +432,10 @@ export class FormControlComponent<
 
   private fillFields(
     fields: FormFieldComponent<F, M, S, number>[],
-    all = this.children
+    all = this.formElement.children
   ) {
     for (const node of Array.from(all)) {
+      debugger
       if (node instanceof FormFieldComponent) {
         fields.push(node);
       } else {
@@ -468,7 +469,7 @@ export class FormControlComponent<
       childList: true,
       attributes: false,
     });
-    Array.from(this.children).forEach(console.log)
+    Array.from(this.formElement.children).forEach(console.log)
     this.subscription = this.controlAll();
   }
 
