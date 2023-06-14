@@ -54,16 +54,19 @@ class NRFieldComponent extends field_1.FormFieldComponent {
     }
     makeControl() {
         const controller$ = this.formControllerEmitter;
+        // test
+        controller$.subscribe((c) => console.log("test control", c));
+        // ---
         const directChild$ = this.directChildEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.tap)(() => {
             var _a;
             (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
         }), (0, rxjs_1.pairwise)());
         return controller$
-            .pipe((0, rxjs_1.switchMap)((controller) => directChild$.pipe((0, rxjs_1.tap)(([previous, current]) => {
+            .pipe((0, rxjs_1.switchMap)((controller) => (0, rxjs_1.iif)(() => controller !== null, directChild$.pipe((0, rxjs_1.tap)(([previous, current]) => {
             console.log([previous, current], controller);
             this.attachChildEventListeners([previous, current], controller);
             this.stopBinding = this.binder(current, controller);
-        }))))
+        })), (0, rxjs_1.of)(null))))
             .subscribe();
     }
     constructor() {

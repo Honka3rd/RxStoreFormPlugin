@@ -1,6 +1,8 @@
 import {
   combineLatest,
   distinctUntilChanged,
+  iif,
+  of,
   pairwise,
   switchMap,
   tap,
@@ -100,6 +102,9 @@ export class NRFieldComponent<
 
   protected makeControl() {
     const controller$ = this.formControllerEmitter;
+    // test
+    controller$.subscribe((c) => console.log("test control", c))
+    // ---
     const directChild$ = this.directChildEmitter.asObservable().pipe(
       distinctUntilChanged(),
       tap(() => {
@@ -110,15 +115,19 @@ export class NRFieldComponent<
     return controller$
       .pipe(
         switchMap((controller) =>
-          directChild$.pipe(
-            tap(([previous, current]) => {
-              console.log([previous, current], controller);
-              this.attachChildEventListeners([previous, current], controller);
-              this.stopBinding = this.binder(
-                current,
-                controller as FormController<F, M, S>
-              );
-            })
+          iif(
+            () => controller !== null,
+            directChild$.pipe(
+              tap(([previous, current]) => {
+                console.log([previous, current], controller);
+                this.attachChildEventListeners([previous, current], controller);
+                this.stopBinding = this.binder(
+                  current,
+                  controller as FormController<F, M, S>
+                );
+              })
+            ),
+            of(null)
           )
         )
       )
