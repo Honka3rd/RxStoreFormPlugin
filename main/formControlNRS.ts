@@ -128,7 +128,7 @@ class FormControllerImpl<
 
   private shallowCloneFormData() {
     return this.safeExecute((connector) => {
-      const casted = this.cast(connector)
+      const casted = this.cast(connector);
       return casted.getClonedState(this.id) as F;
     });
   }
@@ -206,7 +206,9 @@ class FormControllerImpl<
     connector: RxNStore<Record<S, () => F>> & Subscribable<Record<S, () => F>>
   ) {
     return connector.observe(this.id, (formData) => {
+      console.log({ formData });
       const meta = this.validator(formData, this.getMeta());
+      console.log({ meta });
       this.safeCommitMeta(meta);
     });
   }

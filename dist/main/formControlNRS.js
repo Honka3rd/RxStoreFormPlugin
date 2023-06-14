@@ -201,7 +201,9 @@ let FormControllerImpl = (() => {
             }
             validatorExecutor(connector) {
                 return connector.observe(this.id, (formData) => {
+                    console.log({ formData });
                     const meta = this.validator(formData, this.getMeta());
+                    console.log({ meta });
                     this.safeCommitMeta(meta);
                 });
             }
