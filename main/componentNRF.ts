@@ -107,7 +107,7 @@ export class NRFieldComponent<
     let childRecord: [HTMLElement | null, HTMLElement | null];
 
     const controlSubscription = controller$.subscribe((c) => {
-      console.log("controlSubscription", { controller, childRecord });
+      console.log("controlSubscription", { controller: c, childRecord });
       if (c instanceof FormControllerImpl) {
         controller = c;
         this.stopBinding?.();

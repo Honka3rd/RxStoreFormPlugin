@@ -66,7 +66,7 @@ class NRFieldComponent extends field_1.FormFieldComponent {
         let childRecord;
         const controlSubscription = controller$.subscribe((c) => {
             var _a;
-            console.log("controlSubscription", { controller, childRecord });
+            console.log("controlSubscription", { controller: c, childRecord });
             if (c instanceof formControlNRS_1.default) {
                 controller = c;
                 (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
