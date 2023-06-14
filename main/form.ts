@@ -64,7 +64,7 @@ export class FormControlComponent<
           if (!(node instanceof FormFieldComponent)) {
             return;
           }
-          node.setAttribute("data-ready", "true");
+          node.setAttribute("data-ready", "true")
           nodes.push(node);
         })
       );
@@ -136,8 +136,8 @@ export class FormControlComponent<
     const fields: FormFieldComponent<F, M, S, number>[] = [];
     this.fillFields(fields);
     fields.forEach((field) => {
-      field.setAttribute("data-ready", "true");
-    });
+      field.setAttribute("data-ready", "true")
+    })
     this.fieldListEmitter.next(fields);
   }
 

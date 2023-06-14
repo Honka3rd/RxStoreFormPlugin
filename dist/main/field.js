@@ -232,21 +232,20 @@ exports.FormFieldComponent = (() => {
                 return this.type;
             }
             connectedCallback() {
-                if (this.dataset.ready === "true") {
-                    this.reportMultiChildError();
-                    this.emitOnlyChildOnMount().setInputDefaultsOnMount();
-                    this.observer.observe(this, {
-                        subtree: true,
-                        childList: true,
-                        attributes: false,
-                    });
-                    this.setRequiredProperties();
-                }
+                this.reportMultiChildError();
+                this.emitOnlyChildOnMount().setInputDefaultsOnMount();
+                this.observer.observe(this, {
+                    subtree: true,
+                    childList: true,
+                    attributes: false,
+                });
+                this.setRequiredProperties();
+            }
+            attributeChangedCallback(key, prev, next) {
+                console.log("attr changed", { key, prev, next });
             }
             disconnectedCallback() {
-                if (this.dataset.ready === "true") {
-                    this.observer.disconnect();
-                }
+                this.observer.disconnect();
             }
         },
         (() => {

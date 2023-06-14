@@ -1,6 +1,6 @@
 import { BehaviorSubject } from "rxjs";
-import { ConnectedCallback, DatumType, DisconnectedCallback, FieldDataMapperInjector, FormControlBasicMetadata, FormControlData, FormController, FormControllerInjector, ImmutableFormController } from "./interfaces";
-export declare class FormFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends HTMLElement implements ConnectedCallback, DisconnectedCallback, FieldDataMapperInjector<F, N>, FormControllerInjector<F, M, S> {
+import { AttributeChangedCallback, ConnectedCallback, DatumType, DisconnectedCallback, FieldDataMapperInjector, FormControlBasicMetadata, FormControlData, FormController, FormControllerInjector, ImmutableFormController, V } from "./interfaces";
+export declare class FormFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends HTMLElement implements ConnectedCallback, DisconnectedCallback, FieldDataMapperInjector<F, N>, FormControllerInjector<F, M, S>, AttributeChangedCallback<HTMLElement> {
     protected field?: F[N]["field"];
     protected type?: DatumType;
     protected mapper?: (ev: any) => F[N]["value"];
@@ -25,5 +25,6 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     getField(): F[N]["field"] | undefined;
     getDatumType(): DatumType | undefined;
     connectedCallback(): void;
+    attributeChangedCallback(key: keyof HTMLElement, prev: V<HTMLElement>, next: V<HTMLElement>): void;
     disconnectedCallback(): void;
 }

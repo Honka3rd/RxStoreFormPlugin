@@ -3,7 +3,6 @@ import { BehaviorSubject } from "rxjs";
 import {
   AttributeChangedCallback,
   ConnectedCallback,
-  CustomerAttrs,
   DatumType,
   DisconnectedCallback,
   FieldDataMapperInjector,
@@ -12,7 +11,6 @@ import {
   FormController,
   FormControllerInjector,
   ImmutableFormController,
-  K,
   V,
 } from "./interfaces";
 
@@ -27,7 +25,8 @@ export class FormFieldComponent<
     ConnectedCallback,
     DisconnectedCallback,
     FieldDataMapperInjector<F, N>,
-    FormControllerInjector<F, M, S>
+    FormControllerInjector<F, M, S>,
+    AttributeChangedCallback<HTMLElement>
 {
   protected field?: F[N]["field"];
   protected type?: DatumType;
@@ -290,21 +289,25 @@ export class FormFieldComponent<
   }
 
   connectedCallback(): void {
-    if (this.dataset.ready === "true") {
-      this.reportMultiChildError();
-      this.emitOnlyChildOnMount().setInputDefaultsOnMount();
-      this.observer.observe(this, {
-        subtree: true,
-        childList: true,
-        attributes: false,
-      });
-      this.setRequiredProperties();
-    }
+    this.reportMultiChildError();
+    this.emitOnlyChildOnMount().setInputDefaultsOnMount();
+    this.observer.observe(this, {
+      subtree: true,
+      childList: true,
+      attributes: false,
+    });
+    this.setRequiredProperties();
+  }
+
+  attributeChangedCallback(
+    key: keyof HTMLElement,
+    prev: V<HTMLElement>,
+    next: V<HTMLElement>
+  ): void {
+    console.log("attr changed", { key, prev, next });
   }
 
   disconnectedCallback(): void {
-    if (this.dataset.ready === "true") {
-      this.observer.disconnect();
-    }
+    this.observer.disconnect();
   }
 }
