@@ -1,6 +1,5 @@
-import { distinctUntilChanged, pairwise, tap } from "rxjs";
+import { combineLatest, distinctUntilChanged, pairwise, tap } from "rxjs";
 import { FormFieldComponent } from "./field";
-import FormControllerImpl from "./formControlNRS";
 import {
   FormControlBasicDatum,
   FormControlBasicMetadata,
@@ -103,53 +102,22 @@ export class NRFieldComponent<
       pairwise()
     );
 
-    // test
-    controller$.subscribe((controller) => {
-      console.log("test", { controller });
-    });
-    // ---
-
-    let controller: FormController<F, M, S>;
-    let childRecord: [HTMLElement | null, HTMLElement | null];
-
-    const controlSubscription = controller$.subscribe((c) => {
-      console.log("controlSubscription", { controller: c, childRecord });
-      /* if (c instanceof FormControllerImpl) {
-        controller = c;
-        this.stopBinding?.();
-        if (!childRecord) {
-          return;
-        }
-        this.attachChildEventListeners(childRecord, c);
-        this.stopBinding = this.binder(
-          childRecord[1],
-          controller as FormController<F, M, S>
-        );
-      } */
-    });
-
-    const childSubscription = directChild$.subscribe((record) => {
-      this.stopBinding?.();
-      childRecord = record;
-      console.log("childSubscription", { controller, childRecord });
-      if (!controller) {
-        return;
-      }
-      this.attachChildEventListeners(record, controller);
-      this.stopBinding = this.binder(
-        record[1],
-        controller as FormController<F, M, S>
-      );
-    });
-    return () => {
-      controlSubscription.unsubscribe();
-      childSubscription.unsubscribe();
-    };
+    combineLatest([controller$, directChild$] as const)
+      .pipe(
+        tap(([controller, records]) => {
+          this.attachChildEventListeners(records, controller);
+          this.stopBinding = this.binder(
+            records[1],
+            controller as FormController<F, M, S>
+          );
+        })
+      )
+      .subscribe();
   }
 
   constructor() {
     super();
-    this.unsubscribe = this.makeControl();
+    this.makeControl();
   }
 
   setMetaBinder(

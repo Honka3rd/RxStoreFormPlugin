@@ -58,47 +58,16 @@ class NRFieldComponent extends field_1.FormFieldComponent {
             var _a;
             (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
         }), (0, rxjs_1.pairwise)());
-        // test
-        controller$.subscribe((controller) => {
-            console.log("test", { controller });
-        });
-        // ---
-        let controller;
-        let childRecord;
-        const controlSubscription = controller$.subscribe((c) => {
-            console.log("controlSubscription", { controller: c, childRecord });
-            /* if (c instanceof FormControllerImpl) {
-              controller = c;
-              this.stopBinding?.();
-              if (!childRecord) {
-                return;
-              }
-              this.attachChildEventListeners(childRecord, c);
-              this.stopBinding = this.binder(
-                childRecord[1],
-                controller as FormController<F, M, S>
-              );
-            } */
-        });
-        const childSubscription = directChild$.subscribe((record) => {
-            var _a;
-            (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
-            childRecord = record;
-            console.log("childSubscription", { controller, childRecord });
-            if (!controller) {
-                return;
-            }
-            this.attachChildEventListeners(record, controller);
-            this.stopBinding = this.binder(record[1], controller);
-        });
-        return () => {
-            controlSubscription.unsubscribe();
-            childSubscription.unsubscribe();
-        };
+        (0, rxjs_1.combineLatest)([controller$, directChild$])
+            .pipe((0, rxjs_1.tap)(([controller, records]) => {
+            this.attachChildEventListeners(records, controller);
+            this.stopBinding = this.binder(records[1], controller);
+        }))
+            .subscribe();
     }
     constructor() {
         super();
-        this.unsubscribe = this.makeControl();
+        this.makeControl();
     }
     setMetaBinder(binder) {
         this.metaDataBinder = binder;

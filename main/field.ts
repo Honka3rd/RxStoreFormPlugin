@@ -1,11 +1,10 @@
 import { bound } from "rx-store-core";
-import { BehaviorSubject, Subscription } from "rxjs";
+import { BehaviorSubject } from "rxjs";
 import {
   AttributeChangedCallback,
   ConnectedCallback,
   CustomerAttrs,
   DatumType,
-  DisconnectedCallback,
   FieldDataMapperInjector,
   FormControlBasicMetadata,
   FormControlData,
@@ -25,7 +24,6 @@ export class FormFieldComponent<
   extends HTMLElement
   implements
     ConnectedCallback,
-    DisconnectedCallback,
     AttributeChangedCallback<HTMLElement, CustomerAttrs>,
     FieldDataMapperInjector<F, N>,
     FormControllerInjector<F, M, S>
@@ -41,7 +39,6 @@ export class FormFieldComponent<
   >(null);
   protected directChildEmitter: BehaviorSubject<HTMLElement | null> =
     new BehaviorSubject<HTMLElement | null>(null);
-  protected unsubscribe?: () => void;
   protected stopBinding?: () => void;
 
   protected isValidDirectChild(target?: Node | null): target is HTMLElement {
@@ -296,12 +293,6 @@ export class FormFieldComponent<
       attributes: false,
     });
     this.setRequiredProperties();
-  }
-
-  disconnectedCallback(): void {
-    /* this.observer.disconnect();
-    this.unsubscribe?.();
-    this.stopBinding?.(); */
   }
 
   attributeChangedCallback(
