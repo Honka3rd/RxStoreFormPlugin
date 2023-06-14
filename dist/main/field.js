@@ -48,7 +48,6 @@ exports.FormFieldComponent = (() => {
                 this.field = (__runInitializers(this, _instanceExtraInitializers), void 0);
                 this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
                 this.directChildEmitter = new rxjs_1.BehaviorSubject(null);
-                this.subscription = null;
                 this.observer = new MutationObserver(this.setDirectChildFromMutations);
             }
             isValidDirectChild(target) {
@@ -247,7 +246,7 @@ exports.FormFieldComponent = (() => {
             disconnectedCallback() {
                 var _a, _b;
                 this.observer.disconnect();
-                (_a = this.subscription) === null || _a === void 0 ? void 0 : _a.unsubscribe();
+                (_a = this.unsubscribe) === null || _a === void 0 ? void 0 : _a.call(this);
                 (_b = this.stopBinding) === null || _b === void 0 ? void 0 : _b.call(this);
             }
             attributeChangedCallback(key, prev, next) {

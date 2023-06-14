@@ -41,7 +41,7 @@ export class FormFieldComponent<
   >(null);
   protected directChildEmitter: BehaviorSubject<HTMLElement | null> =
     new BehaviorSubject<HTMLElement | null>(null);
-  protected subscription: Subscription | null = null;
+  protected unsubscribe?: () => void;
   protected stopBinding?: () => void;
 
   protected isValidDirectChild(target?: Node | null): target is HTMLElement {
@@ -301,7 +301,7 @@ export class FormFieldComponent<
 
   disconnectedCallback(): void {
     this.observer.disconnect();
-    this.subscription?.unsubscribe();
+    this.unsubscribe?.();
     this.stopBinding?.();
   }
 

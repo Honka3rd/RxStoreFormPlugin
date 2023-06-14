@@ -1,8 +1,12 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NRFieldComponent = void 0;
 const rxjs_1 = require("rxjs");
 const field_1 = require("./field");
+const formControlNRS_1 = __importDefault(require("./formControlNRS"));
 class NRFieldComponent extends field_1.FormFieldComponent {
     attributesBinding(target, formController) {
         const { field } = this;
@@ -53,36 +57,43 @@ class NRFieldComponent extends field_1.FormFieldComponent {
         return () => unListens.forEach((fn) => fn === null || fn === void 0 ? void 0 : fn());
     }
     makeControl() {
-        const controller$ = this.formControllerEmitter.pipe((0, rxjs_1.distinctUntilChanged)());
+        const controller$ = this.formControllerEmitter.pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.filter)((c) => c !== null));
         const directChild$ = this.directChildEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.tap)(() => {
             var _a;
             (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
         }), (0, rxjs_1.pairwise)());
-        return (0, rxjs_1.merge)([controller$, directChild$]).subscribe(console.log);
-        /*  return controller$
-          .pipe(
-            switchMap((controller) =>
-              iif(
-                () => controller !== null,
-                directChild$.pipe(
-                  tap(([previous, current]) => {
-                    console.log([previous, current], controller);
-                    this.attachChildEventListeners([previous, current], controller);
-                    this.stopBinding = this.binder(
-                      current,
-                      controller as FormController<F, M, S>
-                    );
-                  })
-                ),
-                of(null)
-              )
-            )
-          )
-          .subscribe(); */
+        let controller;
+        let childRecord;
+        const controlSubscription = controller$.subscribe((c) => {
+            var _a;
+            if (!childRecord) {
+                return;
+            }
+            if (c instanceof formControlNRS_1.default) {
+                (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
+                this.attachChildEventListeners(childRecord, c);
+                this.stopBinding = this.binder(childRecord[1], controller);
+                controller = c;
+            }
+        });
+        const childSubscription = directChild$.subscribe((record) => {
+            var _a;
+            if (!controller) {
+                return;
+            }
+            (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
+            this.attachChildEventListeners(record, controller);
+            this.stopBinding = this.binder(record[1], controller);
+            childRecord = record;
+        });
+        return () => {
+            controlSubscription.unsubscribe();
+            childSubscription.unsubscribe();
+        };
     }
     constructor() {
         super();
-        this.subscription = this.makeControl();
+        this.unsubscribe = this.makeControl();
     }
     setMetaBinder(binder) {
         this.metaDataBinder = binder;

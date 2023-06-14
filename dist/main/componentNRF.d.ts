@@ -6,7 +6,7 @@ export declare class NRFieldComponent<F extends FormControlData, M extends Parti
     private attributesBinding;
     private metaBinding;
     private binder;
-    protected makeControl(): import("rxjs").Subscription;
+    protected makeControl(): () => void;
     constructor();
     setMetaBinder(binder: <M extends FormControlBasicMetadata>(attributeSetter: (k: string, v: any) => void, meta: M) => void): void;
     setAttrBinder(binder: <D extends FormControlBasicDatum>(attributeSetter: (k: string, v: any) => void, attrs: D) => void): void;

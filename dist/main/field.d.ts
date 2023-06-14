@@ -1,4 +1,4 @@
-import { BehaviorSubject, Subscription } from "rxjs";
+import { BehaviorSubject } from "rxjs";
 import { AttributeChangedCallback, ConnectedCallback, CustomerAttrs, DatumType, DisconnectedCallback, FieldDataMapperInjector, FormControlBasicMetadata, FormControlData, FormController, FormControllerInjector, ImmutableFormController, K, V } from "./interfaces";
 export declare class FormFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends HTMLElement implements ConnectedCallback, DisconnectedCallback, AttributeChangedCallback<HTMLElement, CustomerAttrs>, FieldDataMapperInjector<F, N>, FormControllerInjector<F, M, S> {
     protected field?: F[N]["field"];
@@ -6,7 +6,7 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     protected mapper?: (ev: any) => F[N]["value"];
     protected formControllerEmitter: BehaviorSubject<FormController<F, M, S> | ImmutableFormController<F, M, S> | null>;
     protected directChildEmitter: BehaviorSubject<HTMLElement | null>;
-    protected subscription: Subscription | null;
+    protected unsubscribe?: () => void;
     protected stopBinding?: () => void;
     protected isValidDirectChild(target?: Node | null): target is HTMLElement;
     private reportMultiChildError;

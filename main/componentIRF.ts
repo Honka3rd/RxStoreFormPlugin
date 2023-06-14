@@ -121,7 +121,7 @@ export class IRFieldComponent<
 
   constructor() {
     super();
-    this.subscription = this.makeControl();
+    // this.subscription = this.makeControl();
   }
 
   setMetaBinder(

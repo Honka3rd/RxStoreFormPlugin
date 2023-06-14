@@ -67,7 +67,7 @@ class IRFieldComponent extends field_1.FormFieldComponent {
     }
     constructor() {
         super();
-        this.subscription = this.makeControl();
+        // this.subscription = this.makeControl();
     }
     setMetaBinder(binder) {
         this.metaDataBinder = binder;
