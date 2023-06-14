@@ -1,21 +1,18 @@
 import {
-  combineLatest,
-  distinctUntilChanged,
-  iif,
-  of,
-  pairwise,
-  switchMap,
-  tap,
+    distinctUntilChanged,
+    merge,
+    pairwise,
+    tap
 } from "rxjs";
 import { FormFieldComponent } from "./field";
 import {
-  FormControlBasicDatum,
-  FormControlBasicMetadata,
-  FormControlData,
-  FormController,
-  FormControllerInjector,
-  NRFieldAttributeBinderInjector,
-  NRFieldMetaBinderInjector,
+    FormControlBasicDatum,
+    FormControlBasicMetadata,
+    FormControlData,
+    FormController,
+    FormControllerInjector,
+    NRFieldAttributeBinderInjector,
+    NRFieldMetaBinderInjector,
 } from "./interfaces";
 
 export class NRFieldComponent<
@@ -101,10 +98,7 @@ export class NRFieldComponent<
   }
 
   protected makeControl() {
-    const controller$ = this.formControllerEmitter;
-    // test
-    controller$.subscribe((c) => console.log("test control", c))
-    // ---
+    const controller$ = this.formControllerEmitter.pipe(distinctUntilChanged());
     const directChild$ = this.directChildEmitter.asObservable().pipe(
       distinctUntilChanged(),
       tap(() => {
@@ -112,7 +106,10 @@ export class NRFieldComponent<
       }),
       pairwise()
     );
-    return controller$
+
+    return merge([controller$, directChild$]).subscribe(console.log)
+
+    /*  return controller$
       .pipe(
         switchMap((controller) =>
           iif(
@@ -131,7 +128,7 @@ export class NRFieldComponent<
           )
         )
       )
-      .subscribe();
+      .subscribe(); */
   }
 
   constructor() {

@@ -53,21 +53,32 @@ class NRFieldComponent extends field_1.FormFieldComponent {
         return () => unListens.forEach((fn) => fn === null || fn === void 0 ? void 0 : fn());
     }
     makeControl() {
-        const controller$ = this.formControllerEmitter;
-        // test
-        controller$.subscribe((c) => console.log("test control", c));
-        // ---
+        const controller$ = this.formControllerEmitter.pipe((0, rxjs_1.distinctUntilChanged)());
         const directChild$ = this.directChildEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.tap)(() => {
             var _a;
             (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
         }), (0, rxjs_1.pairwise)());
-        return controller$
-            .pipe((0, rxjs_1.switchMap)((controller) => (0, rxjs_1.iif)(() => controller !== null, directChild$.pipe((0, rxjs_1.tap)(([previous, current]) => {
-            console.log([previous, current], controller);
-            this.attachChildEventListeners([previous, current], controller);
-            this.stopBinding = this.binder(current, controller);
-        })), (0, rxjs_1.of)(null))))
-            .subscribe();
+        return (0, rxjs_1.merge)([controller$, directChild$]).subscribe(console.log);
+        /*  return controller$
+          .pipe(
+            switchMap((controller) =>
+              iif(
+                () => controller !== null,
+                directChild$.pipe(
+                  tap(([previous, current]) => {
+                    console.log([previous, current], controller);
+                    this.attachChildEventListeners([previous, current], controller);
+                    this.stopBinding = this.binder(
+                      current,
+                      controller as FormController<F, M, S>
+                    );
+                  })
+                ),
+                of(null)
+              )
+            )
+          )
+          .subscribe(); */
     }
     constructor() {
         super();
