@@ -24,7 +24,6 @@ export class FormFieldComponent<
   extends HTMLElement
   implements
     ConnectedCallback,
-    AttributeChangedCallback<HTMLElement, CustomerAttrs>,
     FieldDataMapperInjector<F, N>,
     FormControllerInjector<F, M, S>
 {
@@ -177,20 +176,6 @@ export class FormFieldComponent<
     }
   }
 
-  private setInputDefaults(target: Node | null, key: string, next: string) {
-    if (!target) {
-      return;
-    }
-
-    if (key === "placeholder") {
-      this.setInputDefault(target, key, next);
-    }
-
-    if (key === "defaultValue") {
-      this.setInputDefault(target, key, next);
-    }
-  }
-
   private setInputDefaultsOnMount() {
     const first = this.directChildEmitter.value;
     if (!first) {
@@ -296,18 +281,5 @@ export class FormFieldComponent<
       attributes: false,
     });
     this.setRequiredProperties();
-  }
-
-  attributeChangedCallback(
-    key: K<HTMLElement & CustomerAttrs>,
-    prev: V<HTMLElement & CustomerAttrs>,
-    next: V<HTMLElement & CustomerAttrs>
-  ) {
-    const target = this.directChildEmitter.value;
-    this.setInputDefaults(target, key, next);
-  }
-
-  static get observedAttributes() {
-    return ["placeholder", "defaultValue"];
   }
 }

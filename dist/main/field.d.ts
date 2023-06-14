@@ -1,6 +1,6 @@
 import { BehaviorSubject } from "rxjs";
-import { AttributeChangedCallback, ConnectedCallback, CustomerAttrs, DatumType, FieldDataMapperInjector, FormControlBasicMetadata, FormControlData, FormController, FormControllerInjector, ImmutableFormController, K, V } from "./interfaces";
-export declare class FormFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends HTMLElement implements ConnectedCallback, AttributeChangedCallback<HTMLElement, CustomerAttrs>, FieldDataMapperInjector<F, N>, FormControllerInjector<F, M, S> {
+import { ConnectedCallback, DatumType, FieldDataMapperInjector, FormControlBasicMetadata, FormControlData, FormController, FormControllerInjector, ImmutableFormController } from "./interfaces";
+export declare class FormFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends HTMLElement implements ConnectedCallback, FieldDataMapperInjector<F, N>, FormControllerInjector<F, M, S> {
     protected field?: F[N]["field"];
     protected type?: DatumType;
     protected mapper?: (ev: any) => F[N]["value"];
@@ -14,7 +14,6 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     protected observer: MutationObserver;
     protected attachChildEventListeners(target: [Node | null, Node | null], formController: FormController<F, M, S> | ImmutableFormController<F, M, S> | null): void;
     private setInputDefault;
-    private setInputDefaults;
     private setInputDefaultsOnMount;
     private emitOnlyChildOnMount;
     protected attrSetter(target: HTMLElement): (k: string, v: any) => void;
@@ -26,6 +25,4 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     getField(): F[N]["field"] | undefined;
     getDatumType(): DatumType | undefined;
     connectedCallback(): void;
-    attributeChangedCallback(key: K<HTMLElement & CustomerAttrs>, prev: V<HTMLElement & CustomerAttrs>, next: V<HTMLElement & CustomerAttrs>): void;
-    static get observedAttributes(): string[];
 }

@@ -150,17 +150,6 @@ exports.FormFieldComponent = (() => {
                     target.setAttribute(key, next);
                 }
             }
-            setInputDefaults(target, key, next) {
-                if (!target) {
-                    return;
-                }
-                if (key === "placeholder") {
-                    this.setInputDefault(target, key, next);
-                }
-                if (key === "defaultValue") {
-                    this.setInputDefault(target, key, next);
-                }
-            }
             setInputDefaultsOnMount() {
                 const first = this.directChildEmitter.value;
                 if (!first) {
@@ -248,13 +237,6 @@ exports.FormFieldComponent = (() => {
                     attributes: false,
                 });
                 this.setRequiredProperties();
-            }
-            attributeChangedCallback(key, prev, next) {
-                const target = this.directChildEmitter.value;
-                this.setInputDefaults(target, key, next);
-            }
-            static get observedAttributes() {
-                return ["placeholder", "defaultValue"];
             }
         },
         (() => {
