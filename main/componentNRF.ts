@@ -1,5 +1,6 @@
-import { distinctUntilChanged, filter, merge, pairwise, tap } from "rxjs";
+import { distinctUntilChanged, pairwise, tap } from "rxjs";
 import { FormFieldComponent } from "./field";
+import FormControllerImpl from "./formControlNRS";
 import {
   FormControlBasicDatum,
   FormControlBasicMetadata,
@@ -9,7 +10,6 @@ import {
   NRFieldAttributeBinderInjector,
   NRFieldMetaBinderInjector,
 } from "./interfaces";
-import FormControllerImpl from "./formControlNRS";
 
 export class NRFieldComponent<
     F extends FormControlData,
@@ -94,10 +94,7 @@ export class NRFieldComponent<
   }
 
   protected makeControl() {
-    const controller$ = this.formControllerEmitter.pipe(
-      distinctUntilChanged(),
-      filter((c) => c !== null)
-    );
+    const controller$ = this.formControllerEmitter.pipe(distinctUntilChanged());
     const directChild$ = this.directChildEmitter.asObservable().pipe(
       distinctUntilChanged(),
       tap(() => {
@@ -110,6 +107,7 @@ export class NRFieldComponent<
     let childRecord: [HTMLElement | null, HTMLElement | null];
 
     const controlSubscription = controller$.subscribe((c) => {
+      console.log("controlSubscription", { controller, childRecord });
       if (c instanceof FormControllerImpl) {
         controller = c;
         this.stopBinding?.();
@@ -127,6 +125,7 @@ export class NRFieldComponent<
     const childSubscription = directChild$.subscribe((record) => {
       this.stopBinding?.();
       childRecord = record;
+      console.log("childSubscription", { controller, childRecord });
       if (!controller) {
         return;
       }

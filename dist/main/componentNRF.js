@@ -57,7 +57,7 @@ class NRFieldComponent extends field_1.FormFieldComponent {
         return () => unListens.forEach((fn) => fn === null || fn === void 0 ? void 0 : fn());
     }
     makeControl() {
-        const controller$ = this.formControllerEmitter.pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.filter)((c) => c !== null));
+        const controller$ = this.formControllerEmitter.pipe((0, rxjs_1.distinctUntilChanged)());
         const directChild$ = this.directChildEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.tap)(() => {
             var _a;
             (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
@@ -66,6 +66,7 @@ class NRFieldComponent extends field_1.FormFieldComponent {
         let childRecord;
         const controlSubscription = controller$.subscribe((c) => {
             var _a;
+            console.log("controlSubscription", { controller, childRecord });
             if (c instanceof formControlNRS_1.default) {
                 controller = c;
                 (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
@@ -80,6 +81,7 @@ class NRFieldComponent extends field_1.FormFieldComponent {
             var _a;
             (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
             childRecord = record;
+            console.log("childSubscription", { controller, childRecord });
             if (!controller) {
                 return;
             }
