@@ -132,11 +132,11 @@ export class FormFieldComponent<
     };
 
     const change = (event: any) => {
-        debugger
       if (this.mapper) {
         formController.changeFormValue(field, this.mapper(event));
         return;
       }
+      console.log(event);
       formController.changeFormValue(field, event.target.value);
     };
 

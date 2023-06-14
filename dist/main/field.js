@@ -115,11 +115,11 @@ exports.FormFieldComponent = (() => {
                     formController.focusFormField(field, false).touchFormField(field, true);
                 };
                 const change = (event) => {
-                    debugger;
                     if (this.mapper) {
                         formController.changeFormValue(field, this.mapper(event));
                         return;
                     }
+                    console.log(event);
                     formController.changeFormValue(field, event.target.value);
                 };
                 if (current instanceof HTMLElement) {
