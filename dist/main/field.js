@@ -227,6 +227,7 @@ exports.FormFieldComponent = (() => {
                 return this.type;
             }
             connectedCallback() {
+                console.log("connected", this.field);
                 this.reportMultiChildError();
                 this.emitOnlyChildOnMount().setInputDefaultsOnMount();
                 this.observer.observe(this, {

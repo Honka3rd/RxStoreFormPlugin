@@ -271,6 +271,7 @@ export class FormFieldComponent<
   }
 
   connectedCallback(): void {
+    console.log("connected", this.field)
     this.reportMultiChildError();
     this.emitOnlyChildOnMount().setInputDefaultsOnMount();
     this.observer.observe(this, {
