@@ -61,6 +61,7 @@ exports.FormControlComponent = (() => {
                     if (!(node instanceof field_1.FormFieldComponent)) {
                         return;
                     }
+                    node.setAttribute("data-ready", "true");
                     nodes.push(node);
                 }));
                 this.fieldListEmitter.next(nodes);
@@ -110,6 +111,9 @@ exports.FormControlComponent = (() => {
             emitFieldChildrenOnMount() {
                 const fields = [];
                 this.fillFields(fields);
+                fields.forEach((field) => {
+                    field.setAttribute("data-ready", "true");
+                });
                 this.fieldListEmitter.next(fields);
             }
             constructor() {

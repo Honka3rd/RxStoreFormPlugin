@@ -173,7 +173,6 @@ let FormControllerImpl = (() => {
                             const cloned = Object.assign({}, found);
                             data.splice(data.indexOf(found), 1, cloned);
                             callback(cloned, data);
-                            console.log({ data, cloned });
                             this.commitMutation(data, this.cast(connector));
                         });
                     });
@@ -202,9 +201,7 @@ let FormControllerImpl = (() => {
             }
             validatorExecutor(connector) {
                 return connector.observe(this.id, (formData) => {
-                    console.log("before validate", { formData });
                     const meta = this.validator(formData, this.getMeta());
-                    console.log("after validate", { meta });
                     this.safeCommitMeta(meta);
                 });
             }

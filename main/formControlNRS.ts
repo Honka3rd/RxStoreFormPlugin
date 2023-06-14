@@ -169,7 +169,6 @@ class FormControllerImpl<
           const cloned = { ...found };
           data.splice(data.indexOf(found), 1, cloned);
           callback(cloned, data);
-          console.log({ data, cloned });
           this.commitMutation(data, this.cast(connector));
         });
       });
@@ -207,9 +206,7 @@ class FormControllerImpl<
     connector: RxNStore<Record<S, () => F>> & Subscribable<Record<S, () => F>>
   ) {
     return connector.observe(this.id, (formData) => {
-      console.log("before validate", { formData });
       const meta = this.validator(formData, this.getMeta());
-      console.log("after validate", { meta });
       this.safeCommitMeta(meta);
     });
   }

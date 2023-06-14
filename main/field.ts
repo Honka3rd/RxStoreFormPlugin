@@ -5,6 +5,7 @@ import {
   ConnectedCallback,
   CustomerAttrs,
   DatumType,
+  DisconnectedCallback,
   FieldDataMapperInjector,
   FormControlBasicMetadata,
   FormControlData,
@@ -24,6 +25,7 @@ export class FormFieldComponent<
   extends HTMLElement
   implements
     ConnectedCallback,
+    DisconnectedCallback,
     FieldDataMapperInjector<F, N>,
     FormControllerInjector<F, M, S>
 {
@@ -114,31 +116,37 @@ export class FormFieldComponent<
       return;
     }
 
-    function mouseover(){
+    function mouseover() {
       formController?.hoverFormField(field!, true);
-    };
+    }
 
-    function mouseleave(){
+    function mouseleave() {
       formController?.hoverFormField(field!, false);
-    };
+    }
 
     function focus() {
       formController?.focusFormField(field!, true);
-    };
+    }
 
     function blur() {
-      formController?.focusFormField(field!, false).touchFormField(field!, true);
-    };
+      formController
+        ?.focusFormField(field!, false)
+        .touchFormField(field!, true);
+    }
 
     const context = this;
 
-    function change(event: any) {
+    function keydown(event: any) {
       if (context.mapper) {
         formController?.changeFormValue(field!, context.mapper(event));
         return;
       }
       formController?.changeFormValue(field!, event.target.value);
-    };
+    }
+
+    function change({ target }: any) {
+      formController?.changeFormValue(field!, target.checked);
+    }
 
     if (current instanceof HTMLElement) {
       current.addEventListener("mouseover", mouseover);
@@ -149,7 +157,11 @@ export class FormFieldComponent<
 
       current.addEventListener("blur", blur);
 
-      current.addEventListener("keydown", change);
+      current.addEventListener("keydown", keydown);
+
+      if (current instanceof HTMLInputElement && current.type === "checkbox") {
+        current.addEventListener("change", change);
+      }
     }
 
     if (previous instanceof HTMLElement) {
@@ -161,7 +173,14 @@ export class FormFieldComponent<
 
       previous.removeEventListener("blur", blur);
 
-      previous.removeEventListener("keydown", change);
+      previous.removeEventListener("keydown", keydown);
+
+      if (
+        previous instanceof HTMLInputElement &&
+        previous.type === "checkbox"
+      ) {
+        previous.removeEventListener("change", change);
+      }
     }
   }
 
@@ -271,14 +290,21 @@ export class FormFieldComponent<
   }
 
   connectedCallback(): void {
-    console.log("connected", this.field)
-    this.reportMultiChildError();
-    this.emitOnlyChildOnMount().setInputDefaultsOnMount();
-    this.observer.observe(this, {
-      subtree: true,
-      childList: true,
-      attributes: false,
-    });
-    this.setRequiredProperties();
+    if (this.dataset.ready === "true") {
+      this.reportMultiChildError();
+      this.emitOnlyChildOnMount().setInputDefaultsOnMount();
+      this.observer.observe(this, {
+        subtree: true,
+        childList: true,
+        attributes: false,
+      });
+      this.setRequiredProperties();
+    }
+  }
+
+  disconnectedCallback(): void {
+    if (this.dataset.ready === "true") {
+      this.observer.disconnect();
+    }
   }
 }

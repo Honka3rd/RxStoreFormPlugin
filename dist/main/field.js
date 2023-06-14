@@ -105,41 +105,46 @@ exports.FormFieldComponent = (() => {
                 function mouseover() {
                     formController === null || formController === void 0 ? void 0 : formController.hoverFormField(field, true);
                 }
-                ;
                 function mouseleave() {
                     formController === null || formController === void 0 ? void 0 : formController.hoverFormField(field, false);
                 }
-                ;
                 function focus() {
                     formController === null || formController === void 0 ? void 0 : formController.focusFormField(field, true);
                 }
-                ;
                 function blur() {
                     formController === null || formController === void 0 ? void 0 : formController.focusFormField(field, false).touchFormField(field, true);
                 }
-                ;
                 const context = this;
-                function change(event) {
+                function keydown(event) {
                     if (context.mapper) {
                         formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, context.mapper(event));
                         return;
                     }
                     formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, event.target.value);
                 }
-                ;
+                function change({ target }) {
+                    formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, target.checked);
+                }
                 if (current instanceof HTMLElement) {
                     current.addEventListener("mouseover", mouseover);
                     current.addEventListener("mouseleave", mouseleave);
                     current.addEventListener("focus", focus);
                     current.addEventListener("blur", blur);
-                    current.addEventListener("keydown", change);
+                    current.addEventListener("keydown", keydown);
+                    if (current instanceof HTMLInputElement && current.type === "checkbox") {
+                        current.addEventListener("change", change);
+                    }
                 }
                 if (previous instanceof HTMLElement) {
                     previous.removeEventListener("mouseover", mouseover);
                     previous.removeEventListener("mouseleave", mouseleave);
                     previous.removeEventListener("focus", focus);
                     previous.removeEventListener("blur", blur);
-                    previous.removeEventListener("keydown", change);
+                    previous.removeEventListener("keydown", keydown);
+                    if (previous instanceof HTMLInputElement &&
+                        previous.type === "checkbox") {
+                        previous.removeEventListener("change", change);
+                    }
                 }
             }
             setInputDefault(target, key, next) {
@@ -227,15 +232,21 @@ exports.FormFieldComponent = (() => {
                 return this.type;
             }
             connectedCallback() {
-                console.log("connected", this.field);
-                this.reportMultiChildError();
-                this.emitOnlyChildOnMount().setInputDefaultsOnMount();
-                this.observer.observe(this, {
-                    subtree: true,
-                    childList: true,
-                    attributes: false,
-                });
-                this.setRequiredProperties();
+                if (this.dataset.ready === "true") {
+                    this.reportMultiChildError();
+                    this.emitOnlyChildOnMount().setInputDefaultsOnMount();
+                    this.observer.observe(this, {
+                        subtree: true,
+                        childList: true,
+                        attributes: false,
+                    });
+                    this.setRequiredProperties();
+                }
+            }
+            disconnectedCallback() {
+                if (this.dataset.ready === "true") {
+                    this.observer.disconnect();
+                }
             }
         },
         (() => {
