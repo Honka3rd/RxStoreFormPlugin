@@ -103,6 +103,12 @@ export class NRFieldComponent<
       pairwise()
     );
 
+    // test
+    this.formControllerEmitter.subscribe((controller) => {
+      console.log({ controller });
+    });
+    // ---
+
     let controller: FormController<F, M, S>;
     let childRecord: [HTMLElement | null, HTMLElement | null];
 

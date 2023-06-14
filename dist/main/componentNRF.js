@@ -62,6 +62,11 @@ class NRFieldComponent extends field_1.FormFieldComponent {
             var _a;
             (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
         }), (0, rxjs_1.pairwise)());
+        // test
+        this.formControllerEmitter.subscribe((controller) => {
+            console.log({ controller });
+        });
+        // ---
         let controller;
         let childRecord;
         const controlSubscription = controller$.subscribe((c) => {
