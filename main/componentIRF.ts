@@ -101,27 +101,31 @@ export class IRFieldComponent<
   }
 
   protected makeControl() {
-    return combineLatest([
-      this.formControllerEmitter.asObservable().pipe(distinctUntilChanged()),
-      this.directChildEmitter.asObservable().pipe(
-        distinctUntilChanged(),
-        tap(() => {
-          this.stopBinding?.();
-        }),
-        pairwise()
-      ),
-    ] as const).subscribe(([controller, [previous, current]]) => {
-      this.attachChildEventListeners([previous, current], controller);
-      this.stopBinding = this.binder(
-        current,
-        controller as ImmutableFormController<F, M, S>
-      );
-    });
+    const controller$ = this.formControllerEmitter.pipe(distinctUntilChanged());
+    const directChild$ = this.directChildEmitter.asObservable().pipe(
+      distinctUntilChanged(),
+      tap(() => {
+        this.stopBinding?.();
+      }),
+      pairwise()
+    );
+
+    combineLatest([controller$, directChild$] as const)
+      .pipe(
+        tap(([controller, records]) => {
+          this.attachChildEventListeners(records, controller);
+          this.stopBinding = this.binder(
+            records[1],
+            controller as ImmutableFormController<F, M, S>
+          );
+        })
+      )
+      .subscribe();
   }
 
   constructor() {
     super();
-    // this.subscription = this.makeControl();
+    this.makeControl();
   }
 
   setMetaBinder(

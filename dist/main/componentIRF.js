@@ -54,20 +54,21 @@ class IRFieldComponent extends field_1.FormFieldComponent {
         return () => unListens.forEach((fn) => fn === null || fn === void 0 ? void 0 : fn());
     }
     makeControl() {
-        return (0, rxjs_1.combineLatest)([
-            this.formControllerEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)()),
-            this.directChildEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.tap)(() => {
-                var _a;
-                (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
-            }), (0, rxjs_1.pairwise)()),
-        ]).subscribe(([controller, [previous, current]]) => {
-            this.attachChildEventListeners([previous, current], controller);
-            this.stopBinding = this.binder(current, controller);
-        });
+        const controller$ = this.formControllerEmitter.pipe((0, rxjs_1.distinctUntilChanged)());
+        const directChild$ = this.directChildEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.tap)(() => {
+            var _a;
+            (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
+        }), (0, rxjs_1.pairwise)());
+        (0, rxjs_1.combineLatest)([controller$, directChild$])
+            .pipe((0, rxjs_1.tap)(([controller, records]) => {
+            this.attachChildEventListeners(records, controller);
+            this.stopBinding = this.binder(records[1], controller);
+        }))
+            .subscribe();
     }
     constructor() {
         super();
-        // this.subscription = this.makeControl();
+        this.makeControl();
     }
     setMetaBinder(binder) {
         this.metaDataBinder = binder;

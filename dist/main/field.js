@@ -94,7 +94,6 @@ exports.FormFieldComponent = (() => {
                 return value && value === this.children.item(0);
             }
             attachChildEventListeners(target, formController) {
-                debugger;
                 const { field } = this;
                 if (!formController || !field) {
                     return;
@@ -116,6 +115,7 @@ exports.FormFieldComponent = (() => {
                     formController.focusFormField(field, false).touchFormField(field, true);
                 };
                 const change = (event) => {
+                    debugger;
                     if (this.mapper) {
                         formController.changeFormValue(field, this.mapper(event));
                         return;

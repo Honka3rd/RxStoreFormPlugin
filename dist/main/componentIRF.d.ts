@@ -7,7 +7,7 @@ export declare class IRFieldComponent<F extends FormControlData, M extends Parti
     private attributesBinding;
     private metaBinding;
     private binder;
-    protected makeControl(): import("rxjs").Subscription;
+    protected makeControl(): void;
     constructor();
     setMetaBinder(binder: (attributeSetter: (k: string, v: any) => void, meta: Map<"errors" | "info" | "warn", Map<string, any>>) => void): void;
     setAttrBinder(binder: (attributeSetter: (k: string, v: any) => void, attrs: Map<K<F[number]>, V<F[number]>>) => void): void;
