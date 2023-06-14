@@ -66,25 +66,25 @@ class NRFieldComponent extends field_1.FormFieldComponent {
         let childRecord;
         const controlSubscription = controller$.subscribe((c) => {
             var _a;
-            if (!childRecord) {
-                return;
-            }
             if (c instanceof formControlNRS_1.default) {
+                controller = c;
                 (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
+                if (!childRecord) {
+                    return;
+                }
                 this.attachChildEventListeners(childRecord, c);
                 this.stopBinding = this.binder(childRecord[1], controller);
-                controller = c;
             }
         });
         const childSubscription = directChild$.subscribe((record) => {
             var _a;
+            (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
+            childRecord = record;
             if (!controller) {
                 return;
             }
-            (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
             this.attachChildEventListeners(record, controller);
             this.stopBinding = this.binder(record[1], controller);
-            childRecord = record;
         });
         return () => {
             controlSubscription.unsubscribe();

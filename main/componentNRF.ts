@@ -110,31 +110,31 @@ export class NRFieldComponent<
     let childRecord: [HTMLElement | null, HTMLElement | null];
 
     const controlSubscription = controller$.subscribe((c) => {
-      if (!childRecord) {
-        return;
-      }
       if (c instanceof FormControllerImpl) {
+        controller = c;
         this.stopBinding?.();
+        if (!childRecord) {
+          return;
+        }
         this.attachChildEventListeners(childRecord, c);
         this.stopBinding = this.binder(
           childRecord[1],
           controller as FormController<F, M, S>
         );
-        controller = c;
       }
     });
 
     const childSubscription = directChild$.subscribe((record) => {
+      this.stopBinding?.();
+      childRecord = record;
       if (!controller) {
         return;
       }
-      this.stopBinding?.();
       this.attachChildEventListeners(record, controller);
       this.stopBinding = this.binder(
         record[1],
         controller as FormController<F, M, S>
       );
-      childRecord = record;
     });
     return () => {
       controlSubscription.unsubscribe();
