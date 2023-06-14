@@ -133,12 +133,10 @@ export class FormFieldComponent<
     const context = this;
 
     function change(event: any) {
-      console.log("change");
       if (context.mapper) {
         formController?.changeFormValue(field!, context.mapper(event));
         return;
       }
-      console.log(event);
       formController?.changeFormValue(field!, event.target.value);
     };
 

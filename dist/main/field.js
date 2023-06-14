@@ -120,12 +120,10 @@ exports.FormFieldComponent = (() => {
                 ;
                 const context = this;
                 function change(event) {
-                    console.log("change");
                     if (context.mapper) {
                         formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, context.mapper(event));
                         return;
                     }
-                    console.log(event);
                     formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, event.target.value);
                 }
                 ;
