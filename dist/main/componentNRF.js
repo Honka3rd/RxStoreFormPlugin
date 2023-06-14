@@ -1,12 +1,8 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NRFieldComponent = void 0;
 const rxjs_1 = require("rxjs");
 const field_1 = require("./field");
-const formControlNRS_1 = __importDefault(require("./formControlNRS"));
 class NRFieldComponent extends field_1.FormFieldComponent {
     attributesBinding(target, formController) {
         const { field } = this;
@@ -63,24 +59,26 @@ class NRFieldComponent extends field_1.FormFieldComponent {
             (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
         }), (0, rxjs_1.pairwise)());
         // test
-        this.formControllerEmitter.subscribe((controller) => {
-            console.log({ controller });
+        controller$.subscribe((controller) => {
+            console.log("test", { controller });
         });
         // ---
         let controller;
         let childRecord;
         const controlSubscription = controller$.subscribe((c) => {
-            var _a;
             console.log("controlSubscription", { controller: c, childRecord });
-            if (c instanceof formControlNRS_1.default) {
-                controller = c;
-                (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
-                if (!childRecord) {
-                    return;
-                }
-                this.attachChildEventListeners(childRecord, c);
-                this.stopBinding = this.binder(childRecord[1], controller);
-            }
+            /* if (c instanceof FormControllerImpl) {
+              controller = c;
+              this.stopBinding?.();
+              if (!childRecord) {
+                return;
+              }
+              this.attachChildEventListeners(childRecord, c);
+              this.stopBinding = this.binder(
+                childRecord[1],
+                controller as FormController<F, M, S>
+              );
+            } */
         });
         const childSubscription = directChild$.subscribe((record) => {
             var _a;

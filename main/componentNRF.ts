@@ -104,8 +104,8 @@ export class NRFieldComponent<
     );
 
     // test
-    this.formControllerEmitter.subscribe((controller) => {
-      console.log({ controller });
+    controller$.subscribe((controller) => {
+      console.log("test", { controller });
     });
     // ---
 
@@ -114,7 +114,7 @@ export class NRFieldComponent<
 
     const controlSubscription = controller$.subscribe((c) => {
       console.log("controlSubscription", { controller: c, childRecord });
-      if (c instanceof FormControllerImpl) {
+      /* if (c instanceof FormControllerImpl) {
         controller = c;
         this.stopBinding?.();
         if (!childRecord) {
@@ -125,7 +125,7 @@ export class NRFieldComponent<
           childRecord[1],
           controller as FormController<F, M, S>
         );
-      }
+      } */
     });
 
     const childSubscription = directChild$.subscribe((record) => {
