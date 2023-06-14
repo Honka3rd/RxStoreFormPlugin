@@ -47,9 +47,9 @@ export class NRFieldComponent<
           return;
         }
         try {
-          /* if (target.getAttribute("value") !== datum.value) {
+          if (target.getAttribute("value") !== datum.value) {
             target.setAttribute("value", datum.value);
-          } */
+          }
         } catch (e) {
           if (target.dataset.value !== datum.value) {
             target.setAttribute("data-value", String(datum.value));

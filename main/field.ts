@@ -115,30 +115,32 @@ export class FormFieldComponent<
       return;
     }
 
-    const mouseover = () => {
-      formController.hoverFormField(field, true);
+    function mouseover(){
+      formController?.hoverFormField(field!, true);
     };
 
-    const mouseleave = () => {
-      formController.hoverFormField(field, false);
+    function mouseleave(){
+      formController?.hoverFormField(field!, false);
     };
 
-    const focus = () => {
-      formController.focusFormField(field, true);
+    function focus() {
+      formController?.focusFormField(field!, true);
     };
 
-    const blur = () => {
-      formController.focusFormField(field, false).touchFormField(field, true);
+    function blur() {
+      formController?.focusFormField(field!, false).touchFormField(field!, true);
     };
 
-    const change = (event: any) => {
+    const context = this;
+
+    function change(event: any) {
       console.log("change");
-      if (this.mapper) {
-        formController.changeFormValue(field, this.mapper(event));
+      if (context.mapper) {
+        formController?.changeFormValue(field!, context.mapper(event));
         return;
       }
       console.log(event);
-      formController.changeFormValue(field, event.target.value);
+      formController?.changeFormValue(field!, event.target.value);
     };
 
     if (current instanceof HTMLElement) {

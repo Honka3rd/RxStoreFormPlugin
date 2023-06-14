@@ -102,27 +102,33 @@ exports.FormFieldComponent = (() => {
                 if (!previous && !current) {
                     return;
                 }
-                const mouseover = () => {
-                    formController.hoverFormField(field, true);
-                };
-                const mouseleave = () => {
-                    formController.hoverFormField(field, false);
-                };
-                const focus = () => {
-                    formController.focusFormField(field, true);
-                };
-                const blur = () => {
-                    formController.focusFormField(field, false).touchFormField(field, true);
-                };
-                const change = (event) => {
+                function mouseover() {
+                    formController === null || formController === void 0 ? void 0 : formController.hoverFormField(field, true);
+                }
+                ;
+                function mouseleave() {
+                    formController === null || formController === void 0 ? void 0 : formController.hoverFormField(field, false);
+                }
+                ;
+                function focus() {
+                    formController === null || formController === void 0 ? void 0 : formController.focusFormField(field, true);
+                }
+                ;
+                function blur() {
+                    formController === null || formController === void 0 ? void 0 : formController.focusFormField(field, false).touchFormField(field, true);
+                }
+                ;
+                const context = this;
+                function change(event) {
                     console.log("change");
-                    if (this.mapper) {
-                        formController.changeFormValue(field, this.mapper(event));
+                    if (context.mapper) {
+                        formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, context.mapper(event));
                         return;
                     }
                     console.log(event);
-                    formController.changeFormValue(field, event.target.value);
-                };
+                    formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, event.target.value);
+                }
+                ;
                 if (current instanceof HTMLElement) {
                     current.addEventListener("mouseover", mouseover);
                     current.addEventListener("mouseleave", mouseleave);
