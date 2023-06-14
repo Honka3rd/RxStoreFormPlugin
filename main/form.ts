@@ -80,6 +80,7 @@ export class FormControlComponent<
       if (!controller || !fields) {
         return;
       }
+      debugger
       fields.forEach((node) => node.setFormController(controller));
     });
   }

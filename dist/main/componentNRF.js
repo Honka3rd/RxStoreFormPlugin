@@ -69,9 +69,6 @@ class NRFieldComponent extends field_1.FormFieldComponent {
         super();
         this.subscription = this.makeControl();
     }
-    setFormController(controller) {
-        this.formControllerEmitter.next(controller);
-    }
     setMetaBinder(binder) {
         this.metaDataBinder = binder;
     }

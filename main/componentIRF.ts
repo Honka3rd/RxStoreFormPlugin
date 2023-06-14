@@ -124,10 +124,6 @@ export class IRFieldComponent<
     this.subscription = this.makeControl();
   }
 
-  setFormController(controller: ImmutableFormController<F, M, S>): void {
-    this.formControllerEmitter.next(controller);
-  }
-
   setMetaBinder(
     binder: (
       attributeSetter: (k: string, v: any) => void,

@@ -123,10 +123,6 @@ export class NRFieldComponent<
     this.subscription = this.makeControl();
   }
 
-  setFormController(controller: FormController<F, M, S>): void {
-    this.formControllerEmitter.next(controller);
-  }
-
   setMetaBinder(
     binder: <M extends FormControlBasicMetadata>(
       attributeSetter: (k: string, v: any) => void,
