@@ -99,26 +99,31 @@ export class NRFieldComponent<
   }
 
   protected makeControl() {
-    // test
-    this.formControllerEmitter.subscribe(console.log)
-    // --
-    return combineLatest([
-      this.formControllerEmitter.asObservable().pipe(distinctUntilChanged()),
-      this.directChildEmitter.asObservable().pipe(
-        distinctUntilChanged(),
-        tap(() => {
-          this.stopBinding?.();
-        }),
-        pairwise()
-      ),
-    ] as const).subscribe(([controller, [previous, current]]) => {
-      console.log([previous, current]);
-      this.attachChildEventListeners([previous, current], controller);
-      this.stopBinding = this.binder(
-        current,
-        controller as FormController<F, M, S>
-      );
-    });
+    const controller$ = this.formControllerEmitter
+      .asObservable()
+      .pipe(distinctUntilChanged());
+    const directChild$ = this.directChildEmitter.asObservable().pipe(
+      distinctUntilChanged(),
+      tap(() => {
+        this.stopBinding?.();
+      }),
+      pairwise()
+    );
+    return controller$
+      .pipe(
+        switchMap((controller) =>
+          directChild$.pipe(
+            tap(([previous, current]) => {
+              this.attachChildEventListeners([previous, current], controller);
+              this.stopBinding = this.binder(
+                current,
+                controller as FormController<F, M, S>
+              );
+            })
+          )
+        )
+      )
+      .subscribe();
   }
 
   constructor() {
