@@ -1,12 +1,10 @@
 import { FormFieldComponent } from "./field";
-import { FormControlBasicMetadata, FormControlData, IRFieldAttributeBinderInjector, IRFieldMetaBinderInjector, K, V } from "./interfaces";
+import { FormControlBasicMetadata, FormControlData, IRFieldAttributeBinderInjector, K, V } from "./interfaces";
 import { Map } from "immutable";
-export declare class IRFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends FormFieldComponent<F, M, S, N> implements IRFieldAttributeBinderInjector<F>, IRFieldMetaBinderInjector {
+export declare class IRFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends FormFieldComponent<F, M, S, N> implements IRFieldAttributeBinderInjector<F> {
     private attributeBinder?;
     private metaDataBinder?;
     private attributesBinding;
-    private metaBinding;
-    private binder;
     protected makeControl(): void;
     constructor();
     setMetaBinder(binder: (attributeSetter: (k: string, v: any) => void, meta: Map<"errors" | "info" | "warn", Map<string, any>>) => void): void;

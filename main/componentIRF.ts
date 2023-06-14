@@ -10,7 +10,6 @@ import {
   FormControlBasicMetadata,
   FormControlData,
   IRFieldAttributeBinderInjector,
-  IRFieldMetaBinderInjector,
   ImmutableFormController,
   K,
   V,
@@ -23,7 +22,7 @@ export class IRFieldComponent<
     N extends number = number
   >
   extends FormFieldComponent<F, M, S, N>
-  implements IRFieldAttributeBinderInjector<F>, IRFieldMetaBinderInjector
+  implements IRFieldAttributeBinderInjector<F>
 {
   private attributeBinder?: (
     attributeSetter: (k: string, v: any) => void,
@@ -70,36 +69,6 @@ export class IRFieldComponent<
     }
   }
 
-  private metaBinding(
-    target: Node | null,
-    formController: ImmutableFormController<F, M, S> | null
-  ) {
-    const { field } = this;
-    if (!formController || !field || !this.metaDataBinder) {
-      return;
-    }
-
-    if (target instanceof HTMLElement) {
-      return formController.observeMetaByField(field, (meta) => {
-        if (!meta) {
-          return;
-        }
-        this.metaDataBinder?.(this.attrSetter(target), meta);
-      });
-    }
-  }
-
-  private binder(
-    current: HTMLElement | null,
-    controller: ImmutableFormController<F, M, S>
-  ) {
-    const unListens = [
-      this.attributesBinding(current, controller),
-      this.metaBinding(current, controller),
-    ];
-    return () => unListens.forEach((fn) => fn?.());
-  }
-
   protected makeControl() {
     const controller$ = this.formControllerEmitter.pipe(distinctUntilChanged());
     const directChild$ = this.directChildEmitter.asObservable().pipe(
@@ -114,7 +83,7 @@ export class IRFieldComponent<
       .pipe(
         tap(([controller, records]) => {
           this.attachChildEventListeners(records, controller);
-          this.stopBinding = this.binder(
+          this.stopBinding = this.attributesBinding(
             records[1],
             controller as ImmutableFormController<F, M, S>
           );

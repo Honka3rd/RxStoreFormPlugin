@@ -31,28 +31,6 @@ class IRFieldComponent extends field_1.FormFieldComponent {
             });
         }
     }
-    metaBinding(target, formController) {
-        const { field } = this;
-        if (!formController || !field || !this.metaDataBinder) {
-            return;
-        }
-        if (target instanceof HTMLElement) {
-            return formController.observeMetaByField(field, (meta) => {
-                var _a;
-                if (!meta) {
-                    return;
-                }
-                (_a = this.metaDataBinder) === null || _a === void 0 ? void 0 : _a.call(this, this.attrSetter(target), meta);
-            });
-        }
-    }
-    binder(current, controller) {
-        const unListens = [
-            this.attributesBinding(current, controller),
-            this.metaBinding(current, controller),
-        ];
-        return () => unListens.forEach((fn) => fn === null || fn === void 0 ? void 0 : fn());
-    }
     makeControl() {
         const controller$ = this.formControllerEmitter.pipe((0, rxjs_1.distinctUntilChanged)());
         const directChild$ = this.directChildEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.tap)(() => {
@@ -62,7 +40,7 @@ class IRFieldComponent extends field_1.FormFieldComponent {
         (0, rxjs_1.combineLatest)([controller$, directChild$])
             .pipe((0, rxjs_1.tap)(([controller, records]) => {
             this.attachChildEventListeners(records, controller);
-            this.stopBinding = this.binder(records[1], controller);
+            this.stopBinding = this.attributesBinding(records[1], controller);
         }))
             .subscribe();
     }

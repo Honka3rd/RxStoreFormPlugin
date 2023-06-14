@@ -151,7 +151,7 @@ export class FormFieldComponent<
 
       current.addEventListener("blur", blur);
 
-      current.addEventListener("change", change);
+      current.addEventListener("keydown", change);
     }
 
     if (previous instanceof HTMLElement) {
@@ -163,7 +163,7 @@ export class FormFieldComponent<
 
       previous.removeEventListener("blur", blur);
 
-      previous.removeEventListener("change", change);
+      previous.removeEventListener("keydown", change);
     }
   }
 

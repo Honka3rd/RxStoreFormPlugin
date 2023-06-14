@@ -134,14 +134,14 @@ exports.FormFieldComponent = (() => {
                     current.addEventListener("mouseleave", mouseleave);
                     current.addEventListener("focus", focus);
                     current.addEventListener("blur", blur);
-                    current.addEventListener("change", change);
+                    current.addEventListener("keydown", change);
                 }
                 if (previous instanceof HTMLElement) {
                     previous.removeEventListener("mouseover", mouseover);
                     previous.removeEventListener("mouseleave", mouseleave);
                     previous.removeEventListener("focus", focus);
                     previous.removeEventListener("blur", blur);
-                    previous.removeEventListener("change", change);
+                    previous.removeEventListener("keydown", change);
                 }
             }
             setInputDefault(target, key, next) {
