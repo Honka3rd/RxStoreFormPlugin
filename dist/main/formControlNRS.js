@@ -425,6 +425,7 @@ let FormControllerImpl = (() => {
             changeFormValue(field, value) {
                 this.safeCommitMutation(field, (found) => {
                     found.value = value;
+                    found.changed = true;
                 });
                 return this;
             }

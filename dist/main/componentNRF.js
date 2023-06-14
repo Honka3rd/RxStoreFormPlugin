@@ -22,11 +22,10 @@ class NRFieldComponent extends field_1.FormFieldComponent {
                     this.attributeBinder(this.attrSetter(target), datum);
                     return;
                 }
-                console.log("binding", { datum, target });
                 try {
-                    if (target && target.getAttribute("value") !== datum.value) {
-                        target.setAttribute("value", datum.value);
-                    }
+                    /* if (target.getAttribute("value") !== datum.value) {
+                      target.setAttribute("value", datum.value);
+                    } */
                 }
                 catch (e) {
                     if (target.dataset.value !== datum.value) {

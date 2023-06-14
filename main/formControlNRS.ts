@@ -582,6 +582,7 @@ class FormControllerImpl<
   ) {
     this.safeCommitMutation(field, (found) => {
       found.value = value;
+      found.changed = true;
     });
     return this;
   }
