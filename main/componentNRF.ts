@@ -104,13 +104,17 @@ export class NRFieldComponent<
       this.directChildEmitter.asObservable().pipe(
         distinctUntilChanged(),
         tap(() => {
-            this.stopBinding?.()
+          this.stopBinding?.();
         }),
         pairwise()
       ),
     ] as const).subscribe(([controller, [previous, current]]) => {
+      console.log([previous, current]);
       this.attachChildEventListeners([previous, current], controller);
-      this.stopBinding = this.binder(current, controller as FormController<F, M, S>)
+      this.stopBinding = this.binder(
+        current,
+        controller as FormController<F, M, S>
+      );
     });
   }
 

@@ -108,6 +108,7 @@ export class FormFieldComponent<
       | ImmutableFormController<F, M, S>
       | null
   ) {
+    debugger
     const { field } = this;
     if (!formController || !field) {
       return;

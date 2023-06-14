@@ -95,6 +95,7 @@ exports.FormFieldComponent = (() => {
                 return value && value === this.children.item(0);
             }
             attachChildEventListeners(target, formController) {
+                debugger;
                 const { field } = this;
                 if (!formController || !field) {
                     return;
