@@ -225,6 +225,7 @@ exports.FormFieldComponent = (() => {
                 this.mapper = mapper;
             }
             setFormController(controller) {
+                console.log("setFormController", controller);
                 this.formControllerEmitter.next(controller);
             }
             getField() {

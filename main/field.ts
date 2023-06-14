@@ -108,7 +108,7 @@ export class FormFieldComponent<
       | ImmutableFormController<F, M, S>
       | null
   ) {
-    debugger
+    debugger;
     const { field } = this;
     if (!formController || !field) {
       return;
@@ -276,6 +276,7 @@ export class FormFieldComponent<
   setFormController(
     controller: FormController<F, M, S> | ImmutableFormController<F, M, S>
   ): void {
+    console.log("setFormController", controller);
     this.formControllerEmitter.next(controller);
   }
 
