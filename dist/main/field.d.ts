@@ -7,13 +7,13 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     protected formControllerEmitter: BehaviorSubject<FormController<F, M, S> | ImmutableFormController<F, M, S> | null>;
     protected directChildEmitter: BehaviorSubject<HTMLElement | null>;
     protected subscription: Subscription | null;
-    protected unBind?: () => void;
+    protected stopBinding?: () => void;
     protected isValidDirectChild(target?: Node | null): target is HTMLElement;
     private reportMultiChildError;
     protected setDirectChildFromMutations(mutationList: MutationRecord[]): void;
     protected directChildIsTarget(): boolean | null;
     protected observer: MutationObserver;
-    protected attachChildEventListeners(target: Node | null, formController: FormController<F, M, S> | ImmutableFormController<F, M, S> | null): void;
+    protected attachChildEventListeners(target: [Node | null, Node | null], formController: FormController<F, M, S> | ImmutableFormController<F, M, S> | null): void;
     private setInputDefault;
     private setInputDefaults;
     private setInputDefaultsOnMount;

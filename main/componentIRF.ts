@@ -1,4 +1,10 @@
-import { distinctUntilChanged, switchMap, tap } from "rxjs";
+import {
+  combineLatest,
+  distinctUntilChanged,
+  pairwise,
+  switchMap,
+  tap,
+} from "rxjs";
 import { FormFieldComponent } from "./field";
 import {
   FormControlBasicMetadata,
@@ -29,7 +35,7 @@ export class IRFieldComponent<
     meta: Map<"errors" | "info" | "warn", Map<string, any>>
   ) => void;
 
-  private valuesBinding(
+  private attributesBinding(
     target: Node | null,
     formController: ImmutableFormController<F, M, S> | null
   ) {
@@ -45,7 +51,7 @@ export class IRFieldComponent<
         this.setAttribute("data-touched", String(datum.get("touched")));
         this.setAttribute("data-hovered", String(datum.get("hovered")));
         const state = datum.get("asyncState");
-        state && this.setAttribute("data-asyncState", String(state));
+        state && this.setAttribute("data-async_state", String(state));
         const value = datum.get("value");
         value && this.setAttribute("data-value", String(value));
         if (this.attributeBinder) {
@@ -83,32 +89,34 @@ export class IRFieldComponent<
     }
   }
 
+  private binder(
+    current: HTMLElement | null,
+    controller: ImmutableFormController<F, M, S>
+  ) {
+    const unListens = [
+      this.attributesBinding(current, controller),
+      this.metaBinding(current, controller),
+    ];
+    return () => unListens.forEach((fn) => fn?.());
+  }
+
   protected makeControl() {
-    return this.formControllerEmitter
-      .asObservable()
-      .pipe(
+    return combineLatest([
+      this.formControllerEmitter.asObservable().pipe(distinctUntilChanged()),
+      this.directChildEmitter.asObservable().pipe(
         distinctUntilChanged(),
-        switchMap((controller) =>
-          this.directChildEmitter.asObservable().pipe(
-            distinctUntilChanged(),
-            tap((firstChild) => {
-              this.attachChildEventListeners(firstChild, controller);
-              const unListens = [
-                this.valuesBinding(
-                  firstChild,
-                  controller as ImmutableFormController<F, M, S>
-                ),
-                this.metaBinding(
-                  firstChild,
-                  controller as ImmutableFormController<F, M, S>
-                ),
-              ];
-              this.unBind = () => unListens.forEach((fn) => fn?.());
-            })
-          )
-        )
-      )
-      .subscribe();
+        tap(() => {
+          this.stopBinding?.();
+        }),
+        pairwise()
+      ),
+    ] as const).subscribe(([controller, [previous, current]]) => {
+      this.attachChildEventListeners([previous, current], controller);
+      this.stopBinding = this.binder(
+        current,
+        controller as ImmutableFormController<F, M, S>
+      );
+    });
   }
 
   constructor() {
@@ -116,9 +124,7 @@ export class IRFieldComponent<
     this.subscription = this.makeControl();
   }
 
-  setFormController(
-    controller: ImmutableFormController<F, M, S>
-  ): void {
+  setFormController(controller: ImmutableFormController<F, M, S>): void {
     this.formControllerEmitter.next(controller);
   }
 

@@ -4,7 +4,7 @@ exports.NRFieldComponent = void 0;
 const rxjs_1 = require("rxjs");
 const field_1 = require("./field");
 class NRFieldComponent extends field_1.FormFieldComponent {
-    valuesBinding(target, formController) {
+    attributesBinding(target, formController) {
         const { field } = this;
         if (!formController || !field) {
             return;
@@ -16,7 +16,7 @@ class NRFieldComponent extends field_1.FormFieldComponent {
                 this.setAttribute("data-touched", String(datum.touched));
                 this.setAttribute("data-hovered", String(datum.hovered));
                 datum.asyncState &&
-                    this.setAttribute("data-asyncState", String(datum.asyncState));
+                    this.setAttribute("data-async_state", String(datum.asyncState));
                 this.setAttribute("data-value", datum.value);
                 if (this.attributeBinder) {
                     this.attributeBinder(this.attrSetter(target), datum);
@@ -45,18 +45,24 @@ class NRFieldComponent extends field_1.FormFieldComponent {
             });
         }
     }
+    binder(current, controller) {
+        const unListens = [
+            this.attributesBinding(current, controller),
+            this.metaBinding(current, controller),
+        ];
+        return () => unListens.forEach((fn) => fn === null || fn === void 0 ? void 0 : fn());
+    }
     makeControl() {
-        return this.formControllerEmitter
-            .asObservable()
-            .pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.switchMap)((controller) => this.directChildEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.tap)((firstChild) => {
-            this.attachChildEventListeners(firstChild, controller);
-            const unListens = [
-                this.valuesBinding(firstChild, controller),
-                this.metaBinding(firstChild, controller),
-            ];
-            this.unBind = () => unListens.forEach((fn) => fn === null || fn === void 0 ? void 0 : fn());
-        }))))
-            .subscribe();
+        return (0, rxjs_1.combineLatest)([
+            this.formControllerEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)()),
+            this.directChildEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.tap)(() => {
+                var _a;
+                (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
+            }), (0, rxjs_1.pairwise)()),
+        ]).subscribe(([controller, [previous, current]]) => {
+            this.attachChildEventListeners([previous, current], controller);
+            this.stopBinding = this.binder(current, controller);
+        });
     }
     constructor() {
         super();

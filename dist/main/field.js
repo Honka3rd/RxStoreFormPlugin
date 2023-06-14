@@ -61,18 +61,6 @@ exports.FormFieldComponent = (() => {
             }
             setDirectChildFromMutations(mutationList) {
                 const mutations = mutationList.filter((mutation) => mutation.type === "childList");
-                if (this.unBind) {
-                    const removedAll = mutations.reduce((acc, next) => {
-                        Array.from(next.removedNodes).forEach((node) => {
-                            acc.push(node);
-                        });
-                        return acc;
-                    }, []);
-                    const removed = removedAll.find((rm) => rm && this.directChildEmitter.value === rm);
-                    if (removed) {
-                        this.unBind();
-                    }
-                }
                 if (!this.dataset.targetSelector && !this.dataset.targetId) {
                     const first = mutations[0].addedNodes.item(0);
                     if (!this.isValidDirectChild(first)) {
@@ -111,26 +99,42 @@ exports.FormFieldComponent = (() => {
                 if (!formController || !field) {
                     return;
                 }
-                if (target instanceof HTMLElement) {
-                    target.addEventListener("mouseover", () => {
-                        formController.hoverFormField(field, true);
-                    });
-                    target.addEventListener("mouseleave", () => {
-                        formController.hoverFormField(field, false);
-                    });
-                    target.addEventListener("focus", () => {
-                        formController.focusFormField(field, true);
-                    });
-                    target.addEventListener("blur", () => {
-                        formController.focusFormField(field, false).touchFormField(field, true);
-                    });
-                    target.addEventListener("change", (event) => {
-                        if (this.mapper) {
-                            formController.changeFormValue(field, this.mapper(event));
-                            return;
-                        }
-                        formController.changeFormValue(field, event.target.value);
-                    });
+                const [previous, current] = target;
+                if (!previous && !current) {
+                    return;
+                }
+                const mouseover = () => {
+                    formController.hoverFormField(field, true);
+                };
+                const mouseleave = () => {
+                    formController.hoverFormField(field, false);
+                };
+                const focus = () => {
+                    formController.focusFormField(field, true);
+                };
+                const blur = () => {
+                    formController.focusFormField(field, false).touchFormField(field, true);
+                };
+                const change = (event) => {
+                    if (this.mapper) {
+                        formController.changeFormValue(field, this.mapper(event));
+                        return;
+                    }
+                    formController.changeFormValue(field, event.target.value);
+                };
+                if (current instanceof HTMLElement) {
+                    current.addEventListener("mouseover", mouseover);
+                    current.addEventListener("mouseleave", mouseleave);
+                    current.addEventListener("focus", focus);
+                    current.addEventListener("blur", blur);
+                    current.addEventListener("change", change);
+                }
+                if (previous instanceof HTMLElement) {
+                    previous.removeEventListener("mouseover", mouseover);
+                    previous.removeEventListener("mouseleave", mouseleave);
+                    previous.removeEventListener("focus", focus);
+                    previous.removeEventListener("blur", blur);
+                    previous.removeEventListener("change", change);
                 }
             }
             setInputDefault(target, key, next) {
@@ -242,7 +246,7 @@ exports.FormFieldComponent = (() => {
                 var _a, _b;
                 this.observer.disconnect();
                 (_a = this.subscription) === null || _a === void 0 ? void 0 : _a.unsubscribe();
-                (_b = this.unBind) === null || _b === void 0 ? void 0 : _b.call(this);
+                (_b = this.stopBinding) === null || _b === void 0 ? void 0 : _b.call(this);
             }
             attributeChangedCallback(key, prev, next) {
                 const target = this.directChildEmitter.value;

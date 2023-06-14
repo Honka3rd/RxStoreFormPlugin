@@ -1,22 +1,19 @@
 import { bound } from "rx-store-core";
+import { BehaviorSubject, Subscription } from "rxjs";
 import {
-    BehaviorSubject,
-    Subscription
-} from "rxjs";
-import {
-    AttributeChangedCallback,
-    ConnectedCallback,
-    CustomerAttrs,
-    DatumType,
-    DisconnectedCallback,
-    FieldDataMapperInjector,
-    FormControlBasicMetadata,
-    FormControlData,
-    FormController,
-    FormControllerInjector,
-    ImmutableFormController,
-    K,
-    V,
+  AttributeChangedCallback,
+  ConnectedCallback,
+  CustomerAttrs,
+  DatumType,
+  DisconnectedCallback,
+  FieldDataMapperInjector,
+  FormControlBasicMetadata,
+  FormControlData,
+  FormController,
+  FormControllerInjector,
+  ImmutableFormController,
+  K,
+  V,
 } from "./interfaces";
 
 export class FormFieldComponent<
@@ -45,7 +42,7 @@ export class FormFieldComponent<
   protected directChildEmitter: BehaviorSubject<HTMLElement | null> =
     new BehaviorSubject<HTMLElement | null>(null);
   protected subscription: Subscription | null = null;
-  protected unBind?: () => void;
+  protected stopBinding?: () => void;
 
   protected isValidDirectChild(target?: Node | null): target is HTMLElement {
     return target instanceof HTMLElement && target.parentNode === this;
@@ -63,21 +60,6 @@ export class FormFieldComponent<
     const mutations = mutationList.filter(
       (mutation) => mutation.type === "childList"
     );
-
-    if (this.unBind) {
-      const removedAll = mutations.reduce((acc, next) => {
-        Array.from(next.removedNodes).forEach((node) => {
-          acc.push(node);
-        });
-        return acc;
-      }, [] as Node[]);
-      const removed = removedAll.find(
-        (rm) => rm && this.directChildEmitter.value === rm
-      );
-      if (removed) {
-        this.unBind();
-      }
-    }
 
     if (!this.dataset.targetSelector && !this.dataset.targetId) {
       const first = mutations[0].addedNodes.item(0);
@@ -120,7 +102,7 @@ export class FormFieldComponent<
   protected observer = new MutationObserver(this.setDirectChildFromMutations);
 
   protected attachChildEventListeners(
-    target: Node | null,
+    target: [Node | null, Node | null],
     formController:
       | FormController<F, M, S>
       | ImmutableFormController<F, M, S>
@@ -131,30 +113,57 @@ export class FormFieldComponent<
       return;
     }
 
-    if (target instanceof HTMLElement) {
-      target.addEventListener("mouseover", () => {
-        formController.hoverFormField(field, true);
-      });
+    const [previous, current] = target;
+    if (!previous && !current) {
+      return;
+    }
 
-      target.addEventListener("mouseleave", () => {
-        formController.hoverFormField(field, false);
-      });
+    const mouseover = () => {
+      formController.hoverFormField(field, true);
+    };
 
-      target.addEventListener("focus", () => {
-        formController.focusFormField(field, true);
-      });
+    const mouseleave = () => {
+      formController.hoverFormField(field, false);
+    };
 
-      target.addEventListener("blur", () => {
-        formController.focusFormField(field, false).touchFormField(field, true);
-      });
+    const focus = () => {
+      formController.focusFormField(field, true);
+    };
 
-      target.addEventListener("change", (event: any) => {
-        if (this.mapper) {
-          formController.changeFormValue(field, this.mapper(event));
-          return;
-        }
-        formController.changeFormValue(field, event.target.value);
-      });
+    const blur = () => {
+      formController.focusFormField(field, false).touchFormField(field, true);
+    };
+
+    const change = (event: any) => {
+      if (this.mapper) {
+        formController.changeFormValue(field, this.mapper(event));
+        return;
+      }
+      formController.changeFormValue(field, event.target.value);
+    };
+
+    if (current instanceof HTMLElement) {
+      current.addEventListener("mouseover", mouseover);
+
+      current.addEventListener("mouseleave", mouseleave);
+
+      current.addEventListener("focus", focus);
+
+      current.addEventListener("blur", blur);
+
+      current.addEventListener("change", change);
+    }
+
+    if (previous instanceof HTMLElement) {
+      previous.removeEventListener("mouseover", mouseover);
+
+      previous.removeEventListener("mouseleave", mouseleave);
+
+      previous.removeEventListener("focus", focus);
+
+      previous.removeEventListener("blur", blur);
+
+      previous.removeEventListener("change", change);
     }
   }
 
@@ -291,7 +300,7 @@ export class FormFieldComponent<
   disconnectedCallback(): void {
     this.observer.disconnect();
     this.subscription?.unsubscribe();
-    this.unBind?.();
+    this.stopBinding?.();
   }
 
   attributeChangedCallback(
