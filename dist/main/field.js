@@ -103,19 +103,15 @@ exports.FormFieldComponent = (() => {
                     return;
                 }
                 const mouseover = () => {
-                    console.log("mouseover");
                     formController.hoverFormField(field, true);
                 };
                 const mouseleave = () => {
-                    console.log("mouseleave");
                     formController.hoverFormField(field, false);
                 };
                 const focus = () => {
-                    console.log("focus");
                     formController.focusFormField(field, true);
                 };
                 const blur = () => {
-                    console.log("blur");
                     formController.focusFormField(field, false).touchFormField(field, true);
                 };
                 const change = (event) => {

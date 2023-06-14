@@ -17,18 +17,11 @@ export class NRFieldComponent<
     N extends number = number
   >
   extends FormFieldComponent<F, M, S, N>
-  implements
-    NRFieldAttributeBinderInjector,
-    NRFieldMetaBinderInjector,
-    FormControllerInjector<F, M, S>
+  implements NRFieldAttributeBinderInjector, FormControllerInjector<F, M, S>
 {
   private attributeBinder?: <D extends FormControlBasicDatum>(
     attributeSetter: (k: string, v: any) => void,
     attrs: D
-  ) => void;
-  private metaDataBinder?: <M extends FormControlBasicMetadata>(
-    attributeSetter: (k: string, v: any) => void,
-    meta: M
   ) => void;
 
   private attributesBinding(
@@ -53,43 +46,16 @@ export class NRFieldComponent<
           this.attributeBinder(this.attrSetter(target), datum);
           return;
         }
-        if ("value" in target) {
+        console.log("binding", { datum, target });
+        if ("value" in target && target.getAttribute("value") !== datum.value) {
           target.setAttribute("value", datum.value);
           return;
         }
-        target.setAttribute("data-value", String(datum.value));
-      });
-    }
-  }
-
-  private metaBinding(
-    target: Node | null,
-    formController: FormController<F, M, S> | null
-  ) {
-    const { field } = this;
-    if (!formController || !field || !this.metaDataBinder) {
-      return;
-    }
-
-    if (target instanceof HTMLElement) {
-      return formController.observeMetaByField(field, (meta) => {
-        if (!meta) {
-          return;
+        if (target.dataset.value !== datum.value) {
+          target.setAttribute("data-value", String(datum.value));
         }
-        this.metaDataBinder?.(this.attrSetter(target), meta);
       });
     }
-  }
-
-  private binder(
-    current: HTMLElement | null,
-    controller: FormController<F, M, S>
-  ) {
-    const unListens = [
-      this.attributesBinding(current, controller),
-      this.metaBinding(current, controller),
-    ];
-    return () => unListens.forEach((fn) => fn?.());
   }
 
   protected makeControl() {
@@ -106,7 +72,7 @@ export class NRFieldComponent<
       .pipe(
         tap(([controller, records]) => {
           this.attachChildEventListeners(records, controller);
-          this.stopBinding = this.binder(
+          this.stopBinding = this.attributesBinding(
             records[1],
             controller as FormController<F, M, S>
           );
@@ -126,7 +92,7 @@ export class NRFieldComponent<
       meta: M
     ) => void
   ): void {
-    this.metaDataBinder = binder;
+    // this.metaDataBinder = binder;
   }
 
   setAttrBinder(

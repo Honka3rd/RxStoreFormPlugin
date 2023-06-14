@@ -22,35 +22,16 @@ class NRFieldComponent extends field_1.FormFieldComponent {
                     this.attributeBinder(this.attrSetter(target), datum);
                     return;
                 }
-                if ("value" in target) {
+                console.log("binding", { datum, target });
+                if ("value" in target && target.getAttribute("value") !== datum.value) {
                     target.setAttribute("value", datum.value);
                     return;
                 }
-                target.setAttribute("data-value", String(datum.value));
-            });
-        }
-    }
-    metaBinding(target, formController) {
-        const { field } = this;
-        if (!formController || !field || !this.metaDataBinder) {
-            return;
-        }
-        if (target instanceof HTMLElement) {
-            return formController.observeMetaByField(field, (meta) => {
-                var _a;
-                if (!meta) {
-                    return;
+                if (target.dataset.value !== datum.value) {
+                    target.setAttribute("data-value", String(datum.value));
                 }
-                (_a = this.metaDataBinder) === null || _a === void 0 ? void 0 : _a.call(this, this.attrSetter(target), meta);
             });
         }
-    }
-    binder(current, controller) {
-        const unListens = [
-            this.attributesBinding(current, controller),
-            this.metaBinding(current, controller),
-        ];
-        return () => unListens.forEach((fn) => fn === null || fn === void 0 ? void 0 : fn());
     }
     makeControl() {
         const controller$ = this.formControllerEmitter.pipe((0, rxjs_1.distinctUntilChanged)());
@@ -61,7 +42,7 @@ class NRFieldComponent extends field_1.FormFieldComponent {
         (0, rxjs_1.combineLatest)([controller$, directChild$])
             .pipe((0, rxjs_1.tap)(([controller, records]) => {
             this.attachChildEventListeners(records, controller);
-            this.stopBinding = this.binder(records[1], controller);
+            this.stopBinding = this.attributesBinding(records[1], controller);
         }))
             .subscribe();
     }
@@ -70,7 +51,7 @@ class NRFieldComponent extends field_1.FormFieldComponent {
         this.makeControl();
     }
     setMetaBinder(binder) {
-        this.metaDataBinder = binder;
+        // this.metaDataBinder = binder;
     }
     setAttrBinder(binder) {
         this.attributeBinder = binder;
