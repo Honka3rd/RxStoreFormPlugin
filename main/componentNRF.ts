@@ -99,9 +99,7 @@ export class NRFieldComponent<
   }
 
   protected makeControl() {
-    const controller$ = this.formControllerEmitter
-      .asObservable()
-      .pipe(distinctUntilChanged());
+    const controller$ = this.formControllerEmitter;
     const directChild$ = this.directChildEmitter.asObservable().pipe(
       distinctUntilChanged(),
       tap(() => {
@@ -114,6 +112,7 @@ export class NRFieldComponent<
         switchMap((controller) =>
           directChild$.pipe(
             tap(([previous, current]) => {
+              console.log([previous, current], controller);
               this.attachChildEventListeners([previous, current], controller);
               this.stopBinding = this.binder(
                 current,
