@@ -47,12 +47,14 @@ export class NRFieldComponent<
           return;
         }
         console.log("binding", { datum, target });
-        if ("value" in target && target.getAttribute("value") !== datum.value) {
-          target.setAttribute("value", datum.value);
-          return;
-        }
-        if (target.dataset.value !== datum.value) {
-          target.setAttribute("data-value", String(datum.value));
+        try {
+          if (target && target.getAttribute("value") !== datum.value) {
+            target.setAttribute("value", datum.value);
+          }
+        } catch (e) {
+          if (target.dataset.value !== datum.value) {
+            target.setAttribute("data-value", String(datum.value));
+          }
         }
       });
     }
