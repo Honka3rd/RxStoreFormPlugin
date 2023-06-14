@@ -243,10 +243,9 @@ exports.FormFieldComponent = (() => {
                 this.setRequiredProperties();
             }
             disconnectedCallback() {
-                var _a, _b;
-                this.observer.disconnect();
-                (_a = this.unsubscribe) === null || _a === void 0 ? void 0 : _a.call(this);
-                (_b = this.stopBinding) === null || _b === void 0 ? void 0 : _b.call(this);
+                /* this.observer.disconnect();
+                this.unsubscribe?.();
+                this.stopBinding?.(); */
             }
             attributeChangedCallback(key, prev, next) {
                 const target = this.directChildEmitter.value;

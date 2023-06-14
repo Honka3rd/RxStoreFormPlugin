@@ -299,9 +299,9 @@ export class FormFieldComponent<
   }
 
   disconnectedCallback(): void {
-    this.observer.disconnect();
+    /* this.observer.disconnect();
     this.unsubscribe?.();
-    this.stopBinding?.();
+    this.stopBinding?.(); */
   }
 
   attributeChangedCallback(
