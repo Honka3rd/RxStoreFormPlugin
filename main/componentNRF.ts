@@ -99,6 +99,9 @@ export class NRFieldComponent<
   }
 
   protected makeControl() {
+    // test
+    this.formControllerEmitter.subscribe(console.log)
+    // --
     return combineLatest([
       this.formControllerEmitter.asObservable().pipe(distinctUntilChanged()),
       this.directChildEmitter.asObservable().pipe(

@@ -53,6 +53,9 @@ class NRFieldComponent extends field_1.FormFieldComponent {
         return () => unListens.forEach((fn) => fn === null || fn === void 0 ? void 0 : fn());
     }
     makeControl() {
+        // test
+        this.formControllerEmitter.subscribe(console.log);
+        // --
         return (0, rxjs_1.combineLatest)([
             this.formControllerEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)()),
             this.directChildEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.tap)(() => {
