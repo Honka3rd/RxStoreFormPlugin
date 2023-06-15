@@ -2,6 +2,7 @@ import {
   Subscription,
   combineLatest,
   distinctUntilChanged,
+  filter,
   pairwise,
   tap,
 } from "rxjs";
@@ -71,7 +72,10 @@ export class NRFieldComponent<
   }
 
   protected makeControl() {
-    const controller$ = this.formControllerEmitter.pipe(distinctUntilChanged());
+    const controller$ = this.formControllerEmitter.pipe(
+      distinctUntilChanged(),
+      filter(Boolean)
+    );
     const directChild$ = this.directChildEmitter.asObservable().pipe(
       distinctUntilChanged(),
       tap(() => {

@@ -40,7 +40,7 @@ class NRFieldComponent extends field_1.FormFieldComponent {
         }
     }
     makeControl() {
-        const controller$ = this.formControllerEmitter.pipe((0, rxjs_1.distinctUntilChanged)());
+        const controller$ = this.formControllerEmitter.pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.filter)(Boolean));
         const directChild$ = this.directChildEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.tap)(() => {
             var _a;
             (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
