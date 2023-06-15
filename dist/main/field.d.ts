@@ -1,9 +1,11 @@
 import { BehaviorSubject } from "rxjs";
-import { AttributeChangedCallback, ConnectedCallback, DatumType, DisconnectedCallback, FieldDataMapperInjector, FormControlBasicMetadata, FormControlData, FormController, FormControllerInjector, ImmutableFormController, V } from "./interfaces";
-export declare class FormFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends HTMLElement implements ConnectedCallback, DisconnectedCallback, FieldDataMapperInjector<F, N>, FormControllerInjector<F, M, S>, AttributeChangedCallback<HTMLElement> {
+import { ConnectedCallback, ControllerHostInjector, DatumType, FieldDataMapperInjector, FormControlBasicMetadata, FormControlData, FormController, FormControllerInjector, ImmutableFormController } from "./interfaces";
+export declare class FormFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends HTMLElement implements ConnectedCallback, FieldDataMapperInjector<F, N>, FormControllerInjector<F, M, S>, ControllerHostInjector {
     protected field?: F[N]["field"];
     protected type?: DatumType;
-    protected mapper?: (ev: any) => F[N]["value"];
+    protected keyboardEventMapper?: (ev: any) => F[N]["value"];
+    protected changeEventMapper?: (ev: any) => F[N]["value"];
+    protected container: HTMLFormElement | null;
     protected formControllerEmitter: BehaviorSubject<FormController<F, M, S> | ImmutableFormController<F, M, S> | null>;
     protected directChildEmitter: BehaviorSubject<HTMLElement | null>;
     protected stopBinding?: () => void;
@@ -20,11 +22,11 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     protected setField(field: F[N]["field"]): void;
     protected setDatumType(type: DatumType): void;
     protected setRequiredProperties(): void;
-    setDataMapper(mapper: (ev: any) => F[N]["value"]): void;
+    setKeyboardEventMapperMapper(mapper: (ev: any) => F[N]["value"]): void;
+    setChangeEventMapperMapper(mapper: (ev: any) => F[N]["value"]): void;
     setFormController(controller: FormController<F, M, S> | ImmutableFormController<F, M, S>): void;
+    setHost(form: HTMLFormElement): void;
     getField(): F[N]["field"] | undefined;
     getDatumType(): DatumType | undefined;
     connectedCallback(): void;
-    attributeChangedCallback(key: keyof HTMLElement, prev: V<HTMLElement>, next: V<HTMLElement>): void;
-    disconnectedCallback(): void;
 }

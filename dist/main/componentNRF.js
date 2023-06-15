@@ -52,11 +52,13 @@ class NRFieldComponent extends field_1.FormFieldComponent {
         super();
         this.makeControl();
     }
-    setMetaBinder(binder) {
-        // this.metaDataBinder = binder;
-    }
     setAttrBinder(binder) {
         this.attributeBinder = binder;
+    }
+    disconnectedCallback() {
+        var _a;
+        console.log("disconnected", (_a = this.container) === null || _a === void 0 ? void 0 : _a.contains(this));
+        this.observer.disconnect();
     }
 }
 exports.NRFieldComponent = NRFieldComponent;

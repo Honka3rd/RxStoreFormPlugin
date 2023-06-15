@@ -61,7 +61,7 @@ exports.FormControlComponent = (() => {
                     if (!(node instanceof field_1.FormFieldComponent)) {
                         return;
                     }
-                    node.setAttribute("data-ready", "true");
+                    node.setHost(this.formElement);
                     nodes.push(node);
                 }));
                 this.fieldListEmitter.next(nodes);
@@ -102,6 +102,7 @@ exports.FormControlComponent = (() => {
                 for (const node of Array.from(all)) {
                     if (node instanceof field_1.FormFieldComponent) {
                         fields.push(node);
+                        node.setHost(this.formElement);
                     }
                     else {
                         this.fillFields(fields, node.children);
@@ -111,9 +112,6 @@ exports.FormControlComponent = (() => {
             emitFieldChildrenOnMount() {
                 const fields = [];
                 this.fillFields(fields);
-                fields.forEach((field) => {
-                    field.setAttribute("data-ready", "true");
-                });
                 this.fieldListEmitter.next(fields);
             }
             constructor() {

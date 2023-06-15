@@ -1,17 +1,15 @@
 import { bound } from "rx-store-core";
 import { BehaviorSubject } from "rxjs";
 import {
-  AttributeChangedCallback,
   ConnectedCallback,
+  ControllerHostInjector,
   DatumType,
-  DisconnectedCallback,
   FieldDataMapperInjector,
   FormControlBasicMetadata,
   FormControlData,
   FormController,
   FormControllerInjector,
   ImmutableFormController,
-  V,
 } from "./interfaces";
 
 export class FormFieldComponent<
@@ -23,14 +21,15 @@ export class FormFieldComponent<
   extends HTMLElement
   implements
     ConnectedCallback,
-    DisconnectedCallback,
     FieldDataMapperInjector<F, N>,
     FormControllerInjector<F, M, S>,
-    AttributeChangedCallback<HTMLElement>
+    ControllerHostInjector
 {
   protected field?: F[N]["field"];
   protected type?: DatumType;
-  protected mapper?: (ev: any) => F[N]["value"];
+  protected keyboardEventMapper?: (ev: any) => F[N]["value"];
+  protected changeEventMapper?: (ev: any) => F[N]["value"];
+  protected container: HTMLFormElement | null = null;
 
   protected formControllerEmitter: BehaviorSubject<
     FormController<F, M, S> | ImmutableFormController<F, M, S> | null
@@ -136,15 +135,38 @@ export class FormFieldComponent<
     const context = this;
 
     function keydown(event: any) {
-      if (context.mapper) {
-        formController?.changeFormValue(field!, context.mapper(event));
+      if (context.keyboardEventMapper) {
+        formController?.changeFormValue(
+          field!,
+          context.keyboardEventMapper(event)
+        );
         return;
       }
       formController?.changeFormValue(field!, event.target.value);
     }
 
-    function change({ target }: any) {
-      formController?.changeFormValue(field!, target.checked);
+    function change(event: Event) {
+      if (context.changeEventMapper) {
+        formController?.changeFormValue(
+          field!,
+          context.changeEventMapper(event)
+        );
+        return;
+      }
+      const { target } = event;
+      if (target instanceof HTMLInputElement) {
+        if (target.type === "checkbox" || target.type === "radio") {
+          formController?.changeFormValue(field!, target.checked);
+          return;
+        }
+
+        if (target.type === "file") {
+          formController?.changeFormValue(field!, target.files);
+          return;
+        }
+
+        formController?.changeFormValue(field!, target.value);
+      }
     }
 
     if (current instanceof HTMLElement) {
@@ -158,9 +180,7 @@ export class FormFieldComponent<
 
       current.addEventListener("keydown", keydown);
 
-      if (current instanceof HTMLInputElement && current.type === "checkbox") {
-        current.addEventListener("change", change);
-      }
+      current.addEventListener("change", change);
     }
 
     if (previous instanceof HTMLElement) {
@@ -174,12 +194,7 @@ export class FormFieldComponent<
 
       previous.removeEventListener("keydown", keydown);
 
-      if (
-        previous instanceof HTMLInputElement &&
-        previous.type === "checkbox"
-      ) {
-        previous.removeEventListener("change", change);
-      }
+      previous.addEventListener("change", change);
     }
   }
 
@@ -270,14 +285,22 @@ export class FormFieldComponent<
     this.setDatumType(type as DatumType);
   }
 
-  setDataMapper(mapper: (ev: any) => F[N]["value"]): void {
-    this.mapper = mapper;
+  setKeyboardEventMapperMapper(mapper: (ev: any) => F[N]["value"]): void {
+    this.keyboardEventMapper = mapper;
+  }
+
+  setChangeEventMapperMapper(mapper: (ev: any) => F[N]["value"]) {
+    this.changeEventMapper = mapper;
   }
 
   setFormController(
     controller: FormController<F, M, S> | ImmutableFormController<F, M, S>
   ): void {
     this.formControllerEmitter.next(controller);
+  }
+
+  setHost(form: HTMLFormElement): void {
+    this.container = form;
   }
 
   getField() {
@@ -289,6 +312,7 @@ export class FormFieldComponent<
   }
 
   connectedCallback(): void {
+    console.log("connected", this.container?.contains(this));
     this.reportMultiChildError();
     this.emitOnlyChildOnMount().setInputDefaultsOnMount();
     this.observer.observe(this, {
@@ -297,17 +321,5 @@ export class FormFieldComponent<
       attributes: false,
     });
     this.setRequiredProperties();
-  }
-
-  attributeChangedCallback(
-    key: keyof HTMLElement,
-    prev: V<HTMLElement>,
-    next: V<HTMLElement>
-  ): void {
-    console.log("attr changed", { key, prev, next });
-  }
-
-  disconnectedCallback(): void {
-    this.observer.disconnect();
   }
 }

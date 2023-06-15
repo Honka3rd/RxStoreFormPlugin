@@ -7,7 +7,7 @@ import {
   FormController,
   FormControllerInjector,
   NRFieldAttributeBinderInjector,
-  NRFieldMetaBinderInjector,
+  DisconnectedCallback,
 } from "./interfaces";
 
 export class NRFieldComponent<
@@ -17,7 +17,10 @@ export class NRFieldComponent<
     N extends number = number
   >
   extends FormFieldComponent<F, M, S, N>
-  implements NRFieldAttributeBinderInjector, FormControllerInjector<F, M, S>
+  implements
+    NRFieldAttributeBinderInjector,
+    FormControllerInjector<F, M, S>,
+    DisconnectedCallback
 {
   private attributeBinder?: <D extends FormControlBasicDatum>(
     attributeSetter: (k: string, v: any) => void,
@@ -87,15 +90,6 @@ export class NRFieldComponent<
     this.makeControl();
   }
 
-  setMetaBinder(
-    binder: <M extends FormControlBasicMetadata>(
-      attributeSetter: (k: string, v: any) => void,
-      meta: M
-    ) => void
-  ): void {
-    // this.metaDataBinder = binder;
-  }
-
   setAttrBinder(
     binder: <D extends FormControlBasicDatum>(
       attributeSetter: (k: string, v: any) => void,
@@ -103,5 +97,10 @@ export class NRFieldComponent<
     ) => void
   ): void {
     this.attributeBinder = binder;
+  }
+
+  disconnectedCallback(): void {
+    console.log("disconnected", this.container?.contains(this));
+    this.observer.disconnect();
   }
 }

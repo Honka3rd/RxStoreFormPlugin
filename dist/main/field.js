@@ -46,6 +46,7 @@ exports.FormFieldComponent = (() => {
             constructor() {
                 super(...arguments);
                 this.field = (__runInitializers(this, _instanceExtraInitializers), void 0);
+                this.container = null;
                 this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
                 this.directChildEmitter = new rxjs_1.BehaviorSubject(null);
                 this.observer = new MutationObserver(this.setDirectChildFromMutations);
@@ -116,14 +117,29 @@ exports.FormFieldComponent = (() => {
                 }
                 const context = this;
                 function keydown(event) {
-                    if (context.mapper) {
-                        formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, context.mapper(event));
+                    if (context.keyboardEventMapper) {
+                        formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, context.keyboardEventMapper(event));
                         return;
                     }
                     formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, event.target.value);
                 }
-                function change({ target }) {
-                    formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, target.checked);
+                function change(event) {
+                    if (context.changeEventMapper) {
+                        formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, context.changeEventMapper(event));
+                        return;
+                    }
+                    const { target } = event;
+                    if (target instanceof HTMLInputElement) {
+                        if (target.type === "checkbox" || target.type === "radio") {
+                            formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, target.checked);
+                            return;
+                        }
+                        if (target.type === "file") {
+                            formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, target.files);
+                            return;
+                        }
+                        formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, target.value);
+                    }
                 }
                 if (current instanceof HTMLElement) {
                     current.addEventListener("mouseover", mouseover);
@@ -131,9 +147,7 @@ exports.FormFieldComponent = (() => {
                     current.addEventListener("focus", focus);
                     current.addEventListener("blur", blur);
                     current.addEventListener("keydown", keydown);
-                    if (current instanceof HTMLInputElement && current.type === "checkbox") {
-                        current.addEventListener("change", change);
-                    }
+                    current.addEventListener("change", change);
                 }
                 if (previous instanceof HTMLElement) {
                     previous.removeEventListener("mouseover", mouseover);
@@ -141,10 +155,7 @@ exports.FormFieldComponent = (() => {
                     previous.removeEventListener("focus", focus);
                     previous.removeEventListener("blur", blur);
                     previous.removeEventListener("keydown", keydown);
-                    if (previous instanceof HTMLInputElement &&
-                        previous.type === "checkbox") {
-                        previous.removeEventListener("change", change);
-                    }
+                    previous.addEventListener("change", change);
                 }
             }
             setInputDefault(target, key, next) {
@@ -219,11 +230,17 @@ exports.FormFieldComponent = (() => {
                 const type = (_a = this.getAttribute("data-type")) !== null && _a !== void 0 ? _a : interfaces_1.DatumType.SYNC;
                 this.setDatumType(type);
             }
-            setDataMapper(mapper) {
-                this.mapper = mapper;
+            setKeyboardEventMapperMapper(mapper) {
+                this.keyboardEventMapper = mapper;
+            }
+            setChangeEventMapperMapper(mapper) {
+                this.changeEventMapper = mapper;
             }
             setFormController(controller) {
                 this.formControllerEmitter.next(controller);
+            }
+            setHost(form) {
+                this.container = form;
             }
             getField() {
                 return this.field;
@@ -232,6 +249,8 @@ exports.FormFieldComponent = (() => {
                 return this.type;
             }
             connectedCallback() {
+                var _a;
+                console.log("connected", (_a = this.container) === null || _a === void 0 ? void 0 : _a.contains(this));
                 this.reportMultiChildError();
                 this.emitOnlyChildOnMount().setInputDefaultsOnMount();
                 this.observer.observe(this, {
@@ -240,12 +259,6 @@ exports.FormFieldComponent = (() => {
                     attributes: false,
                 });
                 this.setRequiredProperties();
-            }
-            attributeChangedCallback(key, prev, next) {
-                console.log("attr changed", { key, prev, next });
-            }
-            disconnectedCallback() {
-                this.observer.disconnect();
             }
         },
         (() => {
