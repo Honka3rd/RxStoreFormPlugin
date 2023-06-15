@@ -4,7 +4,6 @@ import {
   ConnectedCallback,
   ControllerHostInjector,
   DatumType,
-  DisconnectedCallback,
   FieldDataMapperInjector,
   FormControlBasicMetadata,
   FormControlData,
@@ -24,8 +23,7 @@ export class FormFieldComponent<
     ConnectedCallback,
     FieldDataMapperInjector<F, N>,
     FormControllerInjector<F, M, S>,
-    ControllerHostInjector,
-    DisconnectedCallback
+    ControllerHostInjector
 {
   protected field?: F[N]["field"];
   protected type?: DatumType;
@@ -323,11 +321,5 @@ export class FormFieldComponent<
       attributes: false,
     });
     this.setRequiredProperties();
-  }
-
-  disconnectedCallback(): void {
-    if (this.container?.contains(this)) {
-      this.observer.disconnect();
-    }
   }
 }

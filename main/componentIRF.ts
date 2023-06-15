@@ -1,6 +1,13 @@
-import { combineLatest, distinctUntilChanged, pairwise, tap } from "rxjs";
+import {
+  Subscription,
+  combineLatest,
+  distinctUntilChanged,
+  pairwise,
+  tap,
+} from "rxjs";
 import { FormFieldComponent } from "./field";
 import {
+  DisconnectedCallback,
   FormControlBasicMetadata,
   FormControlData,
   IRFieldAttributeBinderInjector,
@@ -16,16 +23,12 @@ export class IRFieldComponent<
     N extends number = number
   >
   extends FormFieldComponent<F, M, S, N>
-  implements IRFieldAttributeBinderInjector<F>
+  implements IRFieldAttributeBinderInjector<F>, DisconnectedCallback
 {
+  private subscription: Subscription;
   private attributeBinder?: (
     attributeSetter: (k: string, v: any) => void,
     attrs: Map<K<F[number]>, V<F[number]>>
-  ) => void;
-
-  private metaDataBinder?: (
-    attributeSetter: (k: string, v: any) => void,
-    meta: Map<"errors" | "info" | "warn", Map<string, any>>
   ) => void;
 
   private attributesBinding(
@@ -73,7 +76,7 @@ export class IRFieldComponent<
       pairwise()
     );
 
-    combineLatest([controller$, directChild$] as const)
+    return combineLatest([controller$, directChild$] as const)
       .pipe(
         tap(([controller, records]) => {
           this.attachChildEventListeners(records, controller);
@@ -88,16 +91,7 @@ export class IRFieldComponent<
 
   constructor() {
     super();
-    this.makeControl();
-  }
-
-  setMetaBinder(
-    binder: (
-      attributeSetter: (k: string, v: any) => void,
-      meta: Map<"errors" | "info" | "warn", Map<string, any>>
-    ) => void
-  ): void {
-    this.metaDataBinder = binder;
+    this.subscription = this.makeControl();
   }
 
   setAttrBinder(
@@ -107,5 +101,12 @@ export class IRFieldComponent<
     ) => void
   ): void {
     this.attributeBinder = binder;
+  }
+
+  disconnectedCallback(): void {
+    if (this.container?.contains(this)) {
+      this.observer.disconnect();
+      this.subscription.unsubscribe();
+    }
   }
 }

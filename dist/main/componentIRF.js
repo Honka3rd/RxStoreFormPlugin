@@ -37,7 +37,7 @@ class IRFieldComponent extends field_1.FormFieldComponent {
             var _a;
             (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
         }), (0, rxjs_1.pairwise)());
-        (0, rxjs_1.combineLatest)([controller$, directChild$])
+        return (0, rxjs_1.combineLatest)([controller$, directChild$])
             .pipe((0, rxjs_1.tap)(([controller, records]) => {
             this.attachChildEventListeners(records, controller);
             this.stopBinding = this.attributesBinding(records[1], controller);
@@ -46,13 +46,17 @@ class IRFieldComponent extends field_1.FormFieldComponent {
     }
     constructor() {
         super();
-        this.makeControl();
-    }
-    setMetaBinder(binder) {
-        this.metaDataBinder = binder;
+        this.subscription = this.makeControl();
     }
     setAttrBinder(binder) {
         this.attributeBinder = binder;
+    }
+    disconnectedCallback() {
+        var _a;
+        if ((_a = this.container) === null || _a === void 0 ? void 0 : _a.contains(this)) {
+            this.observer.disconnect();
+            this.subscription.unsubscribe();
+        }
     }
 }
 exports.IRFieldComponent = IRFieldComponent;

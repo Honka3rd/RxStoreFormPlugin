@@ -1,4 +1,10 @@
-import { combineLatest, distinctUntilChanged, pairwise, tap } from "rxjs";
+import {
+  Subscription,
+  combineLatest,
+  distinctUntilChanged,
+  pairwise,
+  tap,
+} from "rxjs";
 import { FormFieldComponent } from "./field";
 import {
   FormControlBasicDatum,
@@ -7,6 +13,7 @@ import {
   FormController,
   FormControllerInjector,
   NRFieldAttributeBinderInjector,
+  DisconnectedCallback,
 } from "./interfaces";
 
 export class NRFieldComponent<
@@ -16,8 +23,12 @@ export class NRFieldComponent<
     N extends number = number
   >
   extends FormFieldComponent<F, M, S, N>
-  implements NRFieldAttributeBinderInjector, FormControllerInjector<F, M, S>
+  implements
+    NRFieldAttributeBinderInjector,
+    FormControllerInjector<F, M, S>,
+    DisconnectedCallback
 {
+  private subscription: Subscription;
   private attributeBinder?: <D extends FormControlBasicDatum>(
     attributeSetter: (k: string, v: any) => void,
     attrs: D
@@ -68,7 +79,7 @@ export class NRFieldComponent<
       pairwise()
     );
 
-    combineLatest([controller$, directChild$] as const)
+    return combineLatest([controller$, directChild$] as const)
       .pipe(
         tap(([controller, records]) => {
           this.attachChildEventListeners(records, controller);
@@ -83,7 +94,7 @@ export class NRFieldComponent<
 
   constructor() {
     super();
-    this.makeControl();
+    this.subscription = this.makeControl();
   }
 
   setAttrBinder(
@@ -96,7 +107,9 @@ export class NRFieldComponent<
   }
 
   disconnectedCallback(): void {
-    console.log("disconnected", this.container?.contains(this));
-    this.observer.disconnect();
+    if (this.container?.contains(this)) {
+      this.observer.disconnect();
+      this.subscription.unsubscribe();
+    }
   }
 }

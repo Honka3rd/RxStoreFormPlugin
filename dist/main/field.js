@@ -259,12 +259,6 @@ exports.FormFieldComponent = (() => {
                 });
                 this.setRequiredProperties();
             }
-            disconnectedCallback() {
-                var _a;
-                if ((_a = this.container) === null || _a === void 0 ? void 0 : _a.contains(this)) {
-                    this.observer.disconnect();
-                }
-            }
         },
         (() => {
             _setDirectChildFromMutations_decorators = [rx_store_core_1.bound];
