@@ -7,7 +7,6 @@ import {
   ImmutableFormController,
   K,
   V,
-  DisconnectedCallback,
 } from "./interfaces";
 import { Map } from "immutable";
 export class IRFieldComponent<
@@ -17,7 +16,7 @@ export class IRFieldComponent<
     N extends number = number
   >
   extends FormFieldComponent<F, M, S, N>
-  implements IRFieldAttributeBinderInjector<F>, DisconnectedCallback
+  implements IRFieldAttributeBinderInjector<F>
 {
   private attributeBinder?: (
     attributeSetter: (k: string, v: any) => void,
@@ -108,10 +107,5 @@ export class IRFieldComponent<
     ) => void
   ): void {
     this.attributeBinder = binder;
-  }
-
-  disconnectedCallback(): void {
-    console.log("disconnected", this.container?.contains(this));
-    this.observer.disconnect();
   }
 }

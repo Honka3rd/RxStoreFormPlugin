@@ -4,6 +4,7 @@ import {
   ConnectedCallback,
   ControllerHostInjector,
   DatumType,
+  DisconnectedCallback,
   FieldDataMapperInjector,
   FormControlBasicMetadata,
   FormControlData,
@@ -23,7 +24,8 @@ export class FormFieldComponent<
     ConnectedCallback,
     FieldDataMapperInjector<F, N>,
     FormControllerInjector<F, M, S>,
-    ControllerHostInjector
+    ControllerHostInjector,
+    DisconnectedCallback
 {
   protected field?: F[N]["field"];
   protected type?: DatumType;
@@ -52,6 +54,7 @@ export class FormFieldComponent<
     }
   }
 
+  @bound
   protected setDirectChildFromMutations(mutationList: MutationRecord[]) {
     const mutations = mutationList.filter(
       (mutation) => mutation.type === "childList"
@@ -312,7 +315,6 @@ export class FormFieldComponent<
   }
 
   connectedCallback(): void {
-    console.log("connected", this.container?.contains(this));
     this.reportMultiChildError();
     this.emitOnlyChildOnMount().setInputDefaultsOnMount();
     this.observer.observe(this, {
@@ -321,5 +323,11 @@ export class FormFieldComponent<
       attributes: false,
     });
     this.setRequiredProperties();
+  }
+
+  disconnectedCallback(): void {
+    if (this.container?.contains(this)) {
+      this.observer.disconnect();
+    }
   }
 }

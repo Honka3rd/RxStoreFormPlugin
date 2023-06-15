@@ -1,6 +1,6 @@
 import { BehaviorSubject } from "rxjs";
-import { ConnectedCallback, ControllerHostInjector, DatumType, FieldDataMapperInjector, FormControlBasicMetadata, FormControlData, FormController, FormControllerInjector, ImmutableFormController } from "./interfaces";
-export declare class FormFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends HTMLElement implements ConnectedCallback, FieldDataMapperInjector<F, N>, FormControllerInjector<F, M, S>, ControllerHostInjector {
+import { ConnectedCallback, ControllerHostInjector, DatumType, DisconnectedCallback, FieldDataMapperInjector, FormControlBasicMetadata, FormControlData, FormController, FormControllerInjector, ImmutableFormController } from "./interfaces";
+export declare class FormFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends HTMLElement implements ConnectedCallback, FieldDataMapperInjector<F, N>, FormControllerInjector<F, M, S>, ControllerHostInjector, DisconnectedCallback {
     protected field?: F[N]["field"];
     protected type?: DatumType;
     protected keyboardEventMapper?: (ev: any) => F[N]["value"];
@@ -29,4 +29,5 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     getField(): F[N]["field"] | undefined;
     getDatumType(): DatumType | undefined;
     connectedCallback(): void;
+    disconnectedCallback(): void;
 }

@@ -41,6 +41,7 @@ const interfaces_1 = require("./interfaces");
 exports.FormFieldComponent = (() => {
     var _a;
     let _instanceExtraInitializers = [];
+    let _setDirectChildFromMutations_decorators;
     let _attrSetter_decorators;
     return _a = class FormFieldComponent extends HTMLElement {
             constructor() {
@@ -249,8 +250,6 @@ exports.FormFieldComponent = (() => {
                 return this.type;
             }
             connectedCallback() {
-                var _a;
-                console.log("connected", (_a = this.container) === null || _a === void 0 ? void 0 : _a.contains(this));
                 this.reportMultiChildError();
                 this.emitOnlyChildOnMount().setInputDefaultsOnMount();
                 this.observer.observe(this, {
@@ -260,9 +259,17 @@ exports.FormFieldComponent = (() => {
                 });
                 this.setRequiredProperties();
             }
+            disconnectedCallback() {
+                var _a;
+                if ((_a = this.container) === null || _a === void 0 ? void 0 : _a.contains(this)) {
+                    this.observer.disconnect();
+                }
+            }
         },
         (() => {
+            _setDirectChildFromMutations_decorators = [rx_store_core_1.bound];
             _attrSetter_decorators = [rx_store_core_1.bound];
+            __esDecorate(_a, null, _setDirectChildFromMutations_decorators, { kind: "method", name: "setDirectChildFromMutations", static: false, private: false, access: { has: obj => "setDirectChildFromMutations" in obj, get: obj => obj.setDirectChildFromMutations } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _attrSetter_decorators, { kind: "method", name: "attrSetter", static: false, private: false, access: { has: obj => "attrSetter" in obj, get: obj => obj.attrSetter } }, null, _instanceExtraInitializers);
         })(),
         _a;

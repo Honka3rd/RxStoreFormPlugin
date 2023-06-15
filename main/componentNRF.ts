@@ -7,7 +7,6 @@ import {
   FormController,
   FormControllerInjector,
   NRFieldAttributeBinderInjector,
-  DisconnectedCallback,
 } from "./interfaces";
 
 export class NRFieldComponent<
@@ -17,10 +16,7 @@ export class NRFieldComponent<
     N extends number = number
   >
   extends FormFieldComponent<F, M, S, N>
-  implements
-    NRFieldAttributeBinderInjector,
-    FormControllerInjector<F, M, S>,
-    DisconnectedCallback
+  implements NRFieldAttributeBinderInjector, FormControllerInjector<F, M, S>
 {
   private attributeBinder?: <D extends FormControlBasicDatum>(
     attributeSetter: (k: string, v: any) => void,
