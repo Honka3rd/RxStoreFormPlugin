@@ -56,7 +56,7 @@ export class FormControlComponent<
             if (!id) {
               return;
             }
-            this.fillFields(nodes, node.children)
+            this.fillFields(nodes, node.children);
             node.setAttribute("data-selector", id);
           }
         })
@@ -88,19 +88,21 @@ export class FormControlComponent<
 
   private fillFields(
     fields: FormFieldComponent<F, M, S, number>[],
-    all = this.getDirectForm()?.children ?? []
+    all = this.getDirectForm()?.children ?? [],
+    map = new WeakMap()
   ) {
     for (const node of Array.from(all)) {
-      if (node instanceof FormFieldComponent) {
+      if (node instanceof FormFieldComponent && !map.has(node)) {
         fields.push(node);
+        map.set(node, node);
       } else {
-        this.fillFields(fields, node.children);
+        this.fillFields(fields, node.children, map);
       }
     }
   }
 
   private emitFieldChildrenOnMount() {
-    if(!this.children.length) {
+    if (!this.children.length) {
       return;
     }
     const fields: FormFieldComponent<F, M, S, number>[] = [];

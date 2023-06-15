@@ -88,15 +88,17 @@ exports.FormControlComponent = (() => {
                 }
                 return formElement;
             }
-            fillFields(fields, all) {
+            fillFields(fields, all, map) {
                 var _a, _b;
                 if (all === void 0) { all = (_b = (_a = this.getDirectForm()) === null || _a === void 0 ? void 0 : _a.children) !== null && _b !== void 0 ? _b : []; }
+                if (map === void 0) { map = new WeakMap(); }
                 for (const node of Array.from(all)) {
-                    if (node instanceof field_1.FormFieldComponent) {
+                    if (node instanceof field_1.FormFieldComponent && !map.has(node)) {
                         fields.push(node);
+                        map.set(node, node);
                     }
                     else {
-                        this.fillFields(fields, node.children);
+                        this.fillFields(fields, node.children, map);
                     }
                 }
             }
