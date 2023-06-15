@@ -56,11 +56,8 @@ class NRFieldComponent extends field_1.FormFieldComponent {
         this.attributeBinder = binder;
     }
     disconnectedCallback() {
-        var _a;
-        if ((_a = this.container) === null || _a === void 0 ? void 0 : _a.contains(this)) {
-            this.observer.disconnect();
-            this.subscription.unsubscribe();
-        }
+        this.observer.disconnect();
+        this.subscription.unsubscribe();
     }
 }
 exports.NRFieldComponent = NRFieldComponent;

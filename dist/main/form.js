@@ -41,28 +41,31 @@ const field_1 = require("./field");
 exports.FormControlComponent = (() => {
     var _a;
     let _instanceExtraInitializers = [];
-    let _drillDownChild_decorators;
     let _setFieldListFromMutationRecords_decorators;
     return _a = class FormControlComponent extends HTMLElement {
-            drillDownChild(node) {
-                if (this.contains(node)) {
-                    this.removeChild(node);
-                }
-                if (!this.formElement.contains(node)) {
-                    this.formElement.appendChild(node);
-                }
+            constructor() {
+                super(...arguments);
+                this.fieldListEmitter = (__runInitializers(this, _instanceExtraInitializers), new rxjs_1.BehaviorSubject([]));
+                this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
+                this.observer = new MutationObserver(this.setFieldListFromMutationRecords);
             }
             setFieldListFromMutationRecords(mutationList) {
                 const nodes = [];
                 mutationList
                     .filter((mutation) => mutation.type === "childList")
                     .forEach((mutation) => Array.from(mutation.addedNodes).forEach((node) => {
-                    this.drillDownChild(node);
-                    if (!(node instanceof field_1.FormFieldComponent)) {
+                    var _a;
+                    if (node instanceof field_1.FormFieldComponent) {
+                        nodes.push(node);
                         return;
                     }
-                    node.setHost(this.formElement);
-                    nodes.push(node);
+                    if (node instanceof HTMLFormElement) {
+                        const id = (_a = this.formControllerEmitter.value) === null || _a === void 0 ? void 0 : _a.selector();
+                        if (!id) {
+                            return;
+                        }
+                        node.setAttribute("data-selector", id);
+                    }
                 }));
                 this.fieldListEmitter.next(nodes);
             }
@@ -77,32 +80,17 @@ exports.FormControlComponent = (() => {
                     fields.forEach((node) => node.setFormController(controller));
                 });
             }
-            handleFirstRenderInForm() {
-                Array.from(this.children).forEach(this.drillDownChild);
-                this.appendChild(this.formElement);
-            }
-            applyParentAttrs() {
-                const attributes = this.attributes;
-                for (let i = 0; i < attributes.length; i++) {
-                    const attribute = attributes[i];
-                    this.removeAttribute(attribute.name);
-                    this.formElement.setAttribute(attribute.name, attribute.value);
+            getDirectForm() {
+                const formElement = this.children.item(0);
+                if (!(formElement instanceof HTMLFormElement)) {
+                    throw new Error("The direct child must be only one form element");
                 }
+                return formElement;
             }
-            overwriteEventListener() {
-                this.addEventListener = (type, listener, options) => {
-                    this.formElement.addEventListener(type, listener, options);
-                };
-                this.removeEventListener = (type, listener, options) => {
-                    this.formElement.removeEventListener(type, listener, options);
-                };
-                return this;
-            }
-            fillFields(fields, all = this.formElement.children) {
+            fillFields(fields, all = this.getDirectForm().children) {
                 for (const node of Array.from(all)) {
                     if (node instanceof field_1.FormFieldComponent) {
                         fields.push(node);
-                        node.setHost(this.formElement);
                     }
                     else {
                         this.fillFields(fields, node.children);
@@ -110,26 +98,19 @@ exports.FormControlComponent = (() => {
                 }
             }
             emitFieldChildrenOnMount() {
+                if (!this.children.length) {
+                    return;
+                }
                 const fields = [];
                 this.fillFields(fields);
                 this.fieldListEmitter.next(fields);
             }
-            constructor() {
-                super();
-                this.fieldListEmitter = (__runInitializers(this, _instanceExtraInitializers), new rxjs_1.BehaviorSubject([]));
-                this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
-                this.formElement = document.createElement("form");
-                this.observer = new MutationObserver(this.setFieldListFromMutationRecords);
-                this.overwriteEventListener();
-            }
             setFormController(controller) {
-                this.formElement.setAttribute("data-selector", controller.selector());
+                this.getDirectForm().setAttribute("data-selector", controller.selector());
                 this.formControllerEmitter.next(controller);
             }
             connectedCallback() {
-                this.handleFirstRenderInForm();
-                this.applyParentAttrs();
-                this.observer.observe(this.formElement, {
+                this.observer.observe(this, {
                     subtree: true,
                     childList: true,
                     attributes: false,
@@ -142,16 +123,9 @@ exports.FormControlComponent = (() => {
                 this.observer.disconnect();
                 (_a = this.subscription) === null || _a === void 0 ? void 0 : _a.unsubscribe();
             }
-            attributeChangedCallback(key, prev, next) {
-                if (typeof next === "string") {
-                    return this.formElement.setAttribute(key, next);
-                }
-            }
         },
         (() => {
-            _drillDownChild_decorators = [rx_store_core_1.bound];
             _setFieldListFromMutationRecords_decorators = [rx_store_core_1.bound];
-            __esDecorate(_a, null, _drillDownChild_decorators, { kind: "method", name: "drillDownChild", static: false, private: false, access: { has: obj => "drillDownChild" in obj, get: obj => obj.drillDownChild } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _setFieldListFromMutationRecords_decorators, { kind: "method", name: "setFieldListFromMutationRecords", static: false, private: false, access: { has: obj => "setFieldListFromMutationRecords" in obj, get: obj => obj.setFieldListFromMutationRecords } }, null, _instanceExtraInitializers);
         })(),
         _a;

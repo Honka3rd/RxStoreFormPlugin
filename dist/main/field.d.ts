@@ -1,11 +1,10 @@
 import { BehaviorSubject } from "rxjs";
-import { ConnectedCallback, ControllerHostInjector, DatumType, FieldDataMapperInjector, FormControlBasicMetadata, FormControlData, FormController, FormControllerInjector, ImmutableFormController } from "./interfaces";
-export declare class FormFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends HTMLElement implements ConnectedCallback, FieldDataMapperInjector<F, N>, FormControllerInjector<F, M, S>, ControllerHostInjector {
+import { ConnectedCallback, DatumType, FieldDataMapperInjector, FormControlBasicMetadata, FormControlData, FormController, FormControllerInjector, ImmutableFormController } from "./interfaces";
+export declare class FormFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends HTMLElement implements ConnectedCallback, FieldDataMapperInjector<F, N>, FormControllerInjector<F, M, S> {
     protected field?: F[N]["field"];
     protected type?: DatumType;
     protected keyboardEventMapper?: (ev: any) => F[N]["value"];
     protected changeEventMapper?: (ev: any) => F[N]["value"];
-    protected container: HTMLFormElement | null;
     protected formControllerEmitter: BehaviorSubject<FormController<F, M, S> | ImmutableFormController<F, M, S> | null>;
     protected directChildEmitter: BehaviorSubject<HTMLElement | null>;
     protected stopBinding?: () => void;
@@ -25,7 +24,6 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     setKeyboardEventMapperMapper(mapper: (ev: any) => F[N]["value"]): void;
     setChangeEventMapperMapper(mapper: (ev: any) => F[N]["value"]): void;
     setFormController(controller: FormController<F, M, S> | ImmutableFormController<F, M, S>): void;
-    setHost(form: HTMLFormElement): void;
     getField(): F[N]["field"] | undefined;
     getDatumType(): DatumType | undefined;
     connectedCallback(): void;

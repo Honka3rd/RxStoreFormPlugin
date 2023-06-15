@@ -13,7 +13,7 @@ import {
   FormController,
   FormControllerInjector,
   NRFieldAttributeBinderInjector,
-  DisconnectedCallback,
+  DisconnectedCallback
 } from "./interfaces";
 
 export class NRFieldComponent<
@@ -23,10 +23,7 @@ export class NRFieldComponent<
     N extends number = number
   >
   extends FormFieldComponent<F, M, S, N>
-  implements
-    NRFieldAttributeBinderInjector,
-    FormControllerInjector<F, M, S>,
-    DisconnectedCallback
+  implements NRFieldAttributeBinderInjector, FormControllerInjector<F, M, S>, DisconnectedCallback
 {
   private subscription: Subscription;
   private attributeBinder?: <D extends FormControlBasicDatum>(
@@ -107,9 +104,7 @@ export class NRFieldComponent<
   }
 
   disconnectedCallback(): void {
-    if (this.container?.contains(this)) {
-      this.observer.disconnect();
+    this.observer.disconnect();
       this.subscription.unsubscribe();
-    }
   }
 }

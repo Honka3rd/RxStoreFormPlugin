@@ -47,7 +47,6 @@ exports.FormFieldComponent = (() => {
             constructor() {
                 super(...arguments);
                 this.field = (__runInitializers(this, _instanceExtraInitializers), void 0);
-                this.container = null;
                 this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
                 this.directChildEmitter = new rxjs_1.BehaviorSubject(null);
                 this.observer = new MutationObserver(this.setDirectChildFromMutations);
@@ -239,9 +238,6 @@ exports.FormFieldComponent = (() => {
             }
             setFormController(controller) {
                 this.formControllerEmitter.next(controller);
-            }
-            setHost(form) {
-                this.container = form;
             }
             getField() {
                 return this.field;

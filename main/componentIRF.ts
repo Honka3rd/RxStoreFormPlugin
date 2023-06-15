@@ -104,9 +104,7 @@ export class IRFieldComponent<
   }
 
   disconnectedCallback(): void {
-    if (this.container?.contains(this)) {
-      this.observer.disconnect();
-      this.subscription.unsubscribe();
-    }
+    this.observer.disconnect();
+    this.subscription.unsubscribe();
   }
 }

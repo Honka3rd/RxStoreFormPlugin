@@ -127,6 +127,7 @@ export interface ImmutableFormController<F extends FormControlData, M extends Pa
     hoverFormField<N extends number>(field: F[N]["field"], hoverOrNot: boolean): this;
     initiator: Initiator<F>;
     validator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>) => Map<PK<M>, Map<"errors" | "info" | "warn", any>>;
+    selector: () => S;
     asyncValidator?(formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>): Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>> | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>;
     startValidation(): (() => void) | undefined;
     getMeta(): Map<PK<M>, Map<"errors" | "info" | "warn", Map<string, any>>>;
@@ -166,9 +167,6 @@ export interface FormControllerInjector<F extends FormControlData, M extends Par
 export interface FieldDataMapperInjector<F extends FormControlData, N extends number = number> {
     setKeyboardEventMapperMapper(mapper: (ev: Event) => F[N]["value"]): void;
     setChangeEventMapperMapper(mapper: (ev: Event) => F[N]["value"]): void;
-}
-export interface ControllerHostInjector {
-    setHost(form: HTMLFormElement): void;
 }
 export interface NRFieldAttributeBinderInjector {
     setAttrBinder(binder: <D extends FormControlBasicDatum>(attributeSetter: (k: string, v: any) => void, attrs: D) => void): void;

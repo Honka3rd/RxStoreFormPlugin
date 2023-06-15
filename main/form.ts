@@ -8,7 +8,6 @@ import {
 } from "rxjs";
 import { FormFieldComponent } from "./field";
 import {
-  AttributeChangedCallback,
   ConnectedCallback,
   DisconnectedCallback,
   FormControlBasicMetadata,
@@ -28,30 +27,17 @@ export class FormControlComponent<
   implements
     ConnectedCallback,
     DisconnectedCallback,
-    FormControllerInjector<F, M, S>,
-    AttributeChangedCallback<HTMLElement>
+    FormControllerInjector<F, M, S>
 {
   private fieldListEmitter: Subject<FormFieldComponent<F, M, S>[]> =
     new BehaviorSubject<FormFieldComponent<F, M, S>[]>([]);
-  private formControllerEmitter: Subject<
+  private formControllerEmitter: BehaviorSubject<
     FormController<F, M, S> | ImmutableFormController<F, M, S> | null
   > = new BehaviorSubject<
     FormController<F, M, S> | ImmutableFormController<F, M, S> | null
   >(null);
 
   private subscription?: Subscription;
-
-  private formElement = document.createElement("form");
-
-  @bound
-  private drillDownChild(node: Node) {
-    if (this.contains(node)) {
-      this.removeChild(node);
-    }
-    if (!this.formElement.contains(node)) {
-      this.formElement.appendChild(node);
-    }
-  }
 
   @bound
   private setFieldListFromMutationRecords(mutationList: MutationRecord[]) {
@@ -60,12 +46,18 @@ export class FormControlComponent<
       .filter((mutation) => mutation.type === "childList")
       .forEach((mutation) =>
         Array.from(mutation.addedNodes).forEach((node) => {
-          this.drillDownChild(node);
-          if (!(node instanceof FormFieldComponent)) {
+          if (node instanceof FormFieldComponent) {
+            nodes.push(node);
             return;
           }
-          node.setHost(this.formElement);
-          nodes.push(node);
+
+          if (node instanceof HTMLFormElement) {
+            const id = this.formControllerEmitter.value?.selector();
+            if (!id) {
+              return;
+            }
+            node.setAttribute("data-selector", id);
+          }
         })
       );
     this.fieldListEmitter.next(nodes);
@@ -85,48 +77,21 @@ export class FormControlComponent<
     });
   }
 
-  private handleFirstRenderInForm() {
-    Array.from(this.children).forEach(this.drillDownChild);
-    this.appendChild(this.formElement);
-  }
-
-  private applyParentAttrs() {
-    const attributes = this.attributes;
-    for (let i = 0; i < attributes.length; i++) {
-      const attribute = attributes[i];
-      this.removeAttribute(attribute.name);
-      this.formElement.setAttribute(attribute.name, attribute.value);
+  private getDirectForm() {
+    const formElement = this.children.item(0);
+    if (!(formElement instanceof HTMLFormElement)) {
+      throw new Error("The direct child must be only one form element");
     }
-  }
-
-  private overwriteEventListener() {
-    this.addEventListener = <K extends keyof HTMLElementEventMap>(
-      type: K,
-      listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any,
-      options?: boolean | AddEventListenerOptions
-    ) => {
-      this.formElement.addEventListener(type, listener, options);
-    };
-
-    this.removeEventListener = <K extends keyof HTMLElementEventMap>(
-      type: K,
-      listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any,
-      options?: boolean | AddEventListenerOptions
-    ) => {
-      this.formElement.removeEventListener(type, listener, options);
-    };
-
-    return this;
+    return formElement;
   }
 
   private fillFields(
     fields: FormFieldComponent<F, M, S, number>[],
-    all = this.formElement.children
+    all = this.getDirectForm().children
   ) {
     for (const node of Array.from(all)) {
       if (node instanceof FormFieldComponent) {
         fields.push(node);
-        node.setHost(this.formElement);
       } else {
         this.fillFields(fields, node.children);
       }
@@ -134,25 +99,21 @@ export class FormControlComponent<
   }
 
   private emitFieldChildrenOnMount() {
+    if(!this.children.length) {
+      return;
+    }
     const fields: FormFieldComponent<F, M, S, number>[] = [];
     this.fillFields(fields);
     this.fieldListEmitter.next(fields);
   }
 
-  constructor() {
-    super();
-    this.overwriteEventListener();
-  }
-
   setFormController(controller: FormController<F, M, S>): void {
-    this.formElement.setAttribute("data-selector", controller.selector());
+    this.getDirectForm().setAttribute("data-selector", controller.selector());
     this.formControllerEmitter.next(controller);
   }
 
   connectedCallback(): void {
-    this.handleFirstRenderInForm();
-    this.applyParentAttrs();
-    this.observer.observe(this.formElement, {
+    this.observer.observe(this, {
       subtree: true,
       childList: true,
       attributes: false,
@@ -164,15 +125,5 @@ export class FormControlComponent<
   disconnectedCallback(): void {
     this.observer.disconnect();
     this.subscription?.unsubscribe();
-  }
-
-  attributeChangedCallback(
-    key: keyof HTMLElement,
-    prev: V<HTMLElement>,
-    next: V<HTMLElement>
-  ): void {
-    if (typeof next === "string") {
-      return this.formElement.setAttribute(key, next);
-    }
   }
 }

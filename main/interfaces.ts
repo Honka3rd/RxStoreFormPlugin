@@ -280,6 +280,8 @@ export interface ImmutableFormController<
     meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>
   ) => Map<PK<M>, Map<"errors" | "info" | "warn", any>>;
 
+  selector: () => S;
+
   asyncValidator?(
     formData: List<Map<keyof F[number], V<F[number]>>>,
     meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>
@@ -400,10 +402,6 @@ export interface FieldDataMapperInjector<
 > {
   setKeyboardEventMapperMapper(mapper: (ev: Event) => F[N]["value"]): void;
   setChangeEventMapperMapper(mapper: (ev: Event) => F[N]["value"]): void;
-}
-
-export interface ControllerHostInjector {
-  setHost(form: HTMLFormElement): void;
 }
 
 export interface NRFieldAttributeBinderInjector {
