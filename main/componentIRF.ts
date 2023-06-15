@@ -16,6 +16,7 @@ import {
   V,
 } from "./interfaces";
 import { Map } from "immutable";
+import { ImmutableFormControllerImpl } from "./formControlIRS";
 export class IRFieldComponent<
     F extends FormControlData,
     M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
@@ -79,6 +80,11 @@ export class IRFieldComponent<
     return combineLatest([controller$, directChild$] as const)
       .pipe(
         tap(([controller, records]) => {
+          if (!(controller instanceof ImmutableFormControllerImpl)) {
+            throw new Error(
+              "Invalid controller, require instance of ImmutableFormControllerImpl"
+            );
+          }
           this.attachChildEventListeners(records, controller);
           this.stopBinding = this.attributesBinding(
             records[1],

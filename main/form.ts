@@ -80,14 +80,14 @@ export class FormControlComponent<
   private getDirectForm() {
     const formElement = this.children.item(0);
     if (!(formElement instanceof HTMLFormElement)) {
-      throw new Error("The direct child must be only one form element");
+      return null;
     }
     return formElement;
   }
 
   private fillFields(
     fields: FormFieldComponent<F, M, S, number>[],
-    all = this.getDirectForm().children
+    all = this.getDirectForm()?.children ?? []
   ) {
     for (const node of Array.from(all)) {
       if (node instanceof FormFieldComponent) {
@@ -108,7 +108,7 @@ export class FormControlComponent<
   }
 
   setFormController(controller: FormController<F, M, S>): void {
-    this.getDirectForm().setAttribute("data-selector", controller.selector());
+    this.getDirectForm()?.setAttribute("data-selector", controller.selector());
     this.formControllerEmitter.next(controller);
   }
 

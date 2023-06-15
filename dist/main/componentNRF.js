@@ -1,8 +1,12 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NRFieldComponent = void 0;
 const rxjs_1 = require("rxjs");
 const field_1 = require("./field");
+const formControlNRS_1 = __importDefault(require("./formControlNRS"));
 class NRFieldComponent extends field_1.FormFieldComponent {
     attributesBinding(target, formController) {
         const { field } = this;
@@ -43,6 +47,9 @@ class NRFieldComponent extends field_1.FormFieldComponent {
         }), (0, rxjs_1.pairwise)());
         return (0, rxjs_1.combineLatest)([controller$, directChild$])
             .pipe((0, rxjs_1.tap)(([controller, records]) => {
+            if (!(controller instanceof formControlNRS_1.default)) {
+                throw new Error("Invalid controller, require instance of FormControllerImpl");
+            }
             this.attachChildEventListeners(records, controller);
             this.stopBinding = this.attributesBinding(records[1], controller);
         }))

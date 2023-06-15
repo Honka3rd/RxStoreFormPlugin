@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.IRFieldComponent = void 0;
 const rxjs_1 = require("rxjs");
 const field_1 = require("./field");
+const formControlIRS_1 = require("./formControlIRS");
 class IRFieldComponent extends field_1.FormFieldComponent {
     attributesBinding(target, formController) {
         const { field } = this;
@@ -39,6 +40,9 @@ class IRFieldComponent extends field_1.FormFieldComponent {
         }), (0, rxjs_1.pairwise)());
         return (0, rxjs_1.combineLatest)([controller$, directChild$])
             .pipe((0, rxjs_1.tap)(([controller, records]) => {
+            if (!(controller instanceof formControlIRS_1.ImmutableFormControllerImpl)) {
+                throw new Error("Invalid controller, require instance of ImmutableFormControllerImpl");
+            }
             this.attachChildEventListeners(records, controller);
             this.stopBinding = this.attributesBinding(records[1], controller);
         }))

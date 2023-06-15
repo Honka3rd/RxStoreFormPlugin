@@ -83,11 +83,13 @@ exports.FormControlComponent = (() => {
             getDirectForm() {
                 const formElement = this.children.item(0);
                 if (!(formElement instanceof HTMLFormElement)) {
-                    throw new Error("The direct child must be only one form element");
+                    return null;
                 }
                 return formElement;
             }
-            fillFields(fields, all = this.getDirectForm().children) {
+            fillFields(fields, all) {
+                var _a, _b;
+                if (all === void 0) { all = (_b = (_a = this.getDirectForm()) === null || _a === void 0 ? void 0 : _a.children) !== null && _b !== void 0 ? _b : []; }
                 for (const node of Array.from(all)) {
                     if (node instanceof field_1.FormFieldComponent) {
                         fields.push(node);
@@ -106,7 +108,8 @@ exports.FormControlComponent = (() => {
                 this.fieldListEmitter.next(fields);
             }
             setFormController(controller) {
-                this.getDirectForm().setAttribute("data-selector", controller.selector());
+                var _a;
+                (_a = this.getDirectForm()) === null || _a === void 0 ? void 0 : _a.setAttribute("data-selector", controller.selector());
                 this.formControllerEmitter.next(controller);
             }
             connectedCallback() {

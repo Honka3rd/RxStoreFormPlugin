@@ -13,8 +13,9 @@ import {
   FormController,
   FormControllerInjector,
   NRFieldAttributeBinderInjector,
-  DisconnectedCallback
+  DisconnectedCallback,
 } from "./interfaces";
+import FormControllerImpl from "./formControlNRS";
 
 export class NRFieldComponent<
     F extends FormControlData,
@@ -23,7 +24,10 @@ export class NRFieldComponent<
     N extends number = number
   >
   extends FormFieldComponent<F, M, S, N>
-  implements NRFieldAttributeBinderInjector, FormControllerInjector<F, M, S>, DisconnectedCallback
+  implements
+    NRFieldAttributeBinderInjector,
+    FormControllerInjector<F, M, S>,
+    DisconnectedCallback
 {
   private subscription: Subscription;
   private attributeBinder?: <D extends FormControlBasicDatum>(
@@ -79,6 +83,11 @@ export class NRFieldComponent<
     return combineLatest([controller$, directChild$] as const)
       .pipe(
         tap(([controller, records]) => {
+          if (!(controller instanceof FormControllerImpl)) {
+            throw new Error(
+              "Invalid controller, require instance of FormControllerImpl"
+            );
+          }
           this.attachChildEventListeners(records, controller);
           this.stopBinding = this.attributesBinding(
             records[1],
@@ -105,6 +114,6 @@ export class NRFieldComponent<
 
   disconnectedCallback(): void {
     this.observer.disconnect();
-      this.subscription.unsubscribe();
+    this.subscription.unsubscribe();
   }
 }
