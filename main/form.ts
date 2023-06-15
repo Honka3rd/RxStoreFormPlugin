@@ -56,6 +56,7 @@ export class FormControlComponent<
             if (!id) {
               return;
             }
+            this.fillFields(nodes, node.children)
             node.setAttribute("data-selector", id);
           }
         })
