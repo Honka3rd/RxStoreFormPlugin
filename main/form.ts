@@ -110,7 +110,9 @@ export class FormControlComponent<
     this.fieldListEmitter.next(fields);
   }
 
-  setFormController(controller: FormController<F, M, S>): void {
+  setFormController(
+    controller: FormController<F, M, S> | ImmutableFormController<F, M, S>
+  ): void {
     this.getDirectForm()?.setAttribute("data-selector", controller.selector());
     this.formControllerEmitter.next(controller);
   }
