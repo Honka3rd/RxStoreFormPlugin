@@ -2,7 +2,7 @@ import { Initiator, PluginImpl } from "rx-store-types";
 import { AsyncValidationConfig, DatumType, FormControlBasicMetadata, FormControlData, FormStubs, ImmutableFormController, K, PK, PV, V } from "./interfaces";
 import { List, Map } from "immutable";
 import { Observable } from "rxjs";
-export declare class ImmutableFormControllerImpl<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> extends PluginImpl<S> implements ImmutableFormController<F, M, S> {
+export declare class ImmutableFormControllerImpl<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> extends PluginImpl<S, F> implements ImmutableFormController<F, M, S> {
     validator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>) => Map<PK<M>, Map<"errors" | "info" | "warn", any>>;
     asyncValidator?: ((formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>) => Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>> | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>) | undefined;
     private asyncConfig;

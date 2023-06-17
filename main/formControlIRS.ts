@@ -40,7 +40,7 @@ export class ImmutableFormControllerImpl<
     M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
     S extends string
   >
-  extends PluginImpl<S>
+  extends PluginImpl<S, F>
   implements ImmutableFormController<F, M, S>
 {
   private asyncConfig: AsyncValidationConfig = {
