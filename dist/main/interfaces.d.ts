@@ -185,4 +185,12 @@ export type CustomerAttrs = {
     asyncState?: AsyncState;
     value?: any;
 };
+export type ListenersCache = {
+    mouseover: () => void;
+    mouseleave: () => void;
+    focus: () => void;
+    blur: () => void;
+    keydown: (event: any) => void;
+    change: (event: Event) => void;
+};
 export {};

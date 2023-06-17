@@ -76,25 +76,21 @@ export class NRFieldComponent<
       distinctUntilChanged(),
       filter(Boolean)
     );
-    const directChild$ = this.directChildEmitter.asObservable().pipe(
-      distinctUntilChanged(),
-      tap(() => {
-        this.stopBinding?.();
-      }),
-      pairwise()
-    );
+    const directChild$ = this.directChildEmitter
+      .asObservable()
+      .pipe(distinctUntilChanged());
 
     return combineLatest([controller$, directChild$] as const)
       .pipe(
-        tap(([controller, records]) => {
+        tap(([controller, current]) => {
           if (!(controller instanceof FormControllerImpl)) {
             throw new Error(
               "Invalid controller, require instance of FormControllerImpl"
             );
           }
-          this.attachChildEventListeners(records, controller);
+          this.attachChildEventListeners(current, controller);
           this.stopBinding = this.attributesBinding(
-            records[1],
+            current,
             controller as FormController<F, M, S>
           );
         })
@@ -119,5 +115,10 @@ export class NRFieldComponent<
   disconnectedCallback(): void {
     this.observer.disconnect();
     this.subscription.unsubscribe();
+    this.stopBinding?.();
+    const removed = this.directChildEmitter.value;
+    if(removed) {
+        this.removeEventListeners(removed);
+    }
   }
 }

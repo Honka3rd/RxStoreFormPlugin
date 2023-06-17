@@ -1,5 +1,5 @@
 import { BehaviorSubject } from "rxjs";
-import { ConnectedCallback, DatumType, FieldDataMapperInjector, FormControlBasicMetadata, FormControlData, FormController, FormControllerInjector, ImmutableFormController } from "./interfaces";
+import { ConnectedCallback, DatumType, FieldDataMapperInjector, FormControlBasicMetadata, FormControlData, FormController, FormControllerInjector, ImmutableFormController, ListenersCache } from "./interfaces";
 export declare class FormFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends HTMLElement implements ConnectedCallback, FieldDataMapperInjector<F, N>, FormControllerInjector<F, M, S> {
     protected field?: F[N]["field"];
     protected type?: DatumType;
@@ -8,12 +8,14 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     protected formControllerEmitter: BehaviorSubject<FormController<F, M, S> | ImmutableFormController<F, M, S> | null>;
     protected directChildEmitter: BehaviorSubject<HTMLElement | null>;
     protected stopBinding?: () => void;
+    protected listeners: WeakMap<Node, ListenersCache>;
     protected isValidDirectChild(target?: Node | null): target is HTMLElement;
     private reportMultiChildError;
+    protected removeEventListeners(removed: Node): void;
     protected setDirectChildFromMutations(mutationList: MutationRecord[]): void;
     protected directChildIsTarget(): boolean | null;
     protected observer: MutationObserver;
-    protected attachChildEventListeners(target: [Node | null, Node | null], formController: FormController<F, M, S> | ImmutableFormController<F, M, S> | null): void;
+    protected attachChildEventListeners(current: Node | null, formController: FormController<F, M, S> | ImmutableFormController<F, M, S> | null): void;
     private setInputDefault;
     private setInputDefaultsOnMount;
     private emitOnlyChildOnMount;

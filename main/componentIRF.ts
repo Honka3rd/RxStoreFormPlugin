@@ -73,25 +73,21 @@ export class IRFieldComponent<
       distinctUntilChanged(),
       filter(Boolean)
     );
-    const directChild$ = this.directChildEmitter.asObservable().pipe(
-      distinctUntilChanged(),
-      tap(() => {
-        this.stopBinding?.();
-      }),
-      pairwise()
-    );
+    const directChild$ = this.directChildEmitter
+      .asObservable()
+      .pipe(distinctUntilChanged());
 
     return combineLatest([controller$, directChild$] as const)
       .pipe(
-        tap(([controller, records]) => {
+        tap(([controller, current]) => {
           if (!(controller instanceof ImmutableFormControllerImpl)) {
             throw new Error(
               "Invalid controller, require instance of ImmutableFormControllerImpl"
             );
           }
-          this.attachChildEventListeners(records, controller);
+          this.attachChildEventListeners(current, controller);
           this.stopBinding = this.attributesBinding(
-            records[1],
+            current,
             controller as ImmutableFormController<F, M, S>
           );
         })
@@ -116,5 +112,10 @@ export class IRFieldComponent<
   disconnectedCallback(): void {
     this.observer.disconnect();
     this.subscription.unsubscribe();
+    this.stopBinding?.();
+    const removed = this.directChildEmitter.value;
+    if (removed) {
+      this.removeEventListeners(removed);
+    }
   }
 }

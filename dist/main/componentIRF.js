@@ -34,17 +34,16 @@ class IRFieldComponent extends field_1.FormFieldComponent {
     }
     makeControl() {
         const controller$ = this.formControllerEmitter.pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.filter)(Boolean));
-        const directChild$ = this.directChildEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.tap)(() => {
-            var _a;
-            (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
-        }), (0, rxjs_1.pairwise)());
+        const directChild$ = this.directChildEmitter
+            .asObservable()
+            .pipe((0, rxjs_1.distinctUntilChanged)());
         return (0, rxjs_1.combineLatest)([controller$, directChild$])
-            .pipe((0, rxjs_1.tap)(([controller, records]) => {
+            .pipe((0, rxjs_1.tap)(([controller, current]) => {
             if (!(controller instanceof formControlIRS_1.ImmutableFormControllerImpl)) {
                 throw new Error("Invalid controller, require instance of ImmutableFormControllerImpl");
             }
-            this.attachChildEventListeners(records, controller);
-            this.stopBinding = this.attributesBinding(records[1], controller);
+            this.attachChildEventListeners(current, controller);
+            this.stopBinding = this.attributesBinding(current, controller);
         }))
             .subscribe();
     }
@@ -56,8 +55,14 @@ class IRFieldComponent extends field_1.FormFieldComponent {
         this.attributeBinder = binder;
     }
     disconnectedCallback() {
+        var _a;
         this.observer.disconnect();
         this.subscription.unsubscribe();
+        (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
+        const removed = this.directChildEmitter.value;
+        if (removed) {
+            this.removeEventListeners(removed);
+        }
     }
 }
 exports.IRFieldComponent = IRFieldComponent;

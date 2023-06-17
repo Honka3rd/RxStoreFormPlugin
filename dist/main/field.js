@@ -49,6 +49,7 @@ exports.FormFieldComponent = (() => {
                 this.field = (__runInitializers(this, _instanceExtraInitializers), void 0);
                 this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
                 this.directChildEmitter = new rxjs_1.BehaviorSubject(null);
+                this.listeners = new WeakMap();
                 this.observer = new MutationObserver(this.setDirectChildFromMutations);
             }
             isValidDirectChild(target) {
@@ -59,8 +60,37 @@ exports.FormFieldComponent = (() => {
                     throw new Error(`${this.dataset.field} has multiple child, only accept one child`);
                 }
             }
+            removeEventListeners(removed) {
+                const cachedListeners = this.listeners.get(removed);
+                if (cachedListeners) {
+                    removed.removeEventListener("mouseover", cachedListeners.mouseover);
+                    removed.removeEventListener("mouseleave", cachedListeners.mouseover);
+                    removed.removeEventListener("focus", cachedListeners.focus);
+                    removed.removeEventListener("blur", cachedListeners.mouseover);
+                    removed.removeEventListener("keydown", cachedListeners.mouseover);
+                    removed.removeEventListener("change", cachedListeners.focus);
+                }
+            }
             setDirectChildFromMutations(mutationList) {
                 const mutations = mutationList.filter((mutation) => mutation.type === "childList");
+                if (this.stopBinding) {
+                    const removed = mutations
+                        .map((mutation) => {
+                        return Array.from(mutation.removedNodes);
+                    })
+                        .reduce((nodes, next) => {
+                        next.forEach((node) => {
+                            nodes.push(node);
+                        });
+                        return nodes;
+                    }, [])
+                        .find((node) => node === this.directChildEmitter.value);
+                    if (removed) {
+                        this.stopBinding();
+                        this.directChildEmitter.next(null);
+                        this.removeEventListeners(removed);
+                    }
+                }
                 if (!this.dataset.targetSelector && !this.dataset.targetId) {
                     const first = mutations[0].addedNodes.item(0);
                     if (!this.isValidDirectChild(first)) {
@@ -77,7 +107,6 @@ exports.FormFieldComponent = (() => {
                         });
                         return acc;
                     }, []);
-                    this.reportMultiChildError();
                     const added = allAdded.find((a) => {
                         a instanceof HTMLElement && a.id === this.dataset.target_id;
                     });
@@ -86,7 +115,6 @@ exports.FormFieldComponent = (() => {
                 }
                 if (this.dataset.target_selector) {
                     const target = this.querySelector(this.dataset.target_selector);
-                    this.reportMultiChildError();
                     target && this.directChildEmitter.next(target);
                 }
             }
@@ -94,13 +122,12 @@ exports.FormFieldComponent = (() => {
                 const { value } = this.directChildEmitter;
                 return value && value === this.children.item(0);
             }
-            attachChildEventListeners(target, formController) {
+            attachChildEventListeners(current, formController) {
                 const { field } = this;
                 if (!formController || !field) {
                     return;
                 }
-                const [previous, current] = target;
-                if (!previous && !current) {
+                if (!current) {
                     return;
                 }
                 function mouseover() {
@@ -148,14 +175,14 @@ exports.FormFieldComponent = (() => {
                     current.addEventListener("blur", blur);
                     current.addEventListener("keydown", keydown);
                     current.addEventListener("change", change);
-                }
-                if (previous instanceof HTMLElement) {
-                    previous.removeEventListener("mouseover", mouseover);
-                    previous.removeEventListener("mouseleave", mouseleave);
-                    previous.removeEventListener("focus", focus);
-                    previous.removeEventListener("blur", blur);
-                    previous.removeEventListener("keydown", keydown);
-                    previous.addEventListener("change", change);
+                    this.listeners.set(current, {
+                        focus,
+                        blur,
+                        mouseleave,
+                        mouseover,
+                        keydown,
+                        change,
+                    });
                 }
             }
             setInputDefault(target, key, next) {

@@ -9,6 +9,7 @@ import {
   FormController,
   FormControllerInjector,
   ImmutableFormController,
+  ListenersCache,
 } from "./interfaces";
 
 export class FormFieldComponent<
@@ -36,6 +37,7 @@ export class FormFieldComponent<
   protected directChildEmitter: BehaviorSubject<HTMLElement | null> =
     new BehaviorSubject<HTMLElement | null>(null);
   protected stopBinding?: () => void;
+  protected listeners: WeakMap<Node, ListenersCache> = new WeakMap();
 
   protected isValidDirectChild(target?: Node | null): target is HTMLElement {
     return target instanceof HTMLElement && target.parentNode === this;
@@ -49,11 +51,42 @@ export class FormFieldComponent<
     }
   }
 
+  protected removeEventListeners(removed: Node) {
+    const cachedListeners = this.listeners.get(removed);
+    if (cachedListeners) {
+      removed.removeEventListener("mouseover", cachedListeners.mouseover);
+      removed.removeEventListener("mouseleave", cachedListeners.mouseover);
+      removed.removeEventListener("focus", cachedListeners.focus);
+      removed.removeEventListener("blur", cachedListeners.mouseover);
+      removed.removeEventListener("keydown", cachedListeners.mouseover);
+      removed.removeEventListener("change", cachedListeners.focus);
+    }
+  }
+
   @bound
   protected setDirectChildFromMutations(mutationList: MutationRecord[]) {
     const mutations = mutationList.filter(
       (mutation) => mutation.type === "childList"
     );
+
+    if (this.stopBinding) {
+      const removed = mutations
+        .map((mutation) => {
+          return Array.from(mutation.removedNodes);
+        })
+        .reduce((nodes, next) => {
+          next.forEach((node) => {
+            nodes.push(node);
+          });
+          return nodes;
+        }, <Node[]>[])
+        .find((node) => node === this.directChildEmitter.value);
+      if (removed) {
+        this.stopBinding();
+        this.directChildEmitter.next(null);
+        this.removeEventListeners(removed);
+      }
+    }
 
     if (!this.dataset.targetSelector && !this.dataset.targetId) {
       const first = mutations[0].addedNodes.item(0);
@@ -72,7 +105,6 @@ export class FormFieldComponent<
         });
         return acc;
       }, [] as Node[]);
-      this.reportMultiChildError();
       const added = allAdded.find((a) => {
         a instanceof HTMLElement && a.id === this.dataset.target_id;
       });
@@ -82,7 +114,6 @@ export class FormFieldComponent<
 
     if (this.dataset.target_selector) {
       const target = this.querySelector(this.dataset.target_selector);
-      this.reportMultiChildError();
       target && this.directChildEmitter.next(target as HTMLElement);
     }
   }
@@ -96,7 +127,7 @@ export class FormFieldComponent<
   protected observer = new MutationObserver(this.setDirectChildFromMutations);
 
   protected attachChildEventListeners(
-    target: [Node | null, Node | null],
+    current: Node | null,
     formController:
       | FormController<F, M, S>
       | ImmutableFormController<F, M, S>
@@ -107,8 +138,7 @@ export class FormFieldComponent<
       return;
     }
 
-    const [previous, current] = target;
-    if (!previous && !current) {
+    if (!current) {
       return;
     }
 
@@ -179,20 +209,15 @@ export class FormFieldComponent<
       current.addEventListener("keydown", keydown);
 
       current.addEventListener("change", change);
-    }
 
-    if (previous instanceof HTMLElement) {
-      previous.removeEventListener("mouseover", mouseover);
-
-      previous.removeEventListener("mouseleave", mouseleave);
-
-      previous.removeEventListener("focus", focus);
-
-      previous.removeEventListener("blur", blur);
-
-      previous.removeEventListener("keydown", keydown);
-
-      previous.addEventListener("change", change);
+      this.listeners.set(current, {
+        focus,
+        blur,
+        mouseleave,
+        mouseover,
+        keydown,
+        change,
+      });
     }
   }
 
