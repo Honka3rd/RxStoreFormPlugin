@@ -9,7 +9,6 @@ import {
   ImmutableFormPluginBuilderParams,
   NormalFormPluginBuilderParams,
   PK,
-  PV,
   V,
 } from "./interfaces";
 import { Plugin } from "rx-store-types";
