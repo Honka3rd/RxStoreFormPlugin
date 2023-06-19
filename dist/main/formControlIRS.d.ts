@@ -34,10 +34,11 @@ export declare class ImmutableFormControllerImpl<F extends FormControlData, M ex
     setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this;
     observeMeta(callback: (meta: Map<PK<M>, Map<"errors" | "info" | "warn", Map<string, any>>>) => void): () => void | undefined;
     observeMetaByField<K extends keyof M>(field: K, callback: (metaOne: Map<"errors" | "info" | "warn", Map<string, any>>) => void): () => void | undefined;
-    observeFormData<CompareAts extends readonly number[] = number[]>(fields: F[CompareAts[number]]["field"][], observer: (result: List<Map<keyof F[CompareAts[number]], PV<F[CompareAts[number]]>>>) => void): () => void;
+    observeFormData<CompareAts extends readonly number[] = number[]>(observer: (result: List<Map<keyof F[CompareAts[number]], PV<F[CompareAts[number]]>>>) => void, fields?: F[CompareAts[number]]["field"][]): () => void;
     observeFormDatum<CompareAt extends number = number>(field: F[CompareAt]["field"], observer: (result: Map<keyof ReturnType<Record<S, () => F>[S]>[CompareAt], PV<ReturnType<Record<S, () => F>[S]>[CompareAt]>>) => void): () => void;
     observeFormValue<CompareAt extends number = number>(field: F[CompareAt]["field"], observer: (result: ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]) => void): () => void;
     getDatum<At extends number = number>(field: F[At]["field"]): Map<keyof F[At], PV<F[At]>>;
+    getDatumValue<At extends number = number>(field: F[At]["field"]): NonNullable<V<F[number]>>;
     getFieldMeta<N extends number = number>(field: F[N]["field"]): Map<"errors" | "info" | "warn", Map<string, any>>;
     changeFieldType<N extends number>(field: F[N]["field"], type: DatumType): this;
     getFieldsMeta(fields: F[number]["field"][] | List<F[number]["field"]>): Map<PK<M>, PV<M>>;

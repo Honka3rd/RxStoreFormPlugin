@@ -414,10 +414,10 @@ export class ImmutableFormControllerImpl<
 
   @bound
   observeFormData<CompareAts extends readonly number[] = number[]>(
-    fields: F[CompareAts[number]]["field"][],
     observer: (
       result: List<Map<keyof F[CompareAts[number]], PV<F[CompareAts[number]]>>>
-    ) => void
+    ) => void,
+    fields?: F[CompareAts[number]]["field"][],
   ): () => void {
     const casted = this.cast(this.connector!);
     const subscription = casted
@@ -425,18 +425,16 @@ export class ImmutableFormControllerImpl<
       .pipe(
         map((states) => states[this.id]),
         map((form) => {
-          return List().withMutations((mutation) => {
-            form.forEach((datum) => {
-              const found = fields.find(
-                (field) => datum.get("field") === field
-              );
-              if (found) {
-                mutation.push(found);
-              }
-            });
-          }) as List<
-            Map<keyof F[CompareAts[number]], PV<F[CompareAts[number]]>>
-          >;
+          if(!fields) {
+            return form;
+          }
+          return List(fields.reduce((acc, next) => {
+            const found = form.find((f) => f.get("field") === next);
+            if(found) {
+              acc.push(found)
+            }
+            return acc;
+          }, [] as Map<keyof F[number], V<F[number]>>[]))
         }),
         distinctUntilChanged((var1, var2) => is(var1, var2))
       )
@@ -489,6 +487,12 @@ export class ImmutableFormControllerImpl<
   ): Map<keyof F[At], PV<F[At]>> {
     const casted = this.cast(this.connector!);
     return this.findDatumByField(casted.getState(this.id), field)!;
+  }
+
+  @bound
+  getDatumValue<At extends number = number>(field: F[At]["field"]) {
+    const casted = this.cast(this.connector!);
+    return this.findDatumByField(casted.getState(this.id), field)!.get("value")!;
   }
 
   @bound

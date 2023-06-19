@@ -394,18 +394,23 @@ let FormControllerImpl = (() => {
                 }
                 return () => { };
             }
-            observeFormData(fields, observer, comparator) {
+            observeFormData(observer, fields, comparator) {
                 const casted = this.cast(this.connector);
                 if (casted) {
                     const subscription = casted
                         .getDataSource()
-                        .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.map)((form) => form.reduce((acc, next, i) => {
-                        const found = fields.find((field) => next.field === field);
-                        if (found) {
-                            acc.push(next);
+                        .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.map)((form) => {
+                        if (!fields) {
+                            return form;
                         }
-                        return acc;
-                    }, [])), (0, rxjs_1.distinctUntilChanged)(comparator))
+                        return form.reduce((acc, next, i) => {
+                            const found = fields.find((field) => next.field === field);
+                            if (found) {
+                                acc.push(next);
+                            }
+                            return acc;
+                        }, []);
+                    }), (0, rxjs_1.distinctUntilChanged)(comparator))
                         .subscribe(observer);
                     return () => subscription.unsubscribe();
                 }

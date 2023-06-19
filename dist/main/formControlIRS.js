@@ -56,6 +56,7 @@ exports.ImmutableFormControllerImpl = (() => {
     let _observeFormDatum_decorators;
     let _observeFormValue_decorators;
     let _getDatum_decorators;
+    let _getDatumValue_decorators;
     let _getFieldMeta_decorators;
     let _changeFieldType_decorators;
     let _getFieldsMeta_decorators;
@@ -315,19 +316,21 @@ exports.ImmutableFormControllerImpl = (() => {
                 });
                 return () => subscription === null || subscription === void 0 ? void 0 : subscription.unsubscribe();
             }
-            observeFormData(fields, observer) {
+            observeFormData(observer, fields) {
                 const casted = this.cast(this.connector);
                 const subscription = casted
                     .getDataSource()
                     .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.map)((form) => {
-                    return (0, immutable_1.List)().withMutations((mutation) => {
-                        form.forEach((datum) => {
-                            const found = fields.find((field) => datum.get("field") === field);
-                            if (found) {
-                                mutation.push(found);
-                            }
-                        });
-                    });
+                    if (!fields) {
+                        return form;
+                    }
+                    return (0, immutable_1.List)(fields.reduce((acc, next) => {
+                        const found = form.find((f) => f.get("field") === next);
+                        if (found) {
+                            acc.push(found);
+                        }
+                        return acc;
+                    }, []));
                 }), (0, rxjs_1.distinctUntilChanged)((var1, var2) => (0, immutable_1.is)(var1, var2)))
                     .subscribe(observer);
                 return () => subscription.unsubscribe();
@@ -349,6 +352,10 @@ exports.ImmutableFormControllerImpl = (() => {
             getDatum(field) {
                 const casted = this.cast(this.connector);
                 return this.findDatumByField(casted.getState(this.id), field);
+            }
+            getDatumValue(field) {
+                const casted = this.cast(this.connector);
+                return this.findDatumByField(casted.getState(this.id), field).get("value");
             }
             getFieldMeta(field) {
                 return this.safeExecute(() => {
@@ -477,6 +484,7 @@ exports.ImmutableFormControllerImpl = (() => {
             _observeFormDatum_decorators = [rx_store_core_1.bound];
             _observeFormValue_decorators = [rx_store_core_1.bound];
             _getDatum_decorators = [rx_store_core_1.bound];
+            _getDatumValue_decorators = [rx_store_core_1.bound];
             _getFieldMeta_decorators = [rx_store_core_1.bound];
             _changeFieldType_decorators = [rx_store_core_1.bound];
             _getFieldsMeta_decorators = [rx_store_core_1.bound];
@@ -501,6 +509,7 @@ exports.ImmutableFormControllerImpl = (() => {
             __esDecorate(_a, null, _observeFormDatum_decorators, { kind: "method", name: "observeFormDatum", static: false, private: false, access: { has: obj => "observeFormDatum" in obj, get: obj => obj.observeFormDatum } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _observeFormValue_decorators, { kind: "method", name: "observeFormValue", static: false, private: false, access: { has: obj => "observeFormValue" in obj, get: obj => obj.observeFormValue } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getDatum_decorators, { kind: "method", name: "getDatum", static: false, private: false, access: { has: obj => "getDatum" in obj, get: obj => obj.getDatum } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _getDatumValue_decorators, { kind: "method", name: "getDatumValue", static: false, private: false, access: { has: obj => "getDatumValue" in obj, get: obj => obj.getDatumValue } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getFieldMeta_decorators, { kind: "method", name: "getFieldMeta", static: false, private: false, access: { has: obj => "getFieldMeta" in obj, get: obj => obj.getFieldMeta } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _changeFieldType_decorators, { kind: "method", name: "changeFieldType", static: false, private: false, access: { has: obj => "changeFieldType" in obj, get: obj => obj.changeFieldType } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getFieldsMeta_decorators, { kind: "method", name: "getFieldsMeta", static: false, private: false, access: { has: obj => "getFieldsMeta" in obj, get: obj => obj.getFieldsMeta } }, null, _instanceExtraInitializers);

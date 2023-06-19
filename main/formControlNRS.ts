@@ -535,8 +535,8 @@ class FormControllerImpl<
 
   @bound
   observeFormData<CompareAts extends Readonly<number[]> = number[]>(
-    fields: F[CompareAts[number]]["field"][],
     observer: (result: F[CompareAts[number]][]) => void,
+    fields?: F[CompareAts[number]]["field"][],
     comparator?: Comparator<F[CompareAts[number]][]>
   ) {
     const casted = this.cast(this.connector!);
@@ -545,15 +545,18 @@ class FormControllerImpl<
         .getDataSource()
         .pipe(
           map((states) => states[this.id]),
-          map((form) =>
-            form.reduce((acc, next, i) => {
+          map((form) => {
+            if (!fields) {
+              return form;
+            }
+            return form.reduce((acc, next, i) => {
               const found = fields.find((field) => next.field === field);
               if (found) {
                 acc.push(next);
               }
               return acc;
-            }, [] as F[CompareAts[number]][])
-          ),
+            }, [] as F[CompareAts[number]][]);
+          }),
           distinctUntilChanged(comparator)
         )
         .subscribe(observer);

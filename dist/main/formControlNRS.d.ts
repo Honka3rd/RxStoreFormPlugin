@@ -57,7 +57,7 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     observeMetaByField<K extends keyof M>(field: K, callback: (metaOne: Partial<M>[K]) => void): () => void | undefined;
     observeFormDatum<CompareAt extends number = number>(field: F[CompareAt]["field"], observer: (result: ReturnType<Record<S, () => F>[S]>[CompareAt]) => void, comparator?: Comparator<ReturnType<Record<S, () => F>[S]>[CompareAt]>): () => void;
     observeFormValue<CompareAt extends number = number>(field: F[CompareAt]["field"], observer: (result: ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]) => void, comparator?: Comparator<ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]>): () => void;
-    observeFormData<CompareAts extends Readonly<number[]> = number[]>(fields: F[CompareAts[number]]["field"][], observer: (result: F[CompareAts[number]][]) => void, comparator?: Comparator<F[CompareAts[number]][]>): () => void;
+    observeFormData<CompareAts extends Readonly<number[]> = number[]>(observer: (result: F[CompareAts[number]][]) => void, fields?: F[CompareAts[number]]["field"][], comparator?: Comparator<F[CompareAts[number]][]>): () => void;
     startValidation(): (() => void) | undefined;
     changeFormValue<N extends number>(field: F[N]["field"], value: F[N]["value"]): this;
     hoverFormField<N extends number>(field: F[N]["field"], hoverOrNot: boolean): this;

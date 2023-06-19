@@ -190,8 +190,8 @@ export interface FormController<
   ): () => void;
 
   observeFormData<CompareAts extends readonly number[] = number[]>(
-    fields: F[CompareAts[number]]["field"][],
     observer: (result: F[CompareAts[number]][]) => void,
+    fields?: F[CompareAts[number]]["field"][],
     comparator?: Comparator<F[CompareAts[number]][]>
   ): () => void;
 
@@ -332,10 +332,10 @@ export interface ImmutableFormController<
   ): () => void | undefined;
 
   observeFormData<CompareAts extends readonly number[] = number[]>(
-    fields: F[CompareAts[number]]["field"][],
     observer: (
       result: List<Map<PK<F[CompareAts[number]]>, PV<F[CompareAts[number]]>>>
-    ) => void
+    ) => void,
+    fields?: F[CompareAts[number]]["field"][]
   ): () => void;
 
   observeFormDatum<CompareAt extends number = number>(
@@ -362,6 +362,10 @@ export interface ImmutableFormController<
   getDatum<At extends number = number>(
     field: F[At]["field"]
   ): Map<PK<F[At]>, PV<F[At]>>;
+
+  getDatumValue<At extends number = number>(
+    field: F[At]["field"]
+  ): NonNullable<V<F[number]>>;
 }
 
 export type ImmutableFormPluginBuilderParams<
