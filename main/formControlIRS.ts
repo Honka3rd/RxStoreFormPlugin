@@ -430,7 +430,11 @@ export class ImmutableFormControllerImpl<
   @bound
   observeFormData<CompareAts extends readonly number[] = number[]>(
     observer: (
-      result: List<Map<keyof F[CompareAts[number]], PV<F[CompareAts[number]]>>>
+      result:
+        | List<Map<keyof F[CompareAts[number]], PV<F[CompareAts[number]]>>>
+        | ReturnType<
+            Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]
+          >
     ) => void,
     fields?: F[CompareAts[number]]["field"][]
   ): () => void {
