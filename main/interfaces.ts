@@ -333,11 +333,15 @@ export interface ImmutableFormController<
     ) => void
   ): () => void | undefined;
 
-  observeFormData<CompareAts extends readonly number[] = number[]>(
+  observeFormData<Ats extends readonly number[] = number[]>(
     observer: (
-      result: List<Map<PK<F[CompareAts[number]]>, PV<F[CompareAts[number]]>>>
+      result:
+        | List<Map<PK<F[Ats[number]]>, PV<F[Ats[number]]>>>
+        | ReturnType<
+            Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]
+          >
     ) => void,
-    fields?: F[CompareAts[number]]["field"][]
+    fields?: F[Ats[number]]["field"][]
   ): () => void;
 
   observeFormDatum<CompareAt extends number = number>(
