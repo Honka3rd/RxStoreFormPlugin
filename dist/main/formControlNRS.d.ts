@@ -44,8 +44,8 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     private cloneMetaByField;
     private cloneMeta;
     private cast;
-    getFormData(): ReturnType<Record<S, () => F>[S]>;
     initiator: Initiator<F>;
+    getFormData<Ats extends Readonly<number[]> = number[]>(fields?: F[Ats[number]]["field"][]): ReturnType<Record<S, () => F>[S]> | F[Ats[number]][];
     getMeta(): Partial<M>;
     getDatum<At extends number = number>(field: F[At]["field"]): F[At] | undefined;
     getDatumValue<At extends number = number>(field: F[At]["field"]): F[At]["value"] | undefined;

@@ -317,10 +317,21 @@ let FormControllerImpl = (() => {
                 const casted = connector;
                 return casted;
             }
-            getFormData() {
+            getFormData(fields) {
                 return this.safeExecute((connector) => {
                     const casted = this.cast(connector);
-                    return casted.getState(this.id);
+                    const form = casted.getState(this.id);
+                    if (fields) {
+                        const reduced = form.reduce((acc, next, i) => {
+                            const found = fields.find((field) => next.field === field);
+                            if (found) {
+                                acc.push(next);
+                            }
+                            return acc;
+                        }, []);
+                        return reduced;
+                    }
+                    return form;
                 });
             }
             getMeta() {

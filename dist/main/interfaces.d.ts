@@ -99,7 +99,7 @@ export interface FormController<F extends FormControlData, M extends Partial<Rec
     observeFormData<CompareAts extends readonly number[] = number[]>(observer: (result: F[CompareAts[number]][]) => void, fields?: F[CompareAts[number]]["field"][], comparator?: Comparator<F[CompareAts[number]][]>): () => void;
     getDatum<At extends number = number>(field: F[At]["field"]): F[At] | undefined;
     getDatumValue<At extends number = number>(field: F[At]["field"]): F[At]["value"] | undefined;
-    getFormData(): ReturnType<Record<S, () => F>[S]>;
+    getFormData<Ats extends Readonly<number[]> = number[]>(fields?: F[Ats[number]]["field"][]): ReturnType<Record<S, () => F>[S]> | F[Ats[number]][];
 }
 export type NormalFormPluginBuilderParams<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> = {
     formSelector: S;
@@ -145,7 +145,7 @@ export interface ImmutableFormController<F extends FormControlData, M extends Pa
     observeFormData<CompareAts extends readonly number[] = number[]>(observer: (result: List<Map<PK<F[CompareAts[number]]>, PV<F[CompareAts[number]]>>>) => void, fields?: F[CompareAts[number]]["field"][]): () => void;
     observeFormDatum<CompareAt extends number = number>(field: F[CompareAt]["field"], observer: (result: Map<PK<ReturnType<Record<S, () => F>[S]>[CompareAt]>, PV<ReturnType<Record<S, () => F>[S]>[CompareAt]>>) => void): () => void;
     observeFormValue<CompareAt extends number = number>(field: F[CompareAt]["field"], observer: (result: ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]) => void): () => void;
-    getFormData(): ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]>;
+    getFormData<Ats extends Readonly<number[]> = number[]>(fields?: F[Ats[number]]["field"][]): ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]> | List<Map<keyof F[number], V<F[number]>>>;
     getDatum<At extends number = number>(field: F[At]["field"]): Map<PK<F[At]>, PV<F[At]>>;
     getDatumValue<At extends number = number>(field: F[At]["field"]): NonNullable<V<F[number]>>;
 }

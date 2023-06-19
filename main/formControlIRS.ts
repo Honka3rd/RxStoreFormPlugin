@@ -299,10 +299,25 @@ export class ImmutableFormControllerImpl<
   }
 
   @bound
-  getFormData() {
+  getFormData<CompareAts extends readonly number[] = number[]>(
+    fields?: F[CompareAts[number]]["field"][]
+  ) {
     return this.safeExecute((connector) => {
       const casted = this.cast(connector);
-      return casted.getState(this.id)!;
+      const form = casted.getState(this.id)!;
+      if (fields) {
+        const reduced = List(
+          fields.reduce((acc, next) => {
+            const found = form.find((f) => f.get("field") === next);
+            if (found) {
+              acc.push(found);
+            }
+            return acc;
+          }, [] as Map<keyof F[number], V<F[number]>>[])
+        );
+        return reduced;
+      }
+      return form;
     })!;
   }
 
@@ -417,7 +432,7 @@ export class ImmutableFormControllerImpl<
     observer: (
       result: List<Map<keyof F[CompareAts[number]], PV<F[CompareAts[number]]>>>
     ) => void,
-    fields?: F[CompareAts[number]]["field"][],
+    fields?: F[CompareAts[number]]["field"][]
   ): () => void {
     const casted = this.cast(this.connector!);
     const subscription = casted
@@ -425,16 +440,18 @@ export class ImmutableFormControllerImpl<
       .pipe(
         map((states) => states[this.id]),
         map((form) => {
-          if(!fields) {
+          if (!fields) {
             return form;
           }
-          return List(fields.reduce((acc, next) => {
-            const found = form.find((f) => f.get("field") === next);
-            if(found) {
-              acc.push(found)
-            }
-            return acc;
-          }, [] as Map<keyof F[number], V<F[number]>>[]))
+          return List(
+            fields.reduce((acc, next) => {
+              const found = form.find((f) => f.get("field") === next);
+              if (found) {
+                acc.push(found);
+              }
+              return acc;
+            }, [] as Map<keyof F[number], V<F[number]>>[])
+          );
         }),
         distinctUntilChanged((var1, var2) => is(var1, var2))
       )
@@ -492,7 +509,9 @@ export class ImmutableFormControllerImpl<
   @bound
   getDatumValue<At extends number = number>(field: F[At]["field"]) {
     const casted = this.cast(this.connector!);
-    return this.findDatumByField(casted.getState(this.id), field)!.get("value")!;
+    return this.findDatumByField(casted.getState(this.id), field)!.get(
+      "value"
+    )!;
   }
 
   @bound

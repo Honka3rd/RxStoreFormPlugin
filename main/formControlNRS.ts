@@ -298,7 +298,10 @@ class FormControllerImpl<
           }
 
           this.setAsyncState(AsyncState.PENDING);
-          const async$ = this.asyncValidator!(this.getFormData(), oldMeta);
+          const async$ = this.asyncValidator!(
+            this.getFormData() as ReturnType<Record<S, () => F>[S]>,
+            oldMeta
+          );
           const reduced$ = async$ instanceof Promise ? from(async$) : async$;
           return reduced$.pipe(
             catchError(() => {
@@ -379,14 +382,6 @@ class FormControllerImpl<
     return casted;
   }
 
-  @bound
-  getFormData() {
-    return this.safeExecute((connector) => {
-      const casted = this.cast(connector);
-      return casted.getState(this.id)!;
-    })!;
-  }
-
   initiator: Initiator<F> = (connector) => {
     if (connector && !this.connector) {
       this.connector = connector as RxNStore<Any> & Subscribable<Any>;
@@ -412,6 +407,27 @@ class FormControllerImpl<
     }
     return [] as unknown as F;
   };
+
+  @bound
+  getFormData<Ats extends Readonly<number[]> = number[]>(
+    fields?: F[Ats[number]]["field"][]
+  ) {
+    return this.safeExecute((connector) => {
+      const casted = this.cast(connector);
+      const form = casted.getState(this.id)!;
+      if (fields) {
+        const reduced = form.reduce((acc, next, i) => {
+          const found = fields.find((field) => next.field === field);
+          if (found) {
+            acc.push(next);
+          }
+          return acc;
+        }, [] as F[Ats[number]][]);
+        return reduced;
+      }
+      return form;
+    })!;
+  }
 
   @bound
   getMeta() {

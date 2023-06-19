@@ -203,7 +203,9 @@ export interface FormController<
     field: F[At]["field"]
   ): F[At]["value"] | undefined;
 
-  getFormData(): ReturnType<Record<S, () => F>[S]>;
+  getFormData<Ats extends Readonly<number[]> = number[]>(
+    fields?: F[Ats[number]]["field"][]
+  ): ReturnType<Record<S, () => F>[S]> | F[Ats[number]][];
 }
 
 export type NormalFormPluginBuilderParams<
@@ -355,9 +357,11 @@ export interface ImmutableFormController<
     ) => void
   ): () => void;
 
-  getFormData(): ReturnType<
-    Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]
-  >;
+  getFormData<Ats extends Readonly<number[]> = number[]>(
+    fields?: F[Ats[number]]["field"][]
+  ):
+    | ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]>
+    | List<Map<keyof F[number], V<F[number]>>>;
 
   getDatum<At extends number = number>(
     field: F[At]["field"]

@@ -243,10 +243,21 @@ exports.ImmutableFormControllerImpl = (() => {
                 });
                 return () => subscription.unsubscribe();
             }
-            getFormData() {
+            getFormData(fields) {
                 return this.safeExecute((connector) => {
                     const casted = this.cast(connector);
-                    return casted.getState(this.id);
+                    const form = casted.getState(this.id);
+                    if (fields) {
+                        const reduced = (0, immutable_1.List)(fields.reduce((acc, next) => {
+                            const found = form.find((f) => f.get("field") === next);
+                            if (found) {
+                                acc.push(found);
+                            }
+                            return acc;
+                        }, []));
+                        return reduced;
+                    }
+                    return form;
                 });
             }
             resetFormDatum(field) {
