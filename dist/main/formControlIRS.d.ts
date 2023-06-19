@@ -25,7 +25,7 @@ export declare class ImmutableFormControllerImpl<F extends FormControlData, M ex
     private setAsyncState;
     private getExcludedMeta;
     private asyncValidatorExecutor;
-    getFormData<CompareAts extends readonly number[] = number[]>(fields?: F[CompareAts[number]]["field"][]): List<Map<keyof F[number], V<F[number]>>>;
+    getFormData<CompareAts extends readonly number[] = number[]>(fields?: F[CompareAts[number]]["field"][]): List<Map<PK<F[CompareAts[number]]>, PV<F[CompareAts[number]]>>> | ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]>;
     resetFormDatum<N extends number>(field: F[N]["field"]): this;
     resetFormAll(): this;
     appendFormData(fields: FormStubs<F>): this;

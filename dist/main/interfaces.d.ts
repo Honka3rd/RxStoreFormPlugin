@@ -142,10 +142,10 @@ export interface ImmutableFormController<F extends FormControlData, M extends Pa
     getFieldsMeta(fields: F[number]["field"][]): Map<PK<M>, PV<M>>;
     observeMeta(callback: (meta: Map<PK<M>, Map<"errors" | "info" | "warn", Map<string, any>>>) => void): () => void | undefined;
     observeMetaByField<K extends keyof M>(field: K, callback: (metaOne: Map<"errors" | "info" | "warn", Map<string, any>>) => void): () => void | undefined;
-    observeFormData<Ats extends readonly number[] = number[]>(observer: (result: List<Map<PK<F[Ats[number]]>, PV<F[Ats[number]]>>> | ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]>) => void, fields?: F[Ats[number]]["field"][]): () => void;
+    observeFormData<Ats extends number[] = number[]>(observer: (result: List<Map<PK<F[Ats[number]]>, PV<F[Ats[number]]>>> | ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]>) => void, fields?: F[Ats[number]]["field"][]): () => void;
     observeFormDatum<CompareAt extends number = number>(field: F[CompareAt]["field"], observer: (result: Map<PK<ReturnType<Record<S, () => F>[S]>[CompareAt]>, PV<ReturnType<Record<S, () => F>[S]>[CompareAt]>>) => void): () => void;
     observeFormValue<CompareAt extends number = number>(field: F[CompareAt]["field"], observer: (result: ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]) => void): () => void;
-    getFormData<Ats extends Readonly<number[]> = number[]>(fields?: F[Ats[number]]["field"][]): ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]> | List<Map<keyof F[number], V<F[number]>>>;
+    getFormData<Ats extends number[] = number[]>(fields?: F[Ats[number]]["field"][]): List<Map<PK<F[Ats[number]]>, PV<F[Ats[number]]>>> | ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]>;
     getDatum<At extends number = number>(field: F[At]["field"]): Map<PK<F[At]>, PV<F[At]>>;
     getDatumValue<At extends number = number>(field: F[At]["field"]): NonNullable<V<F[number]>>;
 }

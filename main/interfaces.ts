@@ -333,7 +333,7 @@ export interface ImmutableFormController<
     ) => void
   ): () => void | undefined;
 
-  observeFormData<Ats extends readonly number[] = number[]>(
+  observeFormData<Ats extends number[] = number[]>(
     observer: (
       result:
         | List<Map<PK<F[Ats[number]]>, PV<F[Ats[number]]>>>
@@ -361,11 +361,11 @@ export interface ImmutableFormController<
     ) => void
   ): () => void;
 
-  getFormData<Ats extends Readonly<number[]> = number[]>(
+  getFormData<Ats extends number[] = number[]>(
     fields?: F[Ats[number]]["field"][]
   ):
-    | ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]>
-    | List<Map<keyof F[number], V<F[number]>>>;
+    | List<Map<PK<F[Ats[number]]>, PV<F[Ats[number]]>>>
+    | ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]>;
 
   getDatum<At extends number = number>(
     field: F[At]["field"]

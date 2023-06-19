@@ -253,7 +253,12 @@ export class ImmutableFormControllerImpl<
           }
 
           this.setAsyncState(AsyncState.PENDING);
-          const async$ = this.asyncValidator!(this.getFormData(), oldMeta);
+          const async$ = this.asyncValidator!(
+            this.getFormData() as ReturnType<
+              Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]
+            >,
+            oldMeta
+          );
           const reduced$ = this.isPromise(async$) ? from(async$) : async$;
           return reduced$.pipe(
             catchError(() => {
@@ -301,7 +306,9 @@ export class ImmutableFormControllerImpl<
   @bound
   getFormData<CompareAts extends readonly number[] = number[]>(
     fields?: F[CompareAts[number]]["field"][]
-  ) {
+  ):
+    | List<Map<PK<F[CompareAts[number]]>, PV<F[CompareAts[number]]>>>
+    | ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]> {
     return this.safeExecute((connector) => {
       const casted = this.cast(connector);
       const form = casted.getState(this.id)!;
