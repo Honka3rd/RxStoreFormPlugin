@@ -149,7 +149,7 @@ export interface ImmutableFormController<F extends FormControlData, M extends Pa
     getDatum<At extends number = number>(field: F[At]["field"]): Map<PK<F[At]>, PV<F[At]>>;
     getDatumValue<At extends number = number>(field: F[At]["field"]): NonNullable<V<F[number]>>;
 }
-export type ImmutableFormPluginBuilderParams<F extends FormControlData, M extends Record<F[number]["field"], FormControlBasicMetadata>, S extends string> = {
+export type ImmutableFormPluginBuilderParams<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> = {
     formSelector: S;
     validator: ImmutableFormController<F, M, S>["validator"];
 };

@@ -20,7 +20,7 @@ declare class NRFormBuilder<F extends FormControlData, M extends Partial<Record<
     setAsyncConfig(cfg: AsyncValidationConfig): this;
     getInstance(): FormController<F, M, S> & Plugin<S, any>;
 }
-declare class IRFormBuilder<F extends FormControlData, M extends Record<F[number]["field"], FormControlBasicMetadata>, S extends string = string> {
+declare class IRFormBuilder<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string> {
     private IRF;
     constructor({ formSelector, validator, }: ImmutableFormPluginBuilderParams<F, M, S>);
     setAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>) => Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>> | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>): this;

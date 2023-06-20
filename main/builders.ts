@@ -86,7 +86,7 @@ class NRFormBuilder<
 
 class IRFormBuilder<
   F extends FormControlData,
-  M extends Record<F[number]["field"], FormControlBasicMetadata>,
+  M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
   S extends string = string
 > {
   private IRF: ImmutableFormControllerImpl<F, M, S> & Plugin<S>;

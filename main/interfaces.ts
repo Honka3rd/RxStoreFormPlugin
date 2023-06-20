@@ -378,7 +378,7 @@ export interface ImmutableFormController<
 
 export type ImmutableFormPluginBuilderParams<
   F extends FormControlData,
-  M extends Record<F[number]["field"], FormControlBasicMetadata>,
+  M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
   S extends string
 > = {
   formSelector: S;
