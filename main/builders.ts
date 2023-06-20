@@ -40,6 +40,14 @@ class NRFormBuilder<
 
   setFields(fields: FormStubs<F>) {
     this.NRF.setFields(fields);
+    this.setDefaultMeta(
+      fields.reduce((meta, next) => {
+        meta[next["field"]] = {
+          errors: {},
+        } as M[F[number]["field"]];
+        return meta;
+      }, {} as Partial<M>)
+    );
     return this;
   }
 
@@ -114,6 +122,14 @@ class IRFormBuilder<
 
   setFields(fields: FormStubs<F>) {
     this.IRF.setFields(fields);
+    this.setDefaultMeta(
+      fields.reduce((meta, next) => {
+        meta[next["field"]] = {
+          errors: {},
+        } as M[F[number]["field"]];
+        return meta;
+      }, {} as Partial<M>)
+    );
     return this;
   }
 

@@ -16,6 +16,12 @@ class NRFormBuilder {
     }
     setFields(fields) {
         this.NRF.setFields(fields);
+        this.setDefaultMeta(fields.reduce((meta, next) => {
+            meta[next["field"]] = {
+                errors: {},
+            };
+            return meta;
+        }, {}));
         return this;
     }
     setMetaComparator(metaComparator) {
@@ -57,6 +63,12 @@ class IRFormBuilder {
     }
     setFields(fields) {
         this.IRF.setFields(fields);
+        this.setDefaultMeta(fields.reduce((meta, next) => {
+            meta[next["field"]] = {
+                errors: {},
+            };
+            return meta;
+        }, {}));
         return this;
     }
     setDefaultMeta(meta) {

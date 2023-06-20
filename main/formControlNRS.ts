@@ -117,9 +117,7 @@ class FormControllerImpl<
   }
 
   setDefaultMeta(meta: Partial<M>) {
-    if (!this.defaultMeta) {
-      this.defaultMeta = meta;
-    }
+    this.defaultMeta = meta;
   }
 
   setAsyncConfig(cfg: AsyncValidationNConfig): void {

@@ -135,9 +135,7 @@ let FormControllerImpl = (() => {
                 }
             }
             setDefaultMeta(meta) {
-                if (!this.defaultMeta) {
-                    this.defaultMeta = meta;
-                }
+                this.defaultMeta = meta;
             }
             setAsyncConfig(cfg) {
                 this.asyncConfig = cfg;
