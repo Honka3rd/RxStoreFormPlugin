@@ -1,6 +1,6 @@
 import { BehaviorSubject } from "rxjs";
-import { ConnectedCallback, DatumType, FieldDataMapperInjector, FormControlBasicMetadata, FormControlData, FormController, FormControllerInjector, ImmutableFormController, ListenersCache } from "./interfaces";
-export declare class FormFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends HTMLElement implements ConnectedCallback, FieldDataMapperInjector<F, N>, FormControllerInjector<F, M, S> {
+import { AttributeChangedCallback, ConnectedCallback, DatumType, FieldDataMapperInjector, FormControlBasicMetadata, FormControlData, FormController, FormControllerInjector, ImmutableFormController, K, ListenedAttributes, ListenersCache, V } from "./interfaces";
+export declare class FormFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends HTMLElement implements ConnectedCallback, FieldDataMapperInjector<F, N>, FormControllerInjector<F, M, S>, AttributeChangedCallback<HTMLElement, ListenedAttributes> {
     protected field?: F[N]["field"];
     protected type?: DatumType;
     protected keyboardEventMapper?: (ev: any) => F[N]["value"];
@@ -17,7 +17,6 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     protected observer: MutationObserver;
     protected attachChildEventListeners(current: Node | null, formController: FormController<F, M, S> | ImmutableFormController<F, M, S> | null): void;
     private setInputDefault;
-    private setInputDefaultsOnMount;
     private emitOnlyChildOnMount;
     protected attrSetter(target: HTMLElement): (k: string, v: any) => void;
     protected setField(field: F[N]["field"]): void;
@@ -29,4 +28,6 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     getField(): F[N]["field"] | undefined;
     getDatumType(): DatumType | undefined;
     connectedCallback(): void;
+    attributeChangedCallback(key: K<HTMLElement & ListenedAttributes>, _: V<HTMLElement & ListenedAttributes>, next: V<HTMLElement & ListenedAttributes>): void;
+    static get observedAttributes(): string[];
 }

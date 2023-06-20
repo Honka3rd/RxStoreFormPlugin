@@ -27,3 +27,4 @@ const installNRFComponents = ({ formSelector, fieldNrSelector, fieldIrSelector, 
     }
 };
 exports.installNRFComponents = installNRFComponents;
+//# sourceMappingURL=index.js.map

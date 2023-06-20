@@ -13,3 +13,4 @@ var DatumType;
     DatumType["ASYNC"] = "Async";
     DatumType["SYNC"] = "Sync";
 })(DatumType = exports.DatumType || (exports.DatumType = {}));
+//# sourceMappingURL=interfaces.js.map

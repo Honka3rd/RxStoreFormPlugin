@@ -394,7 +394,7 @@ export interface DisconnectedCallback {
 }
 
 export interface AttributeChangedCallback<
-  E extends HTMLElement,
+  E extends HTMLElement = HTMLElement,
   P extends Any = {}
 > {
   attributeChangedCallback(key: K<E & P>, prev: V<E & P>, next: V<E & P>): void;
@@ -454,4 +454,9 @@ export type ListenersCache = {
   blur: () => void;
   keydown: (event: any) => void;
   change: (event: Event) => void;
+};
+
+export type ListenedAttributes = {
+  ["data-target_id"]?: string;
+  ["data-target_selector"]?: string;
 };

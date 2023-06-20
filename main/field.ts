@@ -1,6 +1,7 @@
 import { bound } from "rx-store-core";
 import { BehaviorSubject } from "rxjs";
 import {
+  AttributeChangedCallback,
   ConnectedCallback,
   DatumType,
   FieldDataMapperInjector,
@@ -9,7 +10,10 @@ import {
   FormController,
   FormControllerInjector,
   ImmutableFormController,
+  K,
+  ListenedAttributes,
   ListenersCache,
+  V,
 } from "./interfaces";
 
 export class FormFieldComponent<
@@ -22,7 +26,8 @@ export class FormFieldComponent<
   implements
     ConnectedCallback,
     FieldDataMapperInjector<F, N>,
-    FormControllerInjector<F, M, S>
+    FormControllerInjector<F, M, S>,
+    AttributeChangedCallback<HTMLElement, ListenedAttributes>
 {
   protected field?: F[N]["field"];
   protected type?: DatumType;
@@ -88,7 +93,7 @@ export class FormFieldComponent<
       }
     }
 
-    if (!this.dataset.targetSelector && !this.dataset.targetId) {
+    if (!this.dataset.target_selector && !this.dataset.target_id) {
       const first = mutations[0].addedNodes.item(0);
       if (!this.isValidDirectChild(first)) {
         return;
@@ -98,7 +103,7 @@ export class FormFieldComponent<
       return;
     }
 
-    if (this.dataset.targetId) {
+    if (this.dataset.target_id) {
       const allAdded = mutations.reduce((acc, next) => {
         Array.from(next.addedNodes).forEach((node) => {
           acc.push(node);
@@ -230,19 +235,6 @@ export class FormFieldComponent<
     }
   }
 
-  private setInputDefaultsOnMount() {
-    const first = this.directChildEmitter.value;
-    if (!first) {
-      return;
-    }
-
-    const placeholder = this.getAttribute("placeholder");
-    placeholder && this.setInputDefault(first, "placeholder", placeholder);
-
-    const defaultValue = this.getAttribute("defaultValue");
-    defaultValue && this.setInputDefault(first, "defaultValue", defaultValue);
-  }
-
   private emitOnlyChildOnMount() {
     if (!this.dataset.target_selector && !this.dataset.target_id) {
       const first = this.children.item(0);
@@ -332,12 +324,40 @@ export class FormFieldComponent<
 
   connectedCallback(): void {
     this.reportMultiChildError();
-    this.emitOnlyChildOnMount().setInputDefaultsOnMount();
+    this.emitOnlyChildOnMount();
     this.observer.observe(this, {
       subtree: true,
       childList: true,
       attributes: false,
     });
     this.setRequiredProperties();
+  }
+
+  attributeChangedCallback(
+    key: K<HTMLElement & ListenedAttributes>,
+    _: V<HTMLElement & ListenedAttributes>,
+    next: V<HTMLElement & ListenedAttributes>
+  ) {
+    if (key === "data-target_id" && (next as string)) {
+      const target = this.querySelector(`#${next}`);
+      if (target instanceof HTMLElement) {
+        this.directChildEmitter.next(target);
+        return;
+      }
+      this.directChildEmitter.next(null);
+    }
+
+    if (key === "data-target_selector" && (next as string)) {
+      const target = this.querySelector(String(next));
+      if (target instanceof HTMLElement) {
+        this.directChildEmitter.next(target);
+        return;
+      }
+      this.directChildEmitter.next(null);
+    }
+  }
+
+   static get observedAttributes() {
+    return ["data-target_id", "data-target_selector"];
   }
 }

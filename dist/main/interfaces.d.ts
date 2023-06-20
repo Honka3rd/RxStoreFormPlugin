@@ -159,7 +159,7 @@ export interface ConnectedCallback {
 export interface DisconnectedCallback {
     disconnectedCallback(): void;
 }
-export interface AttributeChangedCallback<E extends HTMLElement, P extends Any = {}> {
+export interface AttributeChangedCallback<E extends HTMLElement = HTMLElement, P extends Any = {}> {
     attributeChangedCallback(key: K<E & P>, prev: V<E & P>, next: V<E & P>): void;
 }
 export interface FormControllerInjector<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> {
@@ -193,5 +193,9 @@ export type ListenersCache = {
     blur: () => void;
     keydown: (event: any) => void;
     change: (event: Event) => void;
+};
+export type ListenedAttributes = {
+    ["data-target_id"]?: string;
+    ["data-target_selector"]?: string;
 };
 export {};

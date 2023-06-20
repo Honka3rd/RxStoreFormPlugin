@@ -91,7 +91,7 @@ exports.FormFieldComponent = (() => {
                         this.removeEventListeners(removed);
                     }
                 }
-                if (!this.dataset.targetSelector && !this.dataset.targetId) {
+                if (!this.dataset.target_selector && !this.dataset.target_id) {
                     const first = mutations[0].addedNodes.item(0);
                     if (!this.isValidDirectChild(first)) {
                         return;
@@ -100,7 +100,7 @@ exports.FormFieldComponent = (() => {
                     this.directChildEmitter.next(first);
                     return;
                 }
-                if (this.dataset.targetId) {
+                if (this.dataset.target_id) {
                     const allAdded = mutations.reduce((acc, next) => {
                         Array.from(next.addedNodes).forEach((node) => {
                             acc.push(node);
@@ -191,16 +191,6 @@ exports.FormFieldComponent = (() => {
                     target.setAttribute(key, next);
                 }
             }
-            setInputDefaultsOnMount() {
-                const first = this.directChildEmitter.value;
-                if (!first) {
-                    return;
-                }
-                const placeholder = this.getAttribute("placeholder");
-                placeholder && this.setInputDefault(first, "placeholder", placeholder);
-                const defaultValue = this.getAttribute("defaultValue");
-                defaultValue && this.setInputDefault(first, "defaultValue", defaultValue);
-            }
             emitOnlyChildOnMount() {
                 var _a, _b;
                 if (!this.dataset.target_selector && !this.dataset.target_id) {
@@ -274,13 +264,34 @@ exports.FormFieldComponent = (() => {
             }
             connectedCallback() {
                 this.reportMultiChildError();
-                this.emitOnlyChildOnMount().setInputDefaultsOnMount();
+                this.emitOnlyChildOnMount();
                 this.observer.observe(this, {
                     subtree: true,
                     childList: true,
                     attributes: false,
                 });
                 this.setRequiredProperties();
+            }
+            attributeChangedCallback(key, _, next) {
+                if (key === "data-target_id" && next) {
+                    const target = this.querySelector(`#${next}`);
+                    if (target instanceof HTMLElement) {
+                        this.directChildEmitter.next(target);
+                        return;
+                    }
+                    this.directChildEmitter.next(null);
+                }
+                if (key === "data-target_selector" && next) {
+                    const target = this.querySelector(String(next));
+                    if (target instanceof HTMLElement) {
+                        this.directChildEmitter.next(target);
+                        return;
+                    }
+                    this.directChildEmitter.next(null);
+                }
+            }
+            static get observedAttributes() {
+                return ["data-target_id", "data-target_selector"];
             }
         },
         (() => {
@@ -291,3 +302,4 @@ exports.FormFieldComponent = (() => {
         })(),
         _a;
 })();
+//# sourceMappingURL=field.js.map

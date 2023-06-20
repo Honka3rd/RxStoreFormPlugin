@@ -66,3 +66,4 @@ class IRFieldComponent extends field_1.FormFieldComponent {
     }
 }
 exports.IRFieldComponent = IRFieldComponent;
+//# sourceMappingURL=componentIRF.js.map
