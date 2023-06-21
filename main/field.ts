@@ -354,9 +354,9 @@ export class FormFieldComponent<
       }
     }
 
-    if(prev && !next) {
-      const first = this.firstElementChild
-      if(first instanceof HTMLElement) {
+    if (prev && !next) {
+      const first = this.firstElementChild;
+      if (first instanceof HTMLElement) {
         this.directChildEmitter.next(first);
         return;
       }
