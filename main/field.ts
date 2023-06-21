@@ -335,29 +335,37 @@ export class FormFieldComponent<
 
   attributeChangedCallback(
     key: K<HTMLElement & ListenedAttributes>,
-    _: V<HTMLElement & ListenedAttributes>,
+    prev: V<HTMLElement & ListenedAttributes>,
     next: V<HTMLElement & ListenedAttributes>
   ) {
-    if (key === "data-target_id" && (next as string)) {
+    if (key === "data-target_id" && next) {
       const target = this.querySelector(`#${next}`);
       if (target instanceof HTMLElement) {
         this.directChildEmitter.next(target);
         return;
       }
-      this.directChildEmitter.next(null);
     }
 
-    if (key === "data-target_selector" && (next as string)) {
-      const target = this.querySelector(String(next));
+    if (key === "data-target_selector" && next) {
+      const target = this.querySelector(<string>next);
       if (target instanceof HTMLElement) {
         this.directChildEmitter.next(target);
         return;
       }
-      this.directChildEmitter.next(null);
     }
+
+    if(prev && !next) {
+      const first = this.firstElementChild
+      if(first instanceof HTMLElement) {
+        this.directChildEmitter.next(first);
+        return;
+      }
+    }
+
+    this.directChildEmitter.next(null);
   }
 
-   static get observedAttributes() {
+  static get observedAttributes() {
     return ["data-target_id", "data-target_selector"];
   }
 }

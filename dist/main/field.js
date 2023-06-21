@@ -272,23 +272,29 @@ exports.FormFieldComponent = (() => {
                 });
                 this.setRequiredProperties();
             }
-            attributeChangedCallback(key, _, next) {
+            attributeChangedCallback(key, prev, next) {
                 if (key === "data-target_id" && next) {
                     const target = this.querySelector(`#${next}`);
                     if (target instanceof HTMLElement) {
                         this.directChildEmitter.next(target);
                         return;
                     }
-                    this.directChildEmitter.next(null);
                 }
                 if (key === "data-target_selector" && next) {
-                    const target = this.querySelector(String(next));
+                    const target = this.querySelector(next);
                     if (target instanceof HTMLElement) {
                         this.directChildEmitter.next(target);
                         return;
                     }
-                    this.directChildEmitter.next(null);
                 }
+                if (prev && !next) {
+                    const first = this.firstElementChild;
+                    if (first instanceof HTMLElement) {
+                        this.directChildEmitter.next(first);
+                        return;
+                    }
+                }
+                this.directChildEmitter.next(null);
             }
             static get observedAttributes() {
                 return ["data-target_id", "data-target_selector"];

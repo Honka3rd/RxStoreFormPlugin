@@ -28,6 +28,6 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     getField(): F[N]["field"] | undefined;
     getDatumType(): DatumType | undefined;
     connectedCallback(): void;
-    attributeChangedCallback(key: K<HTMLElement & ListenedAttributes>, _: V<HTMLElement & ListenedAttributes>, next: V<HTMLElement & ListenedAttributes>): void;
+    attributeChangedCallback(key: K<HTMLElement & ListenedAttributes>, prev: V<HTMLElement & ListenedAttributes>, next: V<HTMLElement & ListenedAttributes>): void;
     static get observedAttributes(): string[];
 }
