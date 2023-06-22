@@ -10,6 +10,7 @@ import {
   DisconnectedCallback,
   FormControlBasicMetadata,
   FormControlData,
+  FormControllerInjector,
   IRFieldAttributeBinderInjector,
   ImmutableFormController,
   K,
@@ -24,7 +25,10 @@ export class IRFieldComponent<
     N extends number = number
   >
   extends FormFieldComponent<F, M, S, N>
-  implements IRFieldAttributeBinderInjector<F>, DisconnectedCallback
+  implements
+    IRFieldAttributeBinderInjector<F>,
+    DisconnectedCallback,
+    FormControllerInjector<F, M, S>
 {
   private subscription: Subscription;
   private attributeBinder?: (
