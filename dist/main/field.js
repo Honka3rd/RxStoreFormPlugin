@@ -151,11 +151,18 @@ exports.FormFieldComponent = (() => {
                     formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, event.target.value);
                 }
                 function change(event) {
+                    if (!field) {
+                        return;
+                    }
                     if (context.changeEventMapper) {
                         formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, context.changeEventMapper(event));
                         return;
                     }
                     const { target } = event;
+                    if (target instanceof HTMLTextAreaElement) {
+                        formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, target.value);
+                        return;
+                    }
                     if (target instanceof HTMLInputElement) {
                         if (target.type === "checkbox" || target.type === "radio") {
                             formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, target.checked);

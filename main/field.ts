@@ -179,26 +179,35 @@ export class FormFieldComponent<
     }
 
     function change(event: Event) {
+      if(!field) {
+        return;
+      }
+
       if (context.changeEventMapper) {
         formController?.changeFormValue(
-          field!,
+          field,
           context.changeEventMapper(event)
         );
         return;
       }
       const { target } = event;
+      if(target instanceof HTMLTextAreaElement) {
+        formController?.changeFormValue(field, target.value);
+        return;
+      }
+
       if (target instanceof HTMLInputElement) {
         if (target.type === "checkbox" || target.type === "radio") {
-          formController?.changeFormValue(field!, target.checked);
+          formController?.changeFormValue(field, target.checked);
           return;
         }
 
         if (target.type === "file") {
-          formController?.changeFormValue(field!, target.files);
+          formController?.changeFormValue(field, target.files);
           return;
         }
 
-        formController?.changeFormValue(field!, target.value);
+        formController?.changeFormValue(field, target.value);
       }
     }
 
