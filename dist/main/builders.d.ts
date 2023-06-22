@@ -1,6 +1,5 @@
 import { Observable } from "rxjs";
 import { AsyncValidationConfig, FormControlBasicMetadata, FormControlData, FormController, FormStubs, ImmutableFormPluginBuilderParams, NormalFormPluginBuilderParams, PK, V } from "./interfaces";
-import { Plugin } from "rx-store-types";
 import { ImmutableFormControllerImpl } from "./formControlIRS";
 import { List, Map } from "immutable";
 declare class NRFormBuilder<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string> {
@@ -18,7 +17,7 @@ declare class NRFormBuilder<F extends FormControlData, M extends Partial<Record<
     }): this;
     setDefaultMeta(meta: Partial<M>): this;
     setAsyncConfig(cfg: AsyncValidationConfig): this;
-    getInstance(): FormController<F, M, S> & Plugin<S, any>;
+    getInstance(): FormController<F, M, S>;
 }
 declare class IRFormBuilder<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string> {
     private IRF;
@@ -27,6 +26,6 @@ declare class IRFormBuilder<F extends FormControlData, M extends Partial<Record<
     setFields(fields: FormStubs<F>): this;
     setDefaultMeta(meta: Partial<M>): this;
     setAsyncConfig(cfg: AsyncValidationConfig): this;
-    getInstance(): ImmutableFormControllerImpl<F, M, S> & Plugin<S, any>;
+    getInstance(): ImmutableFormControllerImpl<F, M, S>;
 }
 export { NRFormBuilder, IRFormBuilder };

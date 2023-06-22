@@ -20,7 +20,7 @@ class NRFormBuilder<
   M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
   S extends string = string
 > {
-  private NRF: FormController<F, M, S> & Plugin<S>;
+  private NRF: FormController<F, M, S>;
   constructor({
     formSelector,
     validator,
@@ -97,7 +97,7 @@ class IRFormBuilder<
   M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
   S extends string = string
 > {
-  private IRF: ImmutableFormControllerImpl<F, M, S> & Plugin<S>;
+  private IRF: ImmutableFormControllerImpl<F, M, S>;
   constructor({
     formSelector,
     validator,
