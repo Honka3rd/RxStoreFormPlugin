@@ -6,12 +6,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.IRFormBuilder = exports.NRFormBuilder = void 0;
 const formControlNRS_1 = __importDefault(require("./formControlNRS"));
 const formControlIRS_1 = require("./formControlIRS");
+const subscriptions_1 = require("./subscriptions");
 class NRFormBuilder {
     constructor({ formSelector, validator, }) {
-        this.NRF = new formControlNRS_1.default(formSelector, validator);
+        this.NRF = new formControlNRS_1.default(formSelector, validator, new subscriptions_1.Subscriptions());
     }
-    setAsyncValidator(asyncValidator) {
-        this.NRF.setAsyncValidator(asyncValidator);
+    setBulkAsyncValidator(asyncValidator) {
+        this.NRF.setBulkAsyncValidator(asyncValidator);
         return this;
     }
     setFields(fields) {
@@ -55,10 +56,10 @@ class NRFormBuilder {
 exports.NRFormBuilder = NRFormBuilder;
 class IRFormBuilder {
     constructor({ formSelector, validator, }) {
-        this.IRF = new formControlIRS_1.ImmutableFormControllerImpl(formSelector, validator);
+        this.IRF = new formControlIRS_1.ImmutableFormControllerImpl(formSelector, validator, new subscriptions_1.Subscriptions());
     }
-    setAsyncValidator(asyncValidator) {
-        this.IRF.setAsyncValidator(asyncValidator);
+    setBulkAsyncValidator(asyncValidator) {
+        this.IRF.setBulkAsyncValidator(asyncValidator);
         return this;
     }
     setFields(fields) {

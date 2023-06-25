@@ -4,8 +4,9 @@ import { Observable } from "rxjs";
 
 export type FormControlBasicMetadata = {
   errors: Any;
-  info?: Any;
-  warn?: Any;
+  info?: any;
+  warn?: any;
+  asyncIndicator?: AsyncState;
 };
 
 export type FormControlMetadata<E extends Any, I = any, W = any> = {
@@ -33,6 +34,7 @@ type DatumAttr = {
   hovered: boolean;
   type: DatumType;
   asyncState?: AsyncState;
+  lazy?: boolean;
 };
 
 export type FormControlBasicDatum = {
@@ -61,11 +63,19 @@ export interface AsyncValidationNConfig extends AsyncValidationConfig {
   compare?: (var1: any, var2: any) => boolean;
 }
 
-export type FormStubs<F extends FormControlBasicDatum[]> = Array<{
+export type FormStubs<
+  F extends FormControlBasicDatum[],
+  M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>
+> = Array<{
   field: F[number]["field"];
   defaultValue?: F[number]["value"];
-  compare?: (var1: any, var2: any) => boolean;
   type?: DatumType;
+  $validator?: (
+    fieldData: F[number],
+    metadata: M,
+    formData: F
+  ) => Observable<M> | Promise<M>;
+  lazy?: boolean;
 }>;
 
 export interface FormController<
@@ -73,16 +83,16 @@ export interface FormController<
   M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
   S extends string
 > {
-  setAsyncValidator(
+  setBulkAsyncValidator(
     asyncValidator: (
       formData: F,
       metadata: Partial<M>
     ) => Observable<Partial<M>> | Promise<Partial<M>>
   ): void;
 
-  setFields(fields: FormStubs<F>): void;
+  setFields(fields: FormStubs<F, M>): void;
 
-  getFields(): FormStubs<F>;
+  getFields(): FormStubs<F, M>;
 
   setMetaComparator(
     metaComparator: (meta1: Partial<M>, meta2: Partial<M>) => boolean
@@ -154,7 +164,7 @@ export interface FormController<
 
   resetFormAll(): this;
 
-  appendFormData(fields: FormStubs<F>): this;
+  appendFormData(fields: FormStubs<F, M>): this;
 
   removeFormData(fields: Array<F[number]["field"]>): this;
 
@@ -238,7 +248,7 @@ export interface ImmutableFormController<
   M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
   S extends string
 > {
-  setAsyncValidator(
+  setBulkAsyncValidator(
     asyncValidator: (
       formData: List<Map<keyof F[number], V<F[number]>>>,
       meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>
@@ -247,7 +257,7 @@ export interface ImmutableFormController<
       | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>
   ): void;
 
-  setFields(fields: FormStubs<F>): void;
+  setFields(fields: FormStubs<F, M>): void;
 
   setDefaultMeta(meta: Partial<M>): void;
 
@@ -308,7 +318,7 @@ export interface ImmutableFormController<
 
   resetFormAll(): this;
 
-  appendFormData(fields: FormStubs<F>): this;
+  appendFormData(fields: FormStubs<F, M>): this;
 
   removeFormData(fields: Array<F[number]["field"]>): this;
 

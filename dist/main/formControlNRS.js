@@ -41,6 +41,7 @@ const interfaces_1 = require("./interfaces");
 let FormControllerImpl = (() => {
     var _a;
     let _instanceExtraInitializers = [];
+    let _safeCommitMeta_decorators;
     let _cloneMeta_decorators;
     let _getFormData_decorators;
     let _getMeta_decorators;
@@ -69,19 +70,14 @@ let FormControllerImpl = (() => {
     let _setMetadata_decorators;
     let _setMetaByField_decorators;
     return _a = class FormControllerImpl extends rx_store_types_1.PluginImpl {
-            constructor(id, validator) {
+            constructor(id, validator, subscriptions) {
                 super(id);
                 this.validator = (__runInitializers(this, _instanceExtraInitializers), validator);
+                this.subscriptions = subscriptions;
                 this.fields = [];
                 this.asyncConfig = {
                     lazy: false,
                     debounceDuration: 0,
-                };
-                this.getAsyncFields = (connector) => {
-                    return connector
-                        .getState(this.id)
-                        .filter(({ type }) => type === interfaces_1.DatumType.ASYNC)
-                        .map(({ field }) => field);
                 };
                 this.initiator = (connector) => {
                     if (connector && !this.connector) {
@@ -90,7 +86,7 @@ let FormControllerImpl = (() => {
                         return;
                     }
                     if (this.fields) {
-                        return this.fields.map(({ field, defaultValue, type }) => ({
+                        return this.fields.map(({ field, defaultValue, type, lazy }) => ({
                             field,
                             touched: false,
                             changed: false,
@@ -98,18 +94,45 @@ let FormControllerImpl = (() => {
                             focused: false,
                             value: defaultValue,
                             type: type ? type : interfaces_1.DatumType.SYNC,
+                            lazy,
                         }));
                     }
                     return [];
                 };
             }
-            setAsyncValidator(asyncValidator) {
+            setBulkAsyncValidator(asyncValidator) {
                 if (!this.asyncValidator) {
                     this.asyncValidator = asyncValidator;
                 }
             }
+            getFieldSource(field) {
+                return this.cast(this.connector)
+                    .getDataSource()
+                    .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.distinctUntilChanged)(this.getComparator(this.cast(this.connector))), (0, rxjs_1.map)((formData) => formData.find((f) => f.field === field)), (0, rxjs_1.distinctUntilChanged)(rx_store_core_1.shallowCompare));
+            }
+            getSingleSource($validator, fieldData) {
+                const metadata = this.getMeta();
+                const source = $validator(fieldData, metadata, this.getFormData());
+                return source instanceof Promise ? (0, rxjs_1.from)(source) : source;
+            }
+            connect(lazy) {
+                return lazy ? rxjs_1.exhaustMap : rxjs_1.switchMap;
+            }
+            listenToExcludedAll(fields) {
+                this.subscriptions.pushAll(fields
+                    .filter(({ type, $validator }) => type === interfaces_1.DatumType.EXCLUDED && $validator)
+                    .map(({ field, $validator, lazy }) => ({
+                    id: field,
+                    subscription: this.getFieldSource(field)
+                        .pipe((0, rxjs_1.tap)(() => {
+                        this.commitMetaAsyncIndicator([field], interfaces_1.AsyncState.PENDING);
+                    }), this.connect(lazy)((fieldData) => (0, rxjs_1.iif)(() => Boolean(fieldData), this.getSingleSource($validator, fieldData), (0, rxjs_1.of)(this.getMeta()))), (0, rxjs_1.catchError)(() => (0, rxjs_1.of)(Object.assign(Object.assign({}, this.getMeta()), { asyncIndicator: interfaces_1.AsyncState.ERROR }))))
+                        .subscribe(this.safeCommitMeta),
+                })));
+            }
             setFields(fields) {
                 this.fields = fields;
+                this.listenToExcludedAll(fields);
             }
             getFields() {
                 return this.fields;
@@ -183,9 +206,10 @@ let FormControllerImpl = (() => {
                 fields.forEach((field) => {
                     data.splice(data.findIndex((d) => d.field === field), 1);
                 });
+                fields.forEach((field) => this.subscriptions.remove(field));
             }
             appendDataByFields(fields, data) {
-                fields.forEach(({ defaultValue, field, type }) => {
+                fields.forEach(({ defaultValue, field, type, lazy, $validator }) => {
                     data.push({
                         field,
                         touched: false,
@@ -194,7 +218,17 @@ let FormControllerImpl = (() => {
                         focused: false,
                         value: defaultValue,
                         type: type ? type : interfaces_1.DatumType.SYNC,
+                        lazy,
                     });
+                    if (type === interfaces_1.DatumType.EXCLUDED && $validator) {
+                        this.listenToExcludedAll([
+                            {
+                                field,
+                                type,
+                                $validator,
+                            },
+                        ]);
+                    }
                 });
             }
             validatorExecutor(connector) {
@@ -210,19 +244,6 @@ let FormControllerImpl = (() => {
                     .map(({ field }) => field);
                 return this.getFieldsMeta(excluded);
             }
-            setAsyncState(state) {
-                this.safeExecute((connector) => {
-                    const casted = this.cast(connector);
-                    const cloned = casted.getClonedState(this.id);
-                    this.getAsyncFields(casted).forEach((field) => {
-                        const found = cloned.find((c) => c.field === field);
-                        if (found) {
-                            found.asyncState = state;
-                        }
-                    });
-                    this.commitMutation(cloned, casted);
-                });
-            }
             getComparator(connector) {
                 if (this.asyncConfig.compare) {
                     return this.asyncConfig.compare;
@@ -231,7 +252,21 @@ let FormControllerImpl = (() => {
                 const specCompare = comparatorMap === null || comparatorMap === void 0 ? void 0 : comparatorMap[this.id];
                 return specCompare ? specCompare : connector.comparator;
             }
-            asyncValidatorExecutor(connector) {
+            getChangedMetaAsync(fields, indicator) {
+                const reduced = fields.reduce((meta, next) => {
+                    const found = meta[next];
+                    if (found) {
+                        found.asyncIndicator = indicator;
+                    }
+                    return meta;
+                }, this.getMeta());
+                return reduced;
+            }
+            commitMetaAsyncIndicator(fields, indicator) {
+                const reduced = this.getChangedMetaAsync(fields, indicator);
+                this.safeCommitMeta(reduced);
+            }
+            asyncValidatorExecutor(connector, lazy) {
                 if (!this.asyncValidator) {
                     return;
                 }
@@ -247,37 +282,21 @@ let FormControllerImpl = (() => {
                     touched,
                     focused,
                     hovered,
-                }))), (0, rxjs_1.distinctUntilChanged)(this.getComparator(connector)), (0, rxjs_1.switchMap)((formData) => {
+                }))), (0, rxjs_1.distinctUntilChanged)(this.getComparator(connector)), (0, rxjs_1.tap)((formData) => {
+                    this.commitMetaAsyncIndicator(formData.map(({ field }) => field), interfaces_1.AsyncState.PENDING);
+                }), this.connect(lazy)((formData) => {
                     const oldMeta = this.getMeta();
                     if (!formData.length) {
                         return (0, rxjs_1.of)(oldMeta);
                     }
-                    this.setAsyncState(interfaces_1.AsyncState.PENDING);
                     const async$ = this.asyncValidator(this.getFormData(), oldMeta);
                     const reduced$ = async$ instanceof Promise ? (0, rxjs_1.from)(async$) : async$;
-                    return reduced$.pipe((0, rxjs_1.catchError)(() => {
-                        return (0, rxjs_1.of)({
-                            success: false,
-                            meta: this.getMeta(),
-                        });
-                    }), (0, rxjs_1.map)((meta) => {
-                        if ("success" in meta) {
-                            return meta;
-                        }
-                        return { success: true, meta };
-                    }), (0, rxjs_1.tap)(({ success }) => {
-                        if (success) {
-                            this.setAsyncState(interfaces_1.AsyncState.DONE);
-                            return;
-                        }
-                        this.setAsyncState(interfaces_1.AsyncState.ERROR);
-                    }), (0, rxjs_1.map)(({ meta, success }) => {
-                        if (!success) {
-                            return meta;
-                        }
+                    return reduced$.pipe((0, rxjs_1.map)((meta) => {
                         return Object.assign(Object.assign(Object.assign({}, this.getMeta()), meta), this.getExcludedMeta(connector));
                     }));
-                }))
+                }), (0, rxjs_1.catchError)(() => (0, rxjs_1.of)(Object.assign(Object.assign(Object.assign({}, this.getMeta()), this.getChangedMetaAsync(this.getFormData()
+                    .filter(({ type }) => type === interfaces_1.DatumType.ASYNC)
+                    .map(({ field }) => field), interfaces_1.AsyncState.ERROR)), this.getExcludedMeta(connector)))))
                     .subscribe((meta) => meta && this.safeCommitMeta(meta));
                 return () => subscription.unsubscribe();
             }
@@ -425,14 +444,15 @@ let FormControllerImpl = (() => {
                 }
                 return () => { };
             }
-            startValidation() {
+            startValidation(lazy) {
                 return this.safeExecute((connector) => {
                     const casted = this.cast(connector);
                     const stopSyncValidation = this.validatorExecutor(casted);
-                    const stopAsyncValidation = this.asyncValidatorExecutor(casted);
+                    const stopAsyncValidation = this.asyncValidatorExecutor(casted, lazy);
                     return () => {
                         stopSyncValidation();
                         stopAsyncValidation === null || stopAsyncValidation === void 0 ? void 0 : stopAsyncValidation();
+                        this.subscriptions.removeAll();
                     };
                 });
             }
@@ -464,6 +484,7 @@ let FormControllerImpl = (() => {
                         found.hovered = false;
                         found.touched = false;
                         found.value = defaultDatum.value;
+                        found.lazy = defaultDatum.lazy;
                         return this;
                     }
                     this.removeDataByFields([field], data);
@@ -535,6 +556,7 @@ let FormControllerImpl = (() => {
             }
         },
         (() => {
+            _safeCommitMeta_decorators = [rx_store_core_1.bound];
             _cloneMeta_decorators = [rx_store_core_1.bound];
             _getFormData_decorators = [rx_store_core_1.bound];
             _getMeta_decorators = [rx_store_core_1.bound];
@@ -562,6 +584,7 @@ let FormControllerImpl = (() => {
             _removeFormData_decorators = [rx_store_core_1.bound];
             _setMetadata_decorators = [rx_store_core_1.bound];
             _setMetaByField_decorators = [rx_store_core_1.bound];
+            __esDecorate(_a, null, _safeCommitMeta_decorators, { kind: "method", name: "safeCommitMeta", static: false, private: false, access: { has: obj => "safeCommitMeta" in obj, get: obj => obj.safeCommitMeta } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _cloneMeta_decorators, { kind: "method", name: "cloneMeta", static: false, private: false, access: { has: obj => "cloneMeta" in obj, get: obj => obj.cloneMeta } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getFormData_decorators, { kind: "method", name: "getFormData", static: false, private: false, access: { has: obj => "getFormData" in obj, get: obj => obj.getFormData } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getMeta_decorators, { kind: "method", name: "getMeta", static: false, private: false, access: { has: obj => "getMeta" in obj, get: obj => obj.getMeta } }, null, _instanceExtraInitializers);

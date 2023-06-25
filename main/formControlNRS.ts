@@ -1,4 +1,4 @@
-import { bound, shallowClone } from "rx-store-core";
+import { bound, shallowClone, shallowCompare } from "rx-store-core";
 import {
   Any,
   Comparator,
@@ -13,7 +13,9 @@ import {
   Observable,
   catchError,
   distinctUntilChanged,
+  exhaustMap,
   from,
+  iif,
   map,
   of,
   switchMap,
@@ -29,6 +31,7 @@ import {
   FormController,
   FormStubs,
 } from "./interfaces";
+import { Subscriptions } from "./subscriptions";
 
 class FormControllerImpl<
     F extends FormControlData,
@@ -43,7 +46,7 @@ class FormControllerImpl<
     formData: F,
     metadata: Partial<M>
   ) => Observable<Partial<M>> | Promise<Partial<M>>;
-  private fields: FormStubs<F> = [];
+  private fields: FormStubs<F, M> = [];
   private metaComparator?: (meta1: Partial<M>, meta2: Partial<M>) => boolean;
   private metaComparatorMap?: {
     [K in keyof Partial<M>]: (m1: Partial<M>[K], m2: Partial<M>[K]) => boolean;
@@ -62,12 +65,13 @@ class FormControllerImpl<
 
   constructor(
     id: S,
-    public validator: (formData: F, metadata: Partial<M>) => Partial<M>
+    public validator: (formData: F, metadata: Partial<M>) => Partial<M>,
+    private subscriptions: Subscriptions
   ) {
     super(id);
   }
 
-  setAsyncValidator(
+  setBulkAsyncValidator(
     asyncValidator: (
       formData: F,
       metadata: Partial<M>
@@ -78,11 +82,71 @@ class FormControllerImpl<
     }
   }
 
-  setFields(fields: FormStubs<F>) {
-    this.fields = fields;
+  private getFieldSource(
+    field: F[number]["field"]
+  ): Observable<ReturnType<Record<S, () => F>[S]>[number] | undefined> {
+    return this.cast(this.connector!)
+      .getDataSource()
+      .pipe(
+        map((states) => states[this.id]),
+        distinctUntilChanged(this.getComparator(this.cast(this.connector!))),
+        map((formData) => formData.find((f) => f.field === field)),
+        distinctUntilChanged(shallowCompare)
+      );
   }
 
-  getFields(): FormStubs<F> {
+  private getSingleSource(
+    $validator: FormStubs<F, M>[number]["$validator"],
+    fieldData: ReturnType<Record<S, () => F>[S]>[number]
+  ) {
+    const metadata = this.getMeta() as M;
+    const source = $validator!(
+      fieldData,
+      metadata,
+      this.getFormData() as ReturnType<Record<S, () => F>[S]>
+    );
+    return source instanceof Promise ? from(source) : source;
+  }
+
+  private connect(lazy?: boolean) {
+    return lazy ? exhaustMap : switchMap;
+  }
+
+  private listenToExcludedAll(fields: FormStubs<F, M>) {
+    this.subscriptions.pushAll(
+      fields
+        .filter(
+          ({ type, $validator }) => type === DatumType.EXCLUDED && $validator
+        )
+        .map(({ field, $validator, lazy }) => ({
+          id: field,
+          subscription: this.getFieldSource(field)
+            .pipe(
+              tap(() => {
+                this.commitMetaAsyncIndicator([field], AsyncState.PENDING);
+              }),
+              this.connect(lazy)((fieldData) =>
+                iif(
+                  () => Boolean(fieldData),
+                  this.getSingleSource($validator, fieldData!),
+                  of(this.getMeta())
+                )
+              ),
+              catchError(() =>
+                of({ ...this.getMeta(), asyncIndicator: AsyncState.ERROR })
+              )
+            )
+            .subscribe(this.safeCommitMeta),
+        }))
+    );
+  }
+
+  setFields(fields: FormStubs<F, M>) {
+    this.fields = fields;
+    this.listenToExcludedAll(fields);
+  }
+
+  getFields(): FormStubs<F, M> {
     return this.fields;
   }
 
@@ -173,6 +237,7 @@ class FormControllerImpl<
     });
   }
 
+  @bound
   private safeCommitMeta(meta: Partial<M>) {
     this.safeExecute(() => this.metadata$?.next(meta));
   }
@@ -184,10 +249,11 @@ class FormControllerImpl<
         1
       );
     });
+    fields.forEach((field) => this.subscriptions.remove(field));
   }
 
-  private appendDataByFields(fields: FormStubs<F>, data: F) {
-    fields.forEach(({ defaultValue, field, type }) => {
+  private appendDataByFields(fields: FormStubs<F, M>, data: F) {
+    fields.forEach(({ defaultValue, field, type, lazy, $validator }) => {
       data.push({
         field,
         touched: false,
@@ -196,7 +262,17 @@ class FormControllerImpl<
         focused: false,
         value: defaultValue,
         type: type ? type : DatumType.SYNC,
+        lazy,
       });
+      if (type === DatumType.EXCLUDED && $validator) {
+        this.listenToExcludedAll([
+          {
+            field,
+            type,
+            $validator,
+          },
+        ]);
+      }
     });
   }
 
@@ -219,27 +295,6 @@ class FormControllerImpl<
     return this.getFieldsMeta(excluded);
   }
 
-  private getAsyncFields = (connector: RxNStore<Record<S, () => F>>) => {
-    return connector
-      .getState(this.id)
-      .filter(({ type }) => type === DatumType.ASYNC)
-      .map(({ field }) => field);
-  };
-
-  private setAsyncState(state: AsyncState) {
-    this.safeExecute((connector) => {
-      const casted = this.cast(connector);
-      const cloned = casted.getClonedState(this.id);
-      this.getAsyncFields(casted).forEach((field) => {
-        const found = cloned.find((c) => c.field === field);
-        if (found) {
-          found.asyncState = state;
-        }
-      });
-      this.commitMutation(cloned, casted);
-    });
-  }
-
   private getComparator(
     connector: RxNStore<Record<S, () => F>> & Subscribable<Record<S, () => F>>
   ) {
@@ -251,8 +306,31 @@ class FormControllerImpl<
     return specCompare ? specCompare : connector.comparator;
   }
 
+  private getChangedMetaAsync(
+    fields: F[number]["field"][],
+    indicator: AsyncState
+  ) {
+    const reduced = fields.reduce((meta, next) => {
+      const found = meta[next];
+      if (found) {
+        found.asyncIndicator = indicator;
+      }
+      return meta;
+    }, this.getMeta());
+    return reduced;
+  }
+
+  private commitMetaAsyncIndicator(
+    fields: F[number]["field"][],
+    indicator: AsyncState
+  ) {
+    const reduced = this.getChangedMetaAsync(fields, indicator);
+    this.safeCommitMeta(reduced);
+  }
+
   private asyncValidatorExecutor(
-    connector: RxNStore<Record<S, () => F>> & Subscribable<Record<S, () => F>>
+    connector: RxNStore<Record<S, () => F>> & Subscribable<Record<S, () => F>>,
+    lazy?: boolean
   ) {
     if (!this.asyncValidator) {
       return;
@@ -289,42 +367,24 @@ class FormControllerImpl<
             }[S]
         ),
         distinctUntilChanged(this.getComparator(connector)),
-        switchMap((formData) => {
+        tap((formData) => {
+          this.commitMetaAsyncIndicator(
+            formData.map(({ field }) => field),
+            AsyncState.PENDING
+          );
+        }),
+        this.connect(lazy)((formData) => {
           const oldMeta = this.getMeta();
           if (!formData.length) {
             return of(oldMeta);
           }
-
-          this.setAsyncState(AsyncState.PENDING);
           const async$ = this.asyncValidator!(
             this.getFormData() as ReturnType<Record<S, () => F>[S]>,
             oldMeta
           );
           const reduced$ = async$ instanceof Promise ? from(async$) : async$;
           return reduced$.pipe(
-            catchError(() => {
-              return of({
-                success: false,
-                meta: this.getMeta(),
-              });
-            }),
             map((meta) => {
-              if ("success" in meta) {
-                return meta;
-              }
-              return { success: true, meta };
-            }),
-            tap(({ success }) => {
-              if (success) {
-                this.setAsyncState(AsyncState.DONE);
-                return;
-              }
-              this.setAsyncState(AsyncState.ERROR);
-            }),
-            map(({ meta, success }) => {
-              if (!success) {
-                return meta;
-              }
               return {
                 ...this.getMeta(),
                 ...meta,
@@ -332,7 +392,19 @@ class FormControllerImpl<
               };
             })
           );
-        })
+        }),
+        catchError(() =>
+          of({
+            ...this.getMeta(),
+            ...this.getChangedMetaAsync(
+              this.getFormData()
+                .filter(({ type }) => type === DatumType.ASYNC)
+                .map(({ field }) => field),
+              AsyncState.ERROR
+            ),
+            ...this.getExcludedMeta(connector),
+          })
+        )
       )
       .subscribe((meta) => meta && this.safeCommitMeta(meta));
     return () => subscription.unsubscribe();
@@ -393,7 +465,7 @@ class FormControllerImpl<
     }
 
     if (this.fields) {
-      return this.fields.map(({ field, defaultValue, type }) => ({
+      return this.fields.map(({ field, defaultValue, type, lazy }) => ({
         field,
         touched: false,
         changed: false,
@@ -401,6 +473,7 @@ class FormControllerImpl<
         focused: false,
         value: defaultValue,
         type: type ? type : DatumType.SYNC,
+        lazy,
       })) as F;
     }
     return [] as unknown as F;
@@ -580,14 +653,15 @@ class FormControllerImpl<
   }
 
   @bound
-  startValidation() {
+  startValidation(lazy?: boolean) {
     return this.safeExecute((connector) => {
       const casted = this.cast(connector);
       const stopSyncValidation = this.validatorExecutor(casted);
-      const stopAsyncValidation = this.asyncValidatorExecutor(casted);
+      const stopAsyncValidation = this.asyncValidatorExecutor(casted, lazy);
       return () => {
         stopSyncValidation();
         stopAsyncValidation?.();
+        this.subscriptions.removeAll();
       };
     });
   }
@@ -630,6 +704,7 @@ class FormControllerImpl<
         found.hovered = false;
         found.touched = false;
         found.value = defaultDatum.value;
+        found.lazy = defaultDatum.lazy;
         return this;
       }
       this.removeDataByFields([field], data);
@@ -678,7 +753,7 @@ class FormControllerImpl<
   }
 
   @bound
-  appendFormData(fields: FormStubs<F>) {
+  appendFormData(fields: FormStubs<F, M>) {
     this.safeExecute((connector) => {
       const casted = this.cast(connector);
       const data = casted.getClonedState(this.id);

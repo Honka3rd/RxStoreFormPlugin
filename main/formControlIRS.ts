@@ -34,6 +34,7 @@ import {
   tap,
 } from "rxjs";
 import { bound } from "rx-store-core";
+import { Subscriptions } from "./subscriptions";
 
 export class ImmutableFormControllerImpl<
     F extends FormControlData,
@@ -51,8 +52,15 @@ export class ImmutableFormControllerImpl<
   private metadata$?: BehaviorSubject<
     Map<PK<M>, Map<"errors" | "info" | "warn", Map<string, any>>>
   >;
-  private fields?: FormStubs<F>;
+  private fields?: FormStubs<F, M>;
   private defaultMeta?: Map<PK<M>, Map<"errors" | "info" | "warn", any>>;
+
+  asyncValidator?: (
+    formData: List<Map<keyof F[number], V<F[number]>>>,
+    meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>
+  ) =>
+    | Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>
+    | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>;
 
   constructor(
     id: S,
@@ -60,17 +68,12 @@ export class ImmutableFormControllerImpl<
       formData: List<Map<keyof F[number], V<F[number]>>>,
       meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>
     ) => Map<PK<M>, Map<"errors" | "info" | "warn", any>>,
-    public asyncValidator?: (
-      formData: List<Map<keyof F[number], V<F[number]>>>,
-      meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>
-    ) =>
-      | Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>
-      | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>
+    private subscriptions: Subscriptions
   ) {
     super(id);
   }
 
-  setFields(fields: FormStubs<F>) {
+  setFields(fields: FormStubs<F, M>) {
     if (!this.fields) {
       this.fields = fields;
     }
@@ -117,7 +120,7 @@ export class ImmutableFormControllerImpl<
   }
 
   private appendDataByFields(
-    fields: FormStubs<F>,
+    fields: FormStubs<F, M>,
     data: List<Map<K<F[number]>, V<F[number]>>>
   ) {
     return data.withMutations((mutation) => {
@@ -360,7 +363,7 @@ export class ImmutableFormControllerImpl<
   }
 
   @bound
-  appendFormData(fields: FormStubs<F>): this {
+  appendFormData(fields: FormStubs<F, M>): this {
     this.safeExecute((connector) => {
       const casted = this.cast(connector);
       const data = this.appendDataByFields(fields, casted.getState(this.id));
@@ -570,7 +573,7 @@ export class ImmutableFormControllerImpl<
   }
 
   @bound
-  setAsyncValidator(
+  setBulkAsyncValidator(
     asyncValidator: (
       formData: List<Map<keyof F[number], V<F[number]>>>,
       meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>

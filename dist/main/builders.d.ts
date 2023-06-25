@@ -5,8 +5,8 @@ import { List, Map } from "immutable";
 declare class NRFormBuilder<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string> {
     private NRF;
     constructor({ formSelector, validator, }: NormalFormPluginBuilderParams<F, M, S>);
-    setAsyncValidator(asyncValidator: (formData: F, metadata: Partial<M>) => Observable<Partial<M>> | Promise<Partial<M>>): this;
-    setFields(fields: FormStubs<F>): this;
+    setBulkAsyncValidator(asyncValidator: (formData: F, metadata: Partial<M>) => Observable<Partial<M>> | Promise<Partial<M>>): this;
+    setFields(fields: FormStubs<F, M>): this;
     setMetaComparator(metaComparator: (meta1: Partial<M>, meta2: Partial<M>) => boolean): this;
     setMetaComparatorMap(metaComparatorMap: {
         [K in keyof Partial<M>]: (m1: Partial<M>[K], m2: Partial<M>[K]) => boolean;
@@ -22,8 +22,8 @@ declare class NRFormBuilder<F extends FormControlData, M extends Partial<Record<
 declare class IRFormBuilder<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string> {
     private IRF;
     constructor({ formSelector, validator, }: ImmutableFormPluginBuilderParams<F, M, S>);
-    setAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>) => Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>> | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>): this;
-    setFields(fields: FormStubs<F>): this;
+    setBulkAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>) => Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>> | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>): this;
+    setFields(fields: FormStubs<F, M>): this;
     setDefaultMeta(meta: Partial<M>): this;
     setAsyncConfig(cfg: AsyncValidationConfig): this;
     getInstance(): ImmutableFormControllerImpl<F, M, S>;

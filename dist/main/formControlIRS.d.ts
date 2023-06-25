@@ -2,15 +2,17 @@ import { Initiator, PluginImpl } from "rx-store-types";
 import { AsyncValidationConfig, DatumType, FormControlBasicMetadata, FormControlData, FormStubs, ImmutableFormController, K, PK, PV, V } from "./interfaces";
 import { List, Map } from "immutable";
 import { Observable } from "rxjs";
+import { Subscriptions } from "./subscriptions";
 export declare class ImmutableFormControllerImpl<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> extends PluginImpl<S, F> implements ImmutableFormController<F, M, S> {
     validator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>) => Map<PK<M>, Map<"errors" | "info" | "warn", any>>;
-    asyncValidator?: ((formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>) => Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>> | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>) | undefined;
+    private subscriptions;
     private asyncConfig;
     private metadata$?;
     private fields?;
     private defaultMeta?;
-    constructor(id: S, validator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>) => Map<PK<M>, Map<"errors" | "info" | "warn", any>>, asyncValidator?: ((formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>) => Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>> | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>) | undefined);
-    setFields(fields: FormStubs<F>): void;
+    asyncValidator?: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>) => Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>> | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>;
+    constructor(id: S, validator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>) => Map<PK<M>, Map<"errors" | "info" | "warn", any>>, subscriptions: Subscriptions);
+    setFields(fields: FormStubs<F, M>): void;
     setDefaultMeta(meta: Partial<M>): void;
     setAsyncConfig(cfg: AsyncValidationConfig): void;
     private removeDataByFields;
@@ -28,7 +30,7 @@ export declare class ImmutableFormControllerImpl<F extends FormControlData, M ex
     getFormData<CompareAts extends readonly number[] = number[]>(fields?: F[CompareAts[number]]["field"][]): List<Map<PK<F[CompareAts[number]]>, PV<F[CompareAts[number]]>>> | ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]>;
     resetFormDatum<N extends number>(field: F[N]["field"]): this;
     resetFormAll(): this;
-    appendFormData(fields: FormStubs<F>): this;
+    appendFormData(fields: FormStubs<F, M>): this;
     removeFormData(fields: F[number]["field"][]): this;
     setMetadata(meta: Map<keyof M, Map<"errors" | "info" | "warn", Map<string, any>>>): this;
     setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this;
@@ -42,7 +44,7 @@ export declare class ImmutableFormControllerImpl<F extends FormControlData, M ex
     getFieldMeta<N extends number = number>(field: F[N]["field"]): Map<"errors" | "info" | "warn", Map<string, any>>;
     changeFieldType<N extends number>(field: F[N]["field"], type: DatumType): this;
     getFieldsMeta(fields: F[number]["field"][] | List<F[number]["field"]>): Map<PK<M>, PV<M>>;
-    setAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>) => Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>> | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>): void;
+    setBulkAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>) => Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>> | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>): void;
     changeFormValue<N extends number>(field: F[N]["field"], value: F[N]["value"]): this;
     touchFormField<N extends number>(field: F[N]["field"], touchOrNot: boolean): this;
     emptyFormField<N extends number>(field: F[N]["field"]): this;

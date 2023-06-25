@@ -3,8 +3,9 @@ import { Any, Comparator, Initiator } from "rx-store-types";
 import { Observable } from "rxjs";
 export type FormControlBasicMetadata = {
     errors: Any;
-    info?: Any;
-    warn?: Any;
+    info?: any;
+    warn?: any;
+    asyncIndicator?: AsyncState;
 };
 export type FormControlMetadata<E extends Any, I = any, W = any> = {
     errors: E;
@@ -28,6 +29,7 @@ type DatumAttr = {
     hovered: boolean;
     type: DatumType;
     asyncState?: AsyncState;
+    lazy?: boolean;
 };
 export type FormControlBasicDatum = {
     field: string;
@@ -49,16 +51,17 @@ export type AsyncValidationConfig = {
 export interface AsyncValidationNConfig extends AsyncValidationConfig {
     compare?: (var1: any, var2: any) => boolean;
 }
-export type FormStubs<F extends FormControlBasicDatum[]> = Array<{
+export type FormStubs<F extends FormControlBasicDatum[], M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>> = Array<{
     field: F[number]["field"];
     defaultValue?: F[number]["value"];
-    compare?: (var1: any, var2: any) => boolean;
     type?: DatumType;
+    $validator?: (fieldData: F[number], metadata: M, formData: F) => Observable<M> | Promise<M>;
+    lazy?: boolean;
 }>;
 export interface FormController<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> {
-    setAsyncValidator(asyncValidator: (formData: F, metadata: Partial<M>) => Observable<Partial<M>> | Promise<Partial<M>>): void;
-    setFields(fields: FormStubs<F>): void;
-    getFields(): FormStubs<F>;
+    setBulkAsyncValidator(asyncValidator: (formData: F, metadata: Partial<M>) => Observable<Partial<M>> | Promise<Partial<M>>): void;
+    setFields(fields: FormStubs<F, M>): void;
+    getFields(): FormStubs<F, M>;
     setMetaComparator(metaComparator: (meta1: Partial<M>, meta2: Partial<M>) => boolean): void;
     setMetaComparatorMap(metaComparatorMap: {
         [K in keyof Partial<M>]: (m1: Partial<M>[K], m2: Partial<M>[K]) => boolean;
@@ -86,7 +89,7 @@ export interface FormController<F extends FormControlData, M extends Partial<Rec
     resetFormDatum<N extends number>(field: F[N]["field"]): this;
     resetFormDatum<N extends number>(field: F[N]["field"]): this;
     resetFormAll(): this;
-    appendFormData(fields: FormStubs<F>): this;
+    appendFormData(fields: FormStubs<F, M>): this;
     removeFormData(fields: Array<F[number]["field"]>): this;
     setMetadata(meta: Partial<M>): this;
     setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this;
@@ -116,8 +119,8 @@ export type PK<T> = keyof Partial<T>;
 export type PV<T> = Partial<T>[keyof Partial<T>];
 export type ImmutableFormStubs = List<Map<K<FormStub>, V<FormStub>>>;
 export interface ImmutableFormController<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> {
-    setAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>) => Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>> | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>): void;
-    setFields(fields: FormStubs<F>): void;
+    setBulkAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>) => Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>> | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>): void;
+    setFields(fields: FormStubs<F, M>): void;
     setDefaultMeta(meta: Partial<M>): void;
     setAsyncConfig(cfg: AsyncValidationConfig): void;
     changeFormValue<N extends number>(field: F[N]["field"], value: F[N]["value"]): this;
@@ -135,7 +138,7 @@ export interface ImmutableFormController<F extends FormControlData, M extends Pa
     changeFieldType<N extends number>(field: F[N]["field"], type: DatumType): this;
     resetFormDatum<N extends number>(field: F[N]["field"]): this;
     resetFormAll(): this;
-    appendFormData(fields: FormStubs<F>): this;
+    appendFormData(fields: FormStubs<F, M>): this;
     removeFormData(fields: Array<F[number]["field"]>): this;
     setMetadata(meta: Map<keyof M, Map<"errors" | "info" | "warn", Map<string, any>>>): this;
     setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this;

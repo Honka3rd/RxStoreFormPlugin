@@ -60,7 +60,7 @@ exports.ImmutableFormControllerImpl = (() => {
     let _getFieldMeta_decorators;
     let _changeFieldType_decorators;
     let _getFieldsMeta_decorators;
-    let _setAsyncValidator_decorators;
+    let _setBulkAsyncValidator_decorators;
     let _changeFormValue_decorators;
     let _touchFormField_decorators;
     let _emptyFormField_decorators;
@@ -69,10 +69,10 @@ exports.ImmutableFormControllerImpl = (() => {
     let _startValidation_decorators;
     let _getMeta_decorators;
     return _a = class ImmutableFormControllerImpl extends rx_store_types_1.PluginImpl {
-            constructor(id, validator, asyncValidator) {
+            constructor(id, validator, subscriptions) {
                 super(id);
                 this.validator = (__runInitializers(this, _instanceExtraInitializers), validator);
-                this.asyncValidator = asyncValidator;
+                this.subscriptions = subscriptions;
                 this.asyncConfig = {
                     lazy: false,
                     debounceDuration: 0,
@@ -396,7 +396,7 @@ exports.ImmutableFormControllerImpl = (() => {
                     });
                 });
             }
-            setAsyncValidator(asyncValidator) {
+            setBulkAsyncValidator(asyncValidator) {
                 if (!this.asyncValidator) {
                     this.asyncValidator = asyncValidator;
                 }
@@ -499,7 +499,7 @@ exports.ImmutableFormControllerImpl = (() => {
             _getFieldMeta_decorators = [rx_store_core_1.bound];
             _changeFieldType_decorators = [rx_store_core_1.bound];
             _getFieldsMeta_decorators = [rx_store_core_1.bound];
-            _setAsyncValidator_decorators = [rx_store_core_1.bound];
+            _setBulkAsyncValidator_decorators = [rx_store_core_1.bound];
             _changeFormValue_decorators = [rx_store_core_1.bound];
             _touchFormField_decorators = [rx_store_core_1.bound];
             _emptyFormField_decorators = [rx_store_core_1.bound];
@@ -524,7 +524,7 @@ exports.ImmutableFormControllerImpl = (() => {
             __esDecorate(_a, null, _getFieldMeta_decorators, { kind: "method", name: "getFieldMeta", static: false, private: false, access: { has: obj => "getFieldMeta" in obj, get: obj => obj.getFieldMeta } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _changeFieldType_decorators, { kind: "method", name: "changeFieldType", static: false, private: false, access: { has: obj => "changeFieldType" in obj, get: obj => obj.changeFieldType } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getFieldsMeta_decorators, { kind: "method", name: "getFieldsMeta", static: false, private: false, access: { has: obj => "getFieldsMeta" in obj, get: obj => obj.getFieldsMeta } }, null, _instanceExtraInitializers);
-            __esDecorate(_a, null, _setAsyncValidator_decorators, { kind: "method", name: "setAsyncValidator", static: false, private: false, access: { has: obj => "setAsyncValidator" in obj, get: obj => obj.setAsyncValidator } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _setBulkAsyncValidator_decorators, { kind: "method", name: "setBulkAsyncValidator", static: false, private: false, access: { has: obj => "setBulkAsyncValidator" in obj, get: obj => obj.setBulkAsyncValidator } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _changeFormValue_decorators, { kind: "method", name: "changeFormValue", static: false, private: false, access: { has: obj => "changeFormValue" in obj, get: obj => obj.changeFormValue } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _touchFormField_decorators, { kind: "method", name: "touchFormField", static: false, private: false, access: { has: obj => "touchFormField" in obj, get: obj => obj.touchFormField } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _emptyFormField_decorators, { kind: "method", name: "emptyFormField", static: false, private: false, access: { has: obj => "emptyFormField" in obj, get: obj => obj.emptyFormField } }, null, _instanceExtraInitializers);
