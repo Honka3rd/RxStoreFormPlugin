@@ -104,10 +104,12 @@ let FormControllerImpl = (() => {
                     this.asyncValidator = asyncValidator;
                 }
             }
-            getFieldSource(field) {
+            getFieldSource(field, datumKeys = [], comparator) {
                 return this.cast(this.connector)
                     .getDataSource()
-                    .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.distinctUntilChanged)(this.getComparator(this.cast(this.connector))), (0, rxjs_1.map)((formData) => formData.find((f) => f.field === field)), (0, rxjs_1.distinctUntilChanged)(rx_store_core_1.shallowCompare));
+                    .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.distinctUntilChanged)(this.getComparator(this.cast(this.connector))), (0, rxjs_1.map)((formData) => formData.find((f) => f.field === field)), 
+                // @ts-ignore
+                ...datumKeys.map((key) => (0, rxjs_1.distinctUntilKeyChanged)(key)), (0, rxjs_1.distinctUntilChanged)(comparator));
             }
             getSingleSource($validator, fieldData) {
                 const metadata = this.getMeta();
@@ -120,10 +122,10 @@ let FormControllerImpl = (() => {
             listenToExcludedAll(fields) {
                 this.subscriptions.pushAll(fields
                     .filter(({ type, $validator }) => type === interfaces_1.DatumType.EXCLUDED && $validator)
-                    .map(({ field, $validator, lazy }) => ({
+                    .map(({ field, $validator, lazy, debounceDuration, datumKeys, comparator, }) => ({
                     id: field,
-                    subscription: this.getFieldSource(field)
-                        .pipe((0, rxjs_1.tap)(() => {
+                    subscription: this.getFieldSource(field, datumKeys, comparator)
+                        .pipe((0, rxjs_1.debounceTime)(Number(debounceDuration)), (0, rxjs_1.tap)(() => {
                         this.commitMetaAsyncIndicator([field], interfaces_1.AsyncState.PENDING);
                     }), this.connect(lazy)((fieldData) => (0, rxjs_1.iif)(() => Boolean(fieldData), this.getSingleSource($validator, fieldData), (0, rxjs_1.of)(this.getMeta()))), (0, rxjs_1.catchError)(() => {
                         return (0, rxjs_1.of)(this.getChangedMetaAsync([field], interfaces_1.AsyncState.ERROR));

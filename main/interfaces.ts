@@ -77,12 +77,15 @@ export type FormStubs<F extends FormControlBasicDatum[]> = Array<{
   field: F[number]["field"];
   defaultValue?: F[number]["value"];
   type?: DatumType;
-  $validator?: <A, B, C>(
+  $validator?: <A = any, B = any, C = any>(
     fieldData: A,
     metadata: B,
     formData: C
   ) => Observable<B> | Promise<B>;
   lazy?: boolean;
+  debounceDuration?: number;
+  datumKeys?: Array<keyof F[number]>;
+  comparator?: (v1: any, v2: any) => boolean
 }>;
 
 export interface FormController<

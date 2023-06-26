@@ -116,10 +116,27 @@ exports.ImmutableFormControllerImpl = (() => {
             setAsyncConfig(cfg) {
                 this.asyncConfig = cfg;
             }
-            getFieldSource(field) {
+            partialCompare(datumKeys, previous, next) {
+                const partialPrevious = (0, immutable_1.Map)().withMutations((mutation) => {
+                    datumKeys.forEach((k) => {
+                        const target = previous === null || previous === void 0 ? void 0 : previous.get(k);
+                        target && mutation.set(k, target);
+                    });
+                });
+                const partialNext = (0, immutable_1.Map)().withMutations((mutation) => {
+                    datumKeys.forEach((k) => {
+                        const target = next === null || next === void 0 ? void 0 : next.get(k);
+                        target && mutation.set(k, target);
+                    });
+                });
+                return partialNext.equals(partialPrevious);
+            }
+            getFieldSource(field, datumKeys) {
                 return this.cast(this.connector)
                     .getDataSource()
-                    .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.distinctUntilChanged)((f1, f2) => (0, immutable_1.is)(f1, f2)), (0, rxjs_1.map)((formData) => formData.find((f) => f.get("field") === field)), (0, rxjs_1.distinctUntilChanged)((field1, field2) => (0, immutable_1.is)(field1, field2)));
+                    .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.distinctUntilChanged)((f1, f2) => (0, immutable_1.is)(f1, f2)), (0, rxjs_1.map)((formData) => formData.find((f) => f.get("field") === field)), (0, rxjs_1.distinctUntilChanged)(datumKeys
+                    ? (field1, field2) => this.partialCompare(datumKeys, field1, field2)
+                    : (field1, field2) => (0, immutable_1.is)(field1, field2)));
             }
             getSingleSource($validator, fieldData) {
                 const metadata = this.getMeta();
@@ -152,10 +169,10 @@ exports.ImmutableFormControllerImpl = (() => {
             listenToExcludedAll(fields) {
                 this.subscriptions.pushAll(fields
                     .filter(({ type, $validator }) => type === interfaces_1.DatumType.EXCLUDED && $validator)
-                    .map(({ field, $validator, lazy }) => ({
+                    .map(({ field, $validator, lazy, debounceDuration, datumKeys }) => ({
                     id: field,
                     subscription: this.getFieldSource(field)
-                        .pipe((0, rxjs_1.tap)(() => {
+                        .pipe((0, rxjs_1.debounceTime)(Number(debounceDuration)), (0, rxjs_1.tap)(() => {
                         this.commitMetaAsyncIndicator([field], interfaces_1.AsyncState.PENDING);
                     }), this.connect(lazy)((fieldData) => (0, rxjs_1.iif)(() => Boolean(fieldData), this.getSingleSource($validator, fieldData), (0, rxjs_1.of)(this.getMeta()))), (0, rxjs_1.catchError)(() => (0, rxjs_1.of)(this.getChangedMetaAsync([field], interfaces_1.AsyncState.ERROR))))
                         .subscribe((meta) => {

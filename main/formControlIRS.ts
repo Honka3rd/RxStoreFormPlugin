@@ -97,14 +97,47 @@ export class ImmutableFormControllerImpl<
     this.asyncConfig = cfg;
   }
 
-  private getFieldSource(field: F[number]["field"]) {
+  private partialCompare(
+    datumKeys: Array<keyof F[number]>,
+    previous?: Map<keyof F[number], V<F[number]>>,
+    next?: Map<keyof F[number], V<F[number]>>
+  ) {
+    const partialPrevious = Map<keyof F[number], V<F[number]>>().withMutations(
+      (mutation) => {
+        datumKeys.forEach((k) => {
+          const target = previous?.get(k);
+          target && mutation.set(k, target);
+        });
+      }
+    );
+
+    const partialNext = Map<keyof F[number], V<F[number]>>().withMutations(
+      (mutation) => {
+        datumKeys.forEach((k) => {
+          const target = next?.get(k);
+          target && mutation.set(k, target);
+        });
+      }
+    );
+
+    return partialNext.equals(partialPrevious);
+  }
+
+  private getFieldSource(
+    field: F[number]["field"],
+    datumKeys?: Array<keyof F[number]>
+  ) {
     return this.cast(this.connector!)
       .getDataSource()
       .pipe(
         map((states) => states[this.id]),
         distinctUntilChanged((f1, f2) => is(f1, f2)),
         map((formData) => formData.find((f) => f.get("field") === field)),
-        distinctUntilChanged((field1, field2) => is(field1, field2))
+        distinctUntilChanged(
+          datumKeys
+            ? (field1, field2) => this.partialCompare(datumKeys, field1, field2)
+            : (field1, field2) => is(field1, field2)
+        )
       );
   }
 
@@ -167,10 +200,11 @@ export class ImmutableFormControllerImpl<
         .filter(
           ({ type, $validator }) => type === DatumType.EXCLUDED && $validator
         )
-        .map(({ field, $validator, lazy }) => ({
+        .map(({ field, $validator, lazy, debounceDuration, datumKeys }) => ({
           id: field,
           subscription: this.getFieldSource(field)
             .pipe(
+              debounceTime(Number(debounceDuration)),
               tap(() => {
                 this.commitMetaAsyncIndicator([field], AsyncState.PENDING);
               }),

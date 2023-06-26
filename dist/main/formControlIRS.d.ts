@@ -16,6 +16,7 @@ export declare class ImmutableFormControllerImpl<F extends FormControlData, M ex
     getFields(): FormStubs<F>;
     setDefaultMeta(meta: Partial<M>): void;
     setAsyncConfig(cfg: AsyncValidationConfig): void;
+    private partialCompare;
     private getFieldSource;
     private getSingleSource;
     private connect;

@@ -12,7 +12,9 @@ import {
   BehaviorSubject,
   Observable,
   catchError,
+  debounceTime,
   distinctUntilChanged,
+  distinctUntilKeyChanged,
   exhaustMap,
   from,
   iif,
@@ -83,15 +85,21 @@ class FormControllerImpl<
   }
 
   private getFieldSource(
-    field: F[number]["field"]
+    field: F[number]["field"],
+    datumKeys: Array<keyof F[number]> = [],
+    comparator?: (v1: any, v2: any) => boolean
   ): Observable<ReturnType<Record<S, () => F>[S]>[number] | undefined> {
     return this.cast(this.connector!)
       .getDataSource()
       .pipe(
         map((states) => states[this.id]),
         distinctUntilChanged(this.getComparator(this.cast(this.connector!))),
-        map((formData) => formData.find((f) => f.field === field)),
-        distinctUntilChanged(shallowCompare)
+        map((formData: ReturnType<Record<S, () => F>[S]>) =>
+          formData.find((f) => f.field === field)
+        ),
+        // @ts-ignore
+        ...datumKeys.map((key) => distinctUntilKeyChanged(key)),
+        distinctUntilChanged(comparator)
       );
   }
 
@@ -118,38 +126,50 @@ class FormControllerImpl<
         .filter(
           ({ type, $validator }) => type === DatumType.EXCLUDED && $validator
         )
-        .map(({ field, $validator, lazy }) => ({
-          id: field,
-          subscription: this.getFieldSource(field)
-            .pipe(
-              tap(() => {
-                this.commitMetaAsyncIndicator([field], AsyncState.PENDING);
-              }),
-              this.connect(lazy)((fieldData) =>
-                iif(
-                  () => Boolean(fieldData),
-                  this.getSingleSource($validator, fieldData!),
-                  of(this.getMeta())
-                )
-              ),
-              catchError(() => {
-                return of(this.getChangedMetaAsync([field], AsyncState.ERROR));
-              })
-            )
-            .subscribe((meta) => {
-              this.commitMetaAsyncIndicator(
-                [field],
-                AsyncState.DONE,
-                meta,
-                (found) => {
-                  return (
-                    !found?.asyncIndicator ||
-                    found.asyncIndicator === AsyncState.PENDING
+        .map(
+          ({
+            field,
+            $validator,
+            lazy,
+            debounceDuration,
+            datumKeys,
+            comparator,
+          }) => ({
+            id: field,
+            subscription: this.getFieldSource(field, datumKeys, comparator)
+              .pipe(
+                debounceTime(Number(debounceDuration)),
+                tap(() => {
+                  this.commitMetaAsyncIndicator([field], AsyncState.PENDING);
+                }),
+                this.connect(lazy)((fieldData) =>
+                  iif(
+                    () => Boolean(fieldData),
+                    this.getSingleSource($validator, fieldData!),
+                    of(this.getMeta())
+                  )
+                ),
+                catchError(() => {
+                  return of(
+                    this.getChangedMetaAsync([field], AsyncState.ERROR)
                   );
-                }
-              );
-            }),
-        }))
+                })
+              )
+              .subscribe((meta) => {
+                this.commitMetaAsyncIndicator(
+                  [field],
+                  AsyncState.DONE,
+                  meta,
+                  (found) => {
+                    return (
+                      !found?.asyncIndicator ||
+                      found.asyncIndicator === AsyncState.PENDING
+                    );
+                  }
+                );
+              }),
+          })
+        )
     );
   }
 
