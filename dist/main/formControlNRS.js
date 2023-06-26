@@ -107,9 +107,7 @@ let FormControllerImpl = (() => {
             getFieldSource(field, datumKeys = [], comparator) {
                 return this.cast(this.connector)
                     .getDataSource()
-                    .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.distinctUntilChanged)(this.getComparator(this.cast(this.connector))), (0, rxjs_1.map)((formData) => formData.find((f) => f.field === field)), 
-                // @ts-ignore
-                ...datumKeys.map((key) => (0, rxjs_1.distinctUntilKeyChanged)(key)), (0, rxjs_1.distinctUntilChanged)(comparator));
+                    .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.distinctUntilChanged)(this.getComparator(this.cast(this.connector))), (0, rxjs_1.map)((formData) => formData.find((f) => f.field === field)), ...datumKeys.map((key) => (0, rxjs_1.distinctUntilKeyChanged)(key)), (0, rxjs_1.distinctUntilChanged)(comparator));
             }
             getSingleSource($validator, fieldData) {
                 const metadata = this.getMeta();
