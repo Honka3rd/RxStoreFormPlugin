@@ -16,8 +16,6 @@ class IRFieldComponent extends field_1.FormFieldComponent {
                 this.setAttribute("data-changed", String(datum.get("changed")));
                 this.setAttribute("data-touched", String(datum.get("touched")));
                 this.setAttribute("data-hovered", String(datum.get("hovered")));
-                const state = datum.get("asyncState");
-                state && this.setAttribute("data-async_state", String(state));
                 const value = datum.get("value");
                 value && this.setAttribute("data-value", String(value));
                 if (this.attributeBinder) {

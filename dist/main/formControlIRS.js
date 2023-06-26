@@ -77,12 +77,6 @@ exports.ImmutableFormControllerImpl = (() => {
                     lazy: false,
                     debounceDuration: 0,
                 };
-                this.getAsyncFields = (connector) => {
-                    return connector
-                        .getState(this.id)
-                        .filter((datum) => datum.get("type") === interfaces_1.DatumType.ASYNC)
-                        .map((datum) => datum.get("field"));
-                };
                 this.initiator = (connector) => {
                     if (connector && !this.connector) {
                         this.connector = connector;
@@ -107,13 +101,70 @@ exports.ImmutableFormControllerImpl = (() => {
             setFields(fields) {
                 if (!this.fields) {
                     this.fields = fields;
+                    this.listenToExcludedAll(fields);
                 }
+            }
+            getFields() {
+                if (!this.fields) {
+                    throw new Error("Fields information has not been set");
+                }
+                return this.fields;
             }
             setDefaultMeta(meta) {
                 this.defaultMeta = (0, immutable_1.fromJS)(meta);
             }
             setAsyncConfig(cfg) {
                 this.asyncConfig = cfg;
+            }
+            getFieldSource(field) {
+                return this.cast(this.connector)
+                    .getDataSource()
+                    .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.distinctUntilChanged)((f1, f2) => (0, immutable_1.is)(f1, f2)), (0, rxjs_1.map)((formData) => formData.find((f) => f.get("field") === field)), (0, rxjs_1.distinctUntilChanged)((field1, field2) => (0, immutable_1.is)(field1, field2)));
+            }
+            getSingleSource($validator, fieldData) {
+                const metadata = this.getMeta();
+                const source = $validator(fieldData, metadata, this.getFormData());
+                return source instanceof Promise ? (0, rxjs_1.from)(source) : source;
+            }
+            connect(lazy) {
+                return lazy ? rxjs_1.exhaustMap : rxjs_1.switchMap;
+            }
+            getChangedMetaAsync(fields, indicator, meta, condition) {
+                const merged = meta ? (0, immutable_1.merge)(this.getMeta(), meta) : this.getMeta();
+                const reduced = merged.withMutations((mutation) => {
+                    fields.forEach((field) => {
+                        const target = mutation.get(field);
+                        if (!target) {
+                            return;
+                        }
+                        if ((condition && condition(target)) || !condition) {
+                            mutation.set(field, (0, immutable_1.Map)(target.set("asyncIndicator", indicator)));
+                        }
+                    });
+                });
+                return reduced;
+            }
+            commitMetaAsyncIndicator(fields, indicator, meta, condition) {
+                var _a;
+                const reduced = this.getChangedMetaAsync(fields, indicator, meta, condition);
+                (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.next(reduced);
+            }
+            listenToExcludedAll(fields) {
+                this.subscriptions.pushAll(fields
+                    .filter(({ type, $validator }) => type === interfaces_1.DatumType.EXCLUDED && $validator)
+                    .map(({ field, $validator, lazy }) => ({
+                    id: field,
+                    subscription: this.getFieldSource(field)
+                        .pipe((0, rxjs_1.tap)(() => {
+                        this.commitMetaAsyncIndicator([field], interfaces_1.AsyncState.PENDING);
+                    }), this.connect(lazy)((fieldData) => (0, rxjs_1.iif)(() => Boolean(fieldData), this.getSingleSource($validator, fieldData), (0, rxjs_1.of)(this.getMeta()))), (0, rxjs_1.catchError)(() => (0, rxjs_1.of)(this.getChangedMetaAsync([field], interfaces_1.AsyncState.ERROR))))
+                        .subscribe((meta) => {
+                        this.commitMetaAsyncIndicator([field], interfaces_1.AsyncState.DONE, meta, (found) => {
+                            const indicator = found.get("asyncIndicator");
+                            return !indicator || indicator === interfaces_1.AsyncState.PENDING;
+                        });
+                    }),
+                })));
             }
             removeDataByFields(fields, data) {
                 return data.withMutations((mutation) => {
@@ -165,29 +216,11 @@ exports.ImmutableFormControllerImpl = (() => {
             isPromise($async) {
                 return $async instanceof Promise;
             }
-            setAsyncState(state) {
-                this.safeExecute((connector) => {
-                    const casted = this.cast(connector);
-                    const prevFormData = casted.getState(this.id);
-                    const updated = prevFormData.withMutations((mutation) => {
-                        this.getAsyncFields(casted).forEach((field) => {
-                            var _a;
-                            const castedField = field;
-                            const foundIndex = mutation.findIndex((d) => d.get("field") === castedField);
-                            const updatedDatum = (_a = mutation
-                                .get(foundIndex)) === null || _a === void 0 ? void 0 : _a.set("asyncState", state);
-                            updatedDatum && mutation.set(foundIndex, updatedDatum);
-                        });
-                    });
-                    this.commitMutation(updated, casted);
-                });
-            }
-            getExcludedMeta(connector) {
-                const excluded = connector
-                    .getState(this.id)
-                    .filter((datum) => datum.get("type") === interfaces_1.DatumType.EXCLUDED)
-                    .map((datum) => datum.get("field"));
-                return this.getFieldsMeta(excluded);
+            getAsyncFields() {
+                return this.getFormData()
+                    .filter((field) => field.get("type") === interfaces_1.DatumType.ASYNC)
+                    .map((field) => field.get("field"))
+                    .toJS();
             }
             asyncValidatorExecutor(connector) {
                 if (!this.asyncValidator) {
@@ -196,50 +229,23 @@ exports.ImmutableFormControllerImpl = (() => {
                 const connect = this.asyncConfig.lazy ? rxjs_1.exhaustMap : rxjs_1.switchMap;
                 const subscription = connector
                     .getDataSource()
-                    .pipe((0, rxjs_1.debounceTime)(this.asyncConfig.debounceDuration), (0, rxjs_1.map)((states) => states[this.id]
-                    .filter((datum) => datum.get("type") === interfaces_1.DatumType.ASYNC)
-                    .map((datum) => (0, immutable_1.Map)({
-                    value: datum.get("value"),
-                    changed: datum.get("changed"),
-                    focused: datum.get("focused"),
-                    field: datum.get("field"),
-                    type: datum.get("type"),
-                    hovered: datum.get("hovered"),
-                    touched: datum.get("touched"),
-                }))), (0, rxjs_1.distinctUntilChanged)((var1, var2) => (0, immutable_1.is)(var1, var2)), connect((formData) => {
+                    .pipe((0, rxjs_1.debounceTime)(this.asyncConfig.debounceDuration), (0, rxjs_1.map)((states) => states[this.id].filter((datum) => datum.get("type") === interfaces_1.DatumType.ASYNC)), (0, rxjs_1.distinctUntilChanged)((var1, var2) => (0, immutable_1.is)(var1, var2)), connect((formData) => {
                     const oldMeta = this.getMeta();
                     if (!formData.size) {
                         return (0, rxjs_1.of)(oldMeta);
                     }
-                    this.setAsyncState(interfaces_1.AsyncState.PENDING);
+                    this.commitMetaAsyncIndicator(this.getAsyncFields(), interfaces_1.AsyncState.PENDING);
                     const async$ = this.asyncValidator(this.getFormData(), oldMeta);
                     const reduced$ = this.isPromise(async$) ? (0, rxjs_1.from)(async$) : async$;
                     return reduced$.pipe((0, rxjs_1.catchError)(() => {
-                        return (0, rxjs_1.of)({
-                            success: false,
-                            meta: this.getMeta(),
-                        });
-                    }), (0, rxjs_1.map)((meta) => {
-                        if ("success" in meta && !meta.success) {
-                            return meta;
-                        }
-                        const m = meta;
-                        return { success: true, meta: m };
-                    }), (0, rxjs_1.tap)(({ success }) => {
-                        if (success) {
-                            this.setAsyncState(interfaces_1.AsyncState.DONE);
-                            return;
-                        }
-                        this.setAsyncState(interfaces_1.AsyncState.ERROR);
-                    }), (0, rxjs_1.map)(({ meta, success }) => {
-                        if (!success) {
-                            return meta;
-                        }
-                        return (0, immutable_1.merge)(this.getMeta(), meta, this.getExcludedMeta(connector));
+                        return (0, rxjs_1.of)(this.getChangedMetaAsync(this.getAsyncFields(), interfaces_1.AsyncState.ERROR));
                     }));
                 }))
                     .subscribe((meta) => {
-                    this.setMetadata(meta);
+                    this.commitMetaAsyncIndicator(this.getAsyncFields(), interfaces_1.AsyncState.DONE, meta, (found) => {
+                        const indicator = found.get("asyncIndicator");
+                        return !indicator || indicator === interfaces_1.AsyncState.PENDING;
+                    });
                 });
                 return () => subscription.unsubscribe();
             }
@@ -285,6 +291,7 @@ exports.ImmutableFormControllerImpl = (() => {
                 this.safeExecute((connector) => {
                     const casted = this.cast(connector);
                     const data = this.appendDataByFields(fields, casted.getState(this.id));
+                    this.listenToExcludedAll(fields);
                     this.commitMutation(data, casted);
                 });
                 return this;
@@ -294,6 +301,7 @@ exports.ImmutableFormControllerImpl = (() => {
                     const casted = this.cast(connector);
                     const removed = this.removeDataByFields(fields, casted.getState(this.id));
                     this.commitMutation(removed, casted);
+                    fields.forEach((field) => this.subscriptions.remove(field));
                 });
                 return this;
             }
@@ -308,7 +316,7 @@ exports.ImmutableFormControllerImpl = (() => {
                 this.safeExecute(() => {
                     var _a;
                     const meta = this.getMeta();
-                    const single = (0, immutable_1.fromJS)(Object.assign({}, metaOne));
+                    const single = (0, immutable_1.Map)(Object.assign({}, metaOne));
                     (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.next(meta.set(field, single));
                 });
                 return this;
@@ -470,9 +478,11 @@ exports.ImmutableFormControllerImpl = (() => {
                     const casted = this.cast(connector);
                     const stopValidation = this.validatorExecutor(casted);
                     const stopAsyncValidation = this.asyncValidatorExecutor(casted);
+                    this.listenToExcludedAll(this.getFields());
                     return () => {
                         stopValidation === null || stopValidation === void 0 ? void 0 : stopValidation();
                         stopAsyncValidation === null || stopAsyncValidation === void 0 ? void 0 : stopAsyncValidation();
+                        this.subscriptions.removeAll();
                     };
                 });
             }

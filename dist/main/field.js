@@ -294,7 +294,7 @@ exports.FormFieldComponent = (() => {
                         return;
                     }
                 }
-                if (prev && !next) {
+                if (!next) {
                     const first = this.firstElementChild;
                     if (first instanceof HTMLElement) {
                         this.directChildEmitter.next(first);

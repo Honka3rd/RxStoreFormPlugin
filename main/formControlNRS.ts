@@ -46,7 +46,7 @@ class FormControllerImpl<
     formData: F,
     metadata: Partial<M>
   ) => Observable<Partial<M>> | Promise<Partial<M>>;
-  private fields: FormStubs<F, M> = [];
+  private fields?: FormStubs<F>;
   private metaComparator?: (meta1: Partial<M>, meta2: Partial<M>) => boolean;
   private metaComparatorMap?: {
     [K in keyof Partial<M>]: (m1: Partial<M>[K], m2: Partial<M>[K]) => boolean;
@@ -96,7 +96,7 @@ class FormControllerImpl<
   }
 
   private getSingleSource(
-    $validator: FormStubs<F, M>[number]["$validator"],
+    $validator: FormStubs<F>[number]["$validator"],
     fieldData: ReturnType<Record<S, () => F>[S]>[number]
   ) {
     const metadata = this.getMeta() as M;
@@ -112,7 +112,7 @@ class FormControllerImpl<
     return lazy ? exhaustMap : switchMap;
   }
 
-  private listenToExcludedAll(fields: FormStubs<F, M>) {
+  private listenToExcludedAll(fields: FormStubs<F>) {
     this.subscriptions.pushAll(
       fields
         .filter(
@@ -132,21 +132,37 @@ class FormControllerImpl<
                   of(this.getMeta())
                 )
               ),
-              catchError(() =>
-                of({ ...this.getMeta(), asyncIndicator: AsyncState.ERROR })
-              )
+              catchError(() => {
+                return of(this.getChangedMetaAsync([field], AsyncState.ERROR));
+              })
             )
-            .subscribe(this.safeCommitMeta),
+            .subscribe((meta) => {
+              this.commitMetaAsyncIndicator(
+                [field],
+                AsyncState.DONE,
+                meta,
+                (found) => {
+                  return (
+                    !found?.asyncIndicator ||
+                    found.asyncIndicator === AsyncState.PENDING
+                  );
+                }
+              );
+            }),
         }))
     );
   }
 
-  setFields(fields: FormStubs<F, M>) {
-    this.fields = fields;
-    this.listenToExcludedAll(fields);
+  setFields(fields: FormStubs<F>) {
+    if (!this.fields) {
+      this.fields = fields;
+    }
   }
 
-  getFields(): FormStubs<F, M> {
+  getFields(): FormStubs<F> {
+    if (!this.fields) {
+      throw new Error("Fields information has not been set");
+    }
     return this.fields;
   }
 
@@ -252,7 +268,7 @@ class FormControllerImpl<
     fields.forEach((field) => this.subscriptions.remove(field));
   }
 
-  private appendDataByFields(fields: FormStubs<F, M>, data: F) {
+  private appendDataByFields(fields: FormStubs<F>, data: F) {
     fields.forEach(({ defaultValue, field, type, lazy, $validator }) => {
       data.push({
         field,
@@ -308,24 +324,48 @@ class FormControllerImpl<
 
   private getChangedMetaAsync(
     fields: F[number]["field"][],
-    indicator: AsyncState
+    indicator: AsyncState,
+    meta?: Partial<M>,
+    condition?: (found: Partial<M>[F[number]["field"]]) => boolean
   ) {
-    const reduced = fields.reduce((meta, next) => {
-      const found = meta[next];
-      if (found) {
-        found.asyncIndicator = indicator;
-      }
-      return meta;
-    }, this.getMeta());
+    const reduced = fields.reduce(
+      (meta, next) => {
+        const found = meta[next];
+        if (found) {
+          if (condition) {
+            if (condition(found)) {
+              found.asyncIndicator = indicator;
+            }
+          } else {
+            found.asyncIndicator = indicator;
+          }
+        }
+        return meta;
+      },
+      meta ? { ...this.getMeta(), ...meta } : this.getMeta()
+    );
     return reduced;
   }
 
   private commitMetaAsyncIndicator(
     fields: F[number]["field"][],
-    indicator: AsyncState
+    indicator: AsyncState,
+    meta?: Partial<M>,
+    condition?: (found: Partial<M>[F[number]["field"]]) => boolean
   ) {
-    const reduced = this.getChangedMetaAsync(fields, indicator);
+    const reduced = this.getChangedMetaAsync(
+      fields,
+      indicator,
+      meta,
+      condition
+    );
     this.safeCommitMeta(reduced);
+  }
+
+  private getAsyncFields() {
+    return this.getFormData()
+      .filter(({ type }) => type === DatumType.ASYNC)
+      .map(({ field }) => field);
   }
 
   private asyncValidatorExecutor(
@@ -340,27 +380,7 @@ class FormControllerImpl<
       .pipe(
         map(
           (states) =>
-            states[this.id]
-              .filter(({ type }) => type === DatumType.ASYNC)
-              .map(
-                ({
-                  type,
-                  field,
-                  value,
-                  changed,
-                  touched,
-                  focused,
-                  hovered,
-                }) => ({
-                  type,
-                  field,
-                  value,
-                  changed,
-                  touched,
-                  focused,
-                  hovered,
-                })
-              ) as {
+            states[this.id].filter(({ type }) => type === DatumType.ASYNC) as {
               [K in keyof Record<S, () => F>]: ReturnType<
                 Record<S, () => F>[K]
               >;
@@ -397,16 +417,26 @@ class FormControllerImpl<
           of({
             ...this.getMeta(),
             ...this.getChangedMetaAsync(
-              this.getFormData()
-                .filter(({ type }) => type === DatumType.ASYNC)
-                .map(({ field }) => field),
+              this.getAsyncFields(),
               AsyncState.ERROR
             ),
             ...this.getExcludedMeta(connector),
           })
         )
       )
-      .subscribe((meta) => meta && this.safeCommitMeta(meta));
+      .subscribe((meta) => {
+        this.commitMetaAsyncIndicator(
+          this.getAsyncFields(),
+          AsyncState.DONE,
+          meta,
+          (found) => {
+            return (
+              !found?.asyncIndicator ||
+              found.asyncIndicator === AsyncState.PENDING
+            );
+          }
+        );
+      });
     return () => subscription.unsubscribe();
   }
 
@@ -658,6 +688,7 @@ class FormControllerImpl<
       const casted = this.cast(connector);
       const stopSyncValidation = this.validatorExecutor(casted);
       const stopAsyncValidation = this.asyncValidatorExecutor(casted, lazy);
+      this.listenToExcludedAll(this.getFields());
       return () => {
         stopSyncValidation();
         stopAsyncValidation?.();
@@ -753,7 +784,7 @@ class FormControllerImpl<
   }
 
   @bound
-  appendFormData(fields: FormStubs<F, M>) {
+  appendFormData(fields: FormStubs<F>) {
     this.safeExecute((connector) => {
       const casted = this.cast(connector);
       const data = casted.getClonedState(this.id);

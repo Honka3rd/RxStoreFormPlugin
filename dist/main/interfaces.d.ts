@@ -11,6 +11,7 @@ export type FormControlMetadata<E extends Any, I = any, W = any> = {
     errors: E;
     info?: I;
     warn?: W;
+    asyncIndicator?: AsyncState;
 };
 export declare enum AsyncState {
     PENDING = "PENDING",
@@ -28,9 +29,10 @@ type DatumAttr = {
     focused: boolean;
     hovered: boolean;
     type: DatumType;
-    asyncState?: AsyncState;
     lazy?: boolean;
 };
+export type ImmutableMetaDatum = Map<"errors" | "info" | "warn" | "asyncIndicator", any>;
+export type ImmutableMeta<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>> = Map<PK<M>, ImmutableMetaDatum>;
 export type FormControlBasicDatum = {
     field: string;
     value: any;
@@ -51,17 +53,17 @@ export type AsyncValidationConfig = {
 export interface AsyncValidationNConfig extends AsyncValidationConfig {
     compare?: (var1: any, var2: any) => boolean;
 }
-export type FormStubs<F extends FormControlBasicDatum[], M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>> = Array<{
+export type FormStubs<F extends FormControlBasicDatum[]> = Array<{
     field: F[number]["field"];
     defaultValue?: F[number]["value"];
     type?: DatumType;
-    $validator?: (fieldData: F[number], metadata: M, formData: F) => Observable<M> | Promise<M>;
+    $validator?: <A, B, C>(fieldData: A, metadata: B, formData: C) => Observable<B> | Promise<B>;
     lazy?: boolean;
 }>;
 export interface FormController<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> {
     setBulkAsyncValidator(asyncValidator: (formData: F, metadata: Partial<M>) => Observable<Partial<M>> | Promise<Partial<M>>): void;
-    setFields(fields: FormStubs<F, M>): void;
-    getFields(): FormStubs<F, M>;
+    setFields(fields: FormStubs<F>): void;
+    getFields(): FormStubs<F>;
     setMetaComparator(metaComparator: (meta1: Partial<M>, meta2: Partial<M>) => boolean): void;
     setMetaComparatorMap(metaComparatorMap: {
         [K in keyof Partial<M>]: (m1: Partial<M>[K], m2: Partial<M>[K]) => boolean;
@@ -89,7 +91,7 @@ export interface FormController<F extends FormControlData, M extends Partial<Rec
     resetFormDatum<N extends number>(field: F[N]["field"]): this;
     resetFormDatum<N extends number>(field: F[N]["field"]): this;
     resetFormAll(): this;
-    appendFormData(fields: FormStubs<F, M>): this;
+    appendFormData(fields: FormStubs<F>): this;
     removeFormData(fields: Array<F[number]["field"]>): this;
     setMetadata(meta: Partial<M>): this;
     setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this;
@@ -119,8 +121,8 @@ export type PK<T> = keyof Partial<T>;
 export type PV<T> = Partial<T>[keyof Partial<T>];
 export type ImmutableFormStubs = List<Map<K<FormStub>, V<FormStub>>>;
 export interface ImmutableFormController<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> {
-    setBulkAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>) => Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>> | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>): void;
-    setFields(fields: FormStubs<F, M>): void;
+    setBulkAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: ImmutableMeta<F, M>) => Observable<ImmutableMeta<F, M>> | Promise<ImmutableMeta<F, M>>): void;
+    setFields(fields: FormStubs<F>): void;
     setDefaultMeta(meta: Partial<M>): void;
     setAsyncConfig(cfg: AsyncValidationConfig): void;
     changeFormValue<N extends number>(field: F[N]["field"], value: F[N]["value"]): this;
@@ -129,22 +131,22 @@ export interface ImmutableFormController<F extends FormControlData, M extends Pa
     focusFormField<N extends number>(field: F[N]["field"], focusOrNot: boolean): this;
     hoverFormField<N extends number>(field: F[N]["field"], hoverOrNot: boolean): this;
     initiator: Initiator<F>;
-    validator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>) => Map<PK<M>, Map<"errors" | "info" | "warn", any>>;
+    validator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: ImmutableMeta<F, M>) => ImmutableMeta<F, M>;
     selector: () => S;
-    asyncValidator?(formData: List<Map<keyof F[number], V<F[number]>>>, meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>): Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>> | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>;
+    asyncValidator?(formData: List<Map<keyof F[number], V<F[number]>>>, meta: ImmutableMeta<F, M>): Observable<ImmutableMeta<F, M>> | Promise<ImmutableMeta<F, M>>;
     startValidation(): (() => void) | undefined;
-    getMeta(): Map<PK<M>, Map<"errors" | "info" | "warn", Map<string, any>>>;
-    getFieldMeta<N extends number = number>(field: F[N]["field"]): Map<"errors" | "info" | "warn", Map<string, any>>;
+    getMeta(): ImmutableMeta<F, M>;
+    getFieldMeta<N extends number = number>(field: F[N]["field"]): ImmutableMeta<F, M>;
     changeFieldType<N extends number>(field: F[N]["field"], type: DatumType): this;
     resetFormDatum<N extends number>(field: F[N]["field"]): this;
     resetFormAll(): this;
-    appendFormData(fields: FormStubs<F, M>): this;
+    appendFormData(fields: FormStubs<F>): this;
     removeFormData(fields: Array<F[number]["field"]>): this;
-    setMetadata(meta: Map<keyof M, Map<"errors" | "info" | "warn", Map<string, any>>>): this;
+    setMetadata(meta: ImmutableMeta<F, M>): this;
     setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this;
     getFieldsMeta(fields: F[number]["field"][]): Map<PK<M>, PV<M>>;
-    observeMeta(callback: (meta: Map<PK<M>, Map<"errors" | "info" | "warn", Map<string, any>>>) => void): () => void | undefined;
-    observeMetaByField<K extends keyof M>(field: K, callback: (metaOne: Map<"errors" | "info" | "warn", Map<string, any>>) => void): () => void | undefined;
+    observeMeta(callback: (meta: ImmutableMeta<F, M>) => void): () => void | undefined;
+    observeMetaByField<K extends keyof M>(field: K, callback: (metaOne: ImmutableMetaDatum) => void): () => void | undefined;
     observeFormData<Ats extends number[] = number[]>(observer: (result: List<Map<PK<F[Ats[number]]>, PV<F[Ats[number]]>>> | ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]>) => void, fields?: F[Ats[number]]["field"][]): () => void;
     observeFormDatum<CompareAt extends number = number>(field: F[CompareAt]["field"], observer: (result: Map<PK<ReturnType<Record<S, () => F>[S]>[CompareAt]>, PV<ReturnType<Record<S, () => F>[S]>[CompareAt]>>) => void): () => void;
     observeFormValue<CompareAt extends number = number>(field: F[CompareAt]["field"], observer: (result: ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]) => void): () => void;

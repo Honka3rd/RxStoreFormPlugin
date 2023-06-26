@@ -7,6 +7,7 @@ import {
   FormController,
   FormStubs,
   ImmutableFormPluginBuilderParams,
+  ImmutableMeta,
   NormalFormPluginBuilderParams,
   PK,
   V,
@@ -43,7 +44,7 @@ class NRFormBuilder<
     return this;
   }
 
-  setFields(fields: FormStubs<F, M>) {
+  setFields(fields: FormStubs<F>) {
     this.NRF.setFields(fields);
     this.setDefaultMeta(
       fields.reduce((meta, next) => {
@@ -117,16 +118,16 @@ class IRFormBuilder<
   setBulkAsyncValidator(
     asyncValidator: (
       formData: List<Map<keyof F[number], V<F[number]>>>,
-      meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>
+      meta: ImmutableMeta<F, M>
     ) =>
-      | Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>
-      | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>
+      | Observable<ImmutableMeta<F, M>>
+      | Promise<ImmutableMeta<F, M>>
   ) {
     this.IRF.setBulkAsyncValidator(asyncValidator);
     return this;
   }
 
-  setFields(fields: FormStubs<F, M>) {
+  setFields(fields: FormStubs<F>) {
     this.IRF.setFields(fields);
     this.setDefaultMeta(
       fields.reduce((meta, next) => {

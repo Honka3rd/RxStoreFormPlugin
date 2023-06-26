@@ -7,7 +7,7 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     private subscriptions;
     private metadata$?;
     asyncValidator?: (formData: F, metadata: Partial<M>) => Observable<Partial<M>> | Promise<Partial<M>>;
-    private fields;
+    private fields?;
     private metaComparator?;
     private metaComparatorMap?;
     private cloneFunction?;
@@ -20,8 +20,8 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     private getSingleSource;
     private connect;
     private listenToExcludedAll;
-    setFields(fields: FormStubs<F, M>): void;
-    getFields(): FormStubs<F, M>;
+    setFields(fields: FormStubs<F>): void;
+    getFields(): FormStubs<F>;
     setMetaComparator(metaComparator: (meta1: Partial<M>, meta2: Partial<M>) => boolean): void;
     setMetaComparatorMap(metaComparatorMap: {
         [K in keyof Partial<M>]: (m1: Partial<M>[K], m2: Partial<M>[K]) => boolean;
@@ -46,6 +46,7 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     private getComparator;
     private getChangedMetaAsync;
     private commitMetaAsyncIndicator;
+    private getAsyncFields;
     private asyncValidatorExecutor;
     private cloneMetaByField;
     private cloneMeta;
@@ -73,7 +74,7 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     touchFormField<N extends number>(field: F[N]["field"], touchOrNot: boolean): this;
     emptyFormField<N extends number>(field: F[N]["field"]): this;
     focusFormField<N extends number>(field: F[N]["field"], focusOrNot: boolean): this;
-    appendFormData(fields: FormStubs<F, M>): this;
+    appendFormData(fields: FormStubs<F>): this;
     removeFormData(fields: Array<F[number]["field"]>): this;
     setMetadata(meta: Partial<M>): this;
     setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this;

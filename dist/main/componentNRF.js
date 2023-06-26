@@ -19,8 +19,6 @@ class NRFieldComponent extends field_1.FormFieldComponent {
                 this.setAttribute("data-changed", String(datum.changed));
                 this.setAttribute("data-touched", String(datum.touched));
                 this.setAttribute("data-hovered", String(datum.hovered));
-                datum.asyncState &&
-                    this.setAttribute("data-async_state", String(datum.asyncState));
                 this.setAttribute("data-value", datum.value);
                 if (this.attributeBinder) {
                     this.attributeBinder(this.attrSetter(target), datum);

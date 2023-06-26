@@ -14,12 +14,14 @@ import {
   FormControlData,
   FormStubs,
   ImmutableFormController,
+  ImmutableMeta,
+  ImmutableMetaDatum,
   K,
   PK,
   PV,
   V,
 } from "./interfaces";
-import { List, Map, fromJS, is, merge } from "immutable";
+import { List, Map, fromJS, is, merge, mergeWith } from "immutable";
 import {
   BehaviorSubject,
   Observable,
@@ -28,6 +30,7 @@ import {
   distinctUntilChanged,
   exhaustMap,
   from,
+  iif,
   map,
   of,
   switchMap,
@@ -49,34 +52,38 @@ export class ImmutableFormControllerImpl<
     debounceDuration: 0,
   };
 
-  private metadata$?: BehaviorSubject<
-    Map<PK<M>, Map<"errors" | "info" | "warn", Map<string, any>>>
-  >;
-  private fields?: FormStubs<F, M>;
-  private defaultMeta?: Map<PK<M>, Map<"errors" | "info" | "warn", any>>;
+  private metadata$?: BehaviorSubject<ImmutableMeta<F, M>>;
+  private fields?: FormStubs<F>;
+  private defaultMeta?: ImmutableMeta<F, M>;
 
   asyncValidator?: (
     formData: List<Map<keyof F[number], V<F[number]>>>,
-    meta: Map<PK<M>, Map<"errors" | "info" | "warn", any>>
-  ) =>
-    | Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>
-    | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>;
+    meta: ImmutableMeta<F, M>
+  ) => Observable<ImmutableMeta<F, M>> | Promise<ImmutableMeta<F, M>>;
 
   constructor(
     id: S,
     public validator: (
       formData: List<Map<keyof F[number], V<F[number]>>>,
-      meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>
-    ) => Map<PK<M>, Map<"errors" | "info" | "warn", any>>,
+      meta: ImmutableMeta<F, M>
+    ) => ImmutableMeta<F, M>,
     private subscriptions: Subscriptions
   ) {
     super(id);
   }
 
-  setFields(fields: FormStubs<F, M>) {
+  setFields(fields: FormStubs<F>) {
     if (!this.fields) {
       this.fields = fields;
+      this.listenToExcludedAll(fields);
     }
+  }
+
+  getFields(): FormStubs<F> {
+    if (!this.fields) {
+      throw new Error("Fields information has not been set");
+    }
+    return this.fields;
   }
 
   setDefaultMeta(meta: Partial<M>): void {
@@ -88,6 +95,109 @@ export class ImmutableFormControllerImpl<
 
   setAsyncConfig(cfg: AsyncValidationConfig): void {
     this.asyncConfig = cfg;
+  }
+
+  private getFieldSource(field: F[number]["field"]) {
+    return this.cast(this.connector!)
+      .getDataSource()
+      .pipe(
+        map((states) => states[this.id]),
+        distinctUntilChanged((f1, f2) => is(f1, f2)),
+        map((formData) => formData.find((f) => f.get("field") === field)),
+        distinctUntilChanged((field1, field2) => is(field1, field2))
+      );
+  }
+
+  private getSingleSource(
+    $validator: FormStubs<F>[number]["$validator"],
+    fieldData: Map<keyof F[number], V<F[number]>>
+  ) {
+    const metadata = this.getMeta();
+    const source = $validator!(
+      fieldData,
+      metadata,
+      this.getFormData() as List<Map<keyof F[number], V<F[number]>>>
+    );
+    return source instanceof Promise ? from(source) : source;
+  }
+
+  private connect(lazy?: boolean) {
+    return lazy ? exhaustMap : switchMap;
+  }
+
+  private getChangedMetaAsync(
+    fields: F[number]["field"][],
+    indicator: AsyncState,
+    meta?: ImmutableMeta<F, M>,
+    condition?: (found: ImmutableMetaDatum) => boolean
+  ) {
+    const merged = meta ? merge(this.getMeta(), meta) : this.getMeta();
+    const reduced = merged.withMutations((mutation) => {
+      fields.forEach((field) => {
+        const target = mutation.get(field);
+        if (!target) {
+          return;
+        }
+        if ((condition && condition(target)) || !condition) {
+          mutation.set(field, Map(target.set("asyncIndicator", indicator)));
+        }
+      });
+    });
+    return reduced;
+  }
+
+  private commitMetaAsyncIndicator(
+    fields: F[number]["field"][],
+    indicator: AsyncState,
+    meta?: ImmutableMeta<F, M>,
+    condition?: (found: ImmutableMetaDatum) => boolean
+  ) {
+    const reduced = this.getChangedMetaAsync(
+      fields,
+      indicator,
+      meta,
+      condition
+    );
+    this.metadata$?.next(reduced);
+  }
+
+  private listenToExcludedAll(fields: FormStubs<F>) {
+    this.subscriptions.pushAll(
+      fields
+        .filter(
+          ({ type, $validator }) => type === DatumType.EXCLUDED && $validator
+        )
+        .map(({ field, $validator, lazy }) => ({
+          id: field,
+          subscription: this.getFieldSource(field)
+            .pipe(
+              tap(() => {
+                this.commitMetaAsyncIndicator([field], AsyncState.PENDING);
+              }),
+              this.connect(lazy)((fieldData) =>
+                iif(
+                  () => Boolean(fieldData),
+                  this.getSingleSource($validator, fieldData!),
+                  of(this.getMeta())
+                )
+              ),
+              catchError(() =>
+                of(this.getChangedMetaAsync([field], AsyncState.ERROR))
+              )
+            )
+            .subscribe((meta) => {
+              this.commitMetaAsyncIndicator(
+                [field],
+                AsyncState.DONE,
+                meta,
+                (found) => {
+                  const indicator = found.get("asyncIndicator");
+                  return !indicator || indicator === AsyncState.PENDING;
+                }
+              );
+            }),
+        }))
+    );
   }
 
   private removeDataByFields(
@@ -120,7 +230,7 @@ export class ImmutableFormControllerImpl<
   }
 
   private appendDataByFields(
-    fields: FormStubs<F, M>,
+    fields: FormStubs<F>,
     data: List<Map<K<F[number]>, V<F[number]>>>
   ) {
     return data.withMutations((mutation) => {
@@ -173,49 +283,11 @@ export class ImmutableFormControllerImpl<
     return $async instanceof Promise;
   }
 
-  private getAsyncFields = (
-    connector: RxImStore<
-      Record<S, () => List<Map<keyof F[number], V<F[number]>>>>
-    > &
-      Subscribable<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>>
-  ) => {
-    return connector
-      .getState(this.id)
-      .filter((datum) => datum.get("type") === DatumType.ASYNC)
-      .map((datum) => datum.get("field")!);
-  };
-
-  private setAsyncState(state: AsyncState) {
-    this.safeExecute((connector) => {
-      const casted = this.cast(connector);
-      const prevFormData = casted.getState(this.id);
-      const updated = prevFormData.withMutations((mutation) => {
-        this.getAsyncFields(casted).forEach((field) => {
-          const castedField = field as unknown as F[number]["field"];
-          const foundIndex = mutation.findIndex(
-            (d) => d.get("field") === castedField
-          );
-          const updatedDatum = mutation
-            .get(foundIndex)
-            ?.set("asyncState", state as V<F[number]>);
-          updatedDatum && mutation.set(foundIndex, updatedDatum);
-        });
-      });
-      this.commitMutation(updated, casted);
-    });
-  }
-
-  private getExcludedMeta(
-    connector: RxImStore<
-      Record<S, () => List<Map<keyof F[number], V<F[number]>>>>
-    > &
-      Subscribable<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>>
-  ) {
-    const excluded = connector
-      .getState(this.id)
-      .filter((datum) => datum.get("type") === DatumType.EXCLUDED)
-      .map((datum) => datum.get("field")!) as List<F[number]["field"]>;
-    return this.getFieldsMeta(excluded);
+  private getAsyncFields() {
+    return this.getFormData()
+      .filter((field) => field.get("type") === DatumType.ASYNC)
+      .map((field) => field.get("field"))
+      .toJS() as F[number]["field"][];
   }
 
   private asyncValidatorExecutor(
@@ -234,19 +306,9 @@ export class ImmutableFormControllerImpl<
       .pipe(
         debounceTime(this.asyncConfig.debounceDuration),
         map((states) =>
-          states[this.id]
-            .filter((datum) => datum.get("type") === DatumType.ASYNC)
-            .map((datum) =>
-              Map({
-                value: datum.get("value"),
-                changed: datum.get("changed"),
-                focused: datum.get("focused"),
-                field: datum.get("field"),
-                type: datum.get("type"),
-                hovered: datum.get("hovered"),
-                touched: datum.get("touched"),
-              })
-            )
+          states[this.id].filter(
+            (datum) => datum.get("type") === DatumType.ASYNC
+          )
         ),
         distinctUntilChanged((var1, var2) => is(var1, var2)),
         connect((formData) => {
@@ -254,8 +316,10 @@ export class ImmutableFormControllerImpl<
           if (!formData.size) {
             return of(oldMeta);
           }
-
-          this.setAsyncState(AsyncState.PENDING);
+          this.commitMetaAsyncIndicator(
+            this.getAsyncFields(),
+            AsyncState.PENDING
+          );
           const async$ = this.asyncValidator!(
             this.getFormData() as ReturnType<
               Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]
@@ -265,43 +329,26 @@ export class ImmutableFormControllerImpl<
           const reduced$ = this.isPromise(async$) ? from(async$) : async$;
           return reduced$.pipe(
             catchError(() => {
-              return of({
-                success: false,
-                meta: this.getMeta(),
-              });
-            }),
-            map((meta) => {
-              if ("success" in meta && !meta.success) {
-                return meta;
-              }
-              const m = meta as unknown as Map<
-                keyof M,
-                Map<"errors" | "info" | "warn", any>
-              >;
-              return { success: true, meta: m };
-            }),
-            tap(({ success }) => {
-              if (success) {
-                this.setAsyncState(AsyncState.DONE);
-                return;
-              }
-              this.setAsyncState(AsyncState.ERROR);
-            }),
-            map(({ meta, success }) => {
-              if (!success) {
-                return meta;
-              }
-              return merge(
-                this.getMeta(),
-                meta,
-                this.getExcludedMeta(connector)
+              return of(
+                this.getChangedMetaAsync(
+                  this.getAsyncFields(),
+                  AsyncState.ERROR
+                )
               );
             })
           );
         })
       )
       .subscribe((meta) => {
-        this.setMetadata(meta);
+        this.commitMetaAsyncIndicator(
+          this.getAsyncFields(),
+          AsyncState.DONE,
+          meta,
+          (found) => {
+            const indicator = found.get("asyncIndicator");
+            return !indicator || indicator === AsyncState.PENDING;
+          }
+        );
       });
     return () => subscription.unsubscribe();
   }
@@ -363,10 +410,11 @@ export class ImmutableFormControllerImpl<
   }
 
   @bound
-  appendFormData(fields: FormStubs<F, M>): this {
+  appendFormData(fields: FormStubs<F>): this {
     this.safeExecute((connector) => {
       const casted = this.cast(connector);
       const data = this.appendDataByFields(fields, casted.getState(this.id));
+      this.listenToExcludedAll(fields);
       this.commitMutation(data, casted);
     });
     return this;
@@ -378,14 +426,13 @@ export class ImmutableFormControllerImpl<
       const casted = this.cast(connector);
       const removed = this.removeDataByFields(fields, casted.getState(this.id));
       this.commitMutation(removed, casted);
+      fields.forEach((field) => this.subscriptions.remove(field));
     });
     return this;
   }
 
   @bound
-  setMetadata(
-    meta: Map<keyof M, Map<"errors" | "info" | "warn", Map<string, any>>>
-  ): this {
+  setMetadata(meta: ImmutableMeta<F, M>): this {
     this.safeExecute(() => {
       this.metadata$?.next(meta);
     });
@@ -396,10 +443,7 @@ export class ImmutableFormControllerImpl<
   setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this {
     this.safeExecute(() => {
       const meta = this.getMeta();
-      const single = fromJS({ ...metaOne }) as Map<
-        "errors" | "info" | "warn",
-        Map<string, any>
-      >;
+      const single = Map({ ...metaOne }) as ImmutableMetaDatum;
       this.metadata$?.next(meta.set(field, single));
     });
     return this;
@@ -407,9 +451,7 @@ export class ImmutableFormControllerImpl<
 
   @bound
   observeMeta(
-    callback: (
-      meta: Map<PK<M>, Map<"errors" | "info" | "warn", Map<string, any>>>
-    ) => void
+    callback: (meta: ImmutableMeta<F, M>) => void
   ): () => void | undefined {
     const subscription = this.metadata$
       ?.pipe(distinctUntilChanged((var1, var2) => var1.equals(var2)))
@@ -420,9 +462,7 @@ export class ImmutableFormControllerImpl<
   @bound
   observeMetaByField<K extends keyof M>(
     field: K,
-    callback: (
-      metaOne: Map<"errors" | "info" | "warn", Map<string, any>>
-    ) => void
+    callback: (metaOne: ImmutableMetaDatum) => void
   ): () => void | undefined {
     const subscription = this.metadata$
       ?.pipe(
@@ -531,10 +571,7 @@ export class ImmutableFormControllerImpl<
   @bound
   getFieldMeta<N extends number = number>(field: F[N]["field"]) {
     return this.safeExecute(() => {
-      return this.metadata$?.value.get(field) as Map<
-        "errors" | "info" | "warn",
-        Map<string, any>
-      >;
+      return this.metadata$?.value.get(field);
     })!;
   }
 
@@ -576,10 +613,8 @@ export class ImmutableFormControllerImpl<
   setBulkAsyncValidator(
     asyncValidator: (
       formData: List<Map<keyof F[number], V<F[number]>>>,
-      meta: Map<keyof M, Map<"errors" | "info" | "warn", any>>
-    ) =>
-      | Observable<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>
-      | Promise<Map<PK<M>, Map<"errors" | "info" | "warn", any>>>
+      meta: ImmutableMeta<F, M>
+    ) => Observable<ImmutableMeta<F, M>> | Promise<ImmutableMeta<F, M>>
   ): void {
     if (!this.asyncValidator) {
       this.asyncValidator = asyncValidator;
@@ -696,15 +731,17 @@ export class ImmutableFormControllerImpl<
       const casted = this.cast(connector);
       const stopValidation = this.validatorExecutor(casted);
       const stopAsyncValidation = this.asyncValidatorExecutor(casted);
+      this.listenToExcludedAll(this.getFields());
       return () => {
         stopValidation?.();
         stopAsyncValidation?.();
+        this.subscriptions.removeAll();
       };
     });
   }
 
   @bound
-  getMeta(): Map<PK<M>, Map<"errors" | "info" | "warn", any>> {
+  getMeta(): ImmutableMeta<F, M> {
     return Map(this.metadata$?.value);
   }
 
