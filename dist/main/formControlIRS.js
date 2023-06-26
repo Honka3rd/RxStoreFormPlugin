@@ -168,13 +168,13 @@ exports.ImmutableFormControllerImpl = (() => {
             }
             listenToExcludedAll(fields) {
                 this.subscriptions.pushAll(fields
-                    .filter(({ type, $validator }) => type === interfaces_1.DatumType.EXCLUDED && $validator)
-                    .map(({ field, $validator, lazy, debounceDuration, datumKeys }) => ({
+                    .filter(({ type, $immutableValidator }) => type === interfaces_1.DatumType.EXCLUDED && $immutableValidator)
+                    .map(({ field, $immutableValidator, lazy, debounceDuration, datumKeys }) => ({
                     id: field,
-                    subscription: this.getFieldSource(field)
+                    subscription: this.getFieldSource(field, datumKeys)
                         .pipe((0, rxjs_1.debounceTime)(Number(debounceDuration)), (0, rxjs_1.tap)(() => {
                         this.commitMetaAsyncIndicator([field], interfaces_1.AsyncState.PENDING);
-                    }), this.connect(lazy)((fieldData) => (0, rxjs_1.iif)(() => Boolean(fieldData), this.getSingleSource($validator, fieldData), (0, rxjs_1.of)(this.getMeta()))), (0, rxjs_1.catchError)(() => (0, rxjs_1.of)(this.getChangedMetaAsync([field], interfaces_1.AsyncState.ERROR))))
+                    }), this.connect(lazy)((fieldData) => (0, rxjs_1.iif)(() => Boolean(fieldData), this.getSingleSource($immutableValidator, fieldData), (0, rxjs_1.of)(this.getMeta()))), (0, rxjs_1.catchError)(() => (0, rxjs_1.of)(this.getChangedMetaAsync([field], interfaces_1.AsyncState.ERROR))))
                         .subscribe((meta) => {
                         this.commitMetaAsyncIndicator([field], interfaces_1.AsyncState.DONE, meta, (found) => {
                             const indicator = found.get("asyncIndicator");

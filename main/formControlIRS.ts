@@ -142,7 +142,7 @@ export class ImmutableFormControllerImpl<
   }
 
   private getSingleSource(
-    $validator: FormStubs<F>[number]["$validator"],
+    $validator: FormStubs<F>[number]["$immutableValidator"],
     fieldData: Map<keyof F[number], V<F[number]>>
   ) {
     const metadata = this.getMeta();
@@ -198,11 +198,11 @@ export class ImmutableFormControllerImpl<
     this.subscriptions.pushAll(
       fields
         .filter(
-          ({ type, $validator }) => type === DatumType.EXCLUDED && $validator
+          ({ type, $immutableValidator }) => type === DatumType.EXCLUDED && $immutableValidator
         )
-        .map(({ field, $validator, lazy, debounceDuration, datumKeys }) => ({
+        .map(({ field, $immutableValidator, lazy, debounceDuration, datumKeys }) => ({
           id: field,
-          subscription: this.getFieldSource(field)
+          subscription: this.getFieldSource(field, datumKeys)
             .pipe(
               debounceTime(Number(debounceDuration)),
               tap(() => {
@@ -211,7 +211,7 @@ export class ImmutableFormControllerImpl<
               this.connect(lazy)((fieldData) =>
                 iif(
                   () => Boolean(fieldData),
-                  this.getSingleSource($validator, fieldData!),
+                  this.getSingleSource($immutableValidator, fieldData!),
                   of(this.getMeta())
                 )
               ),

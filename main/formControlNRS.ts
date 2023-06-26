@@ -605,7 +605,12 @@ class FormControllerImpl<
   @bound
   observeMeta(callback: (meta: Partial<M>) => void) {
     const subscription = this.metadata$
-      ?.pipe(map(this.cloneMeta), distinctUntilChanged(this.metaComparator))
+      ?.pipe(
+        map(this.cloneMeta),
+        distinctUntilChanged(
+          this.metaComparator ? this.metaComparator : shallowCompare
+        )
+      )
       .subscribe(callback);
     return () => subscription?.unsubscribe();
   }
@@ -615,10 +620,11 @@ class FormControllerImpl<
     field: K,
     callback: (metaOne: Partial<M>[K]) => void
   ) {
+    const comparator = this.metaComparatorMap?.[field];
     const subscription = this.metadata$
       ?.pipe(
         map((meta) => this.cloneMetaByField(field, meta)),
-        distinctUntilChanged(this.metaComparatorMap?.[field])
+        distinctUntilChanged(comparator ? comparator : shallowCompare)
       )
       .subscribe(callback);
     return () => subscription?.unsubscribe();
@@ -630,14 +636,14 @@ class FormControllerImpl<
     observer: (result: ReturnType<Record<S, () => F>[S]>[CompareAt]) => void,
     comparator?: Comparator<ReturnType<Record<S, () => F>[S]>[CompareAt]>
   ) {
-    const casted = this.connector as unknown as RxNStore<Record<S, () => F>>;
+    const casted = this.cast(this.connector!);
     if (casted) {
       const subscription = casted
         .getDataSource()
         .pipe(
           map((states) => states[this.id]),
           map((form) => this.findDatumByField(form, field)!),
-          distinctUntilChanged(comparator)
+          distinctUntilChanged(comparator ? comparator : shallowCompare)
         )
         .subscribe(observer);
       return () => subscription.unsubscribe();
@@ -662,7 +668,7 @@ class FormControllerImpl<
         .pipe(
           map((states) => states[this.id]),
           map((form) => this.findDatumByField(form, field)!.value),
-          distinctUntilChanged(comparator)
+          distinctUntilChanged(comparator ? comparator : shallowCompare)
         )
         .subscribe(observer);
       return () => subscription.unsubscribe();
@@ -694,7 +700,7 @@ class FormControllerImpl<
               return acc;
             }, [] as F[CompareAts[number]][]);
           }),
-          distinctUntilChanged(comparator)
+          distinctUntilChanged(comparator ? comparator : shallowCompare)
         )
         .subscribe(observer);
       return () => subscription.unsubscribe();

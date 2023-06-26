@@ -57,7 +57,8 @@ export type FormStubs<F extends FormControlBasicDatum[]> = Array<{
     field: F[number]["field"];
     defaultValue?: F[number]["value"];
     type?: DatumType;
-    $validator?: <A = any, B = any, C = any>(fieldData: A, metadata: B, formData: C) => Observable<B> | Promise<B>;
+    $validator?: <A extends FormControlBasicDatum, B extends Partial<Record<C[number]["field"], FormControlBasicMetadata>>, C extends FormControlData>(fieldData: A, metadata: B, formData: C) => Observable<B> | Promise<B>;
+    $immutableValidator?: <A extends Map<keyof F[number], V<F[number]>>, B extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, C extends List<Map<keyof F[number], V<F[number]>>>>(fieldData: A, metadata: ImmutableMeta<F, B>, formData: C) => Observable<ImmutableMeta<F, B>> | Promise<ImmutableMeta<F, B>>;
     lazy?: boolean;
     debounceDuration?: number;
     datumKeys?: Array<keyof F[number]>;

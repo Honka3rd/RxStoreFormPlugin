@@ -407,20 +407,21 @@ let FormControllerImpl = (() => {
             }
             observeMeta(callback) {
                 var _a;
-                const subscription = (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.pipe((0, rxjs_1.map)(this.cloneMeta), (0, rxjs_1.distinctUntilChanged)(this.metaComparator)).subscribe(callback);
+                const subscription = (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.pipe((0, rxjs_1.map)(this.cloneMeta), (0, rxjs_1.distinctUntilChanged)(this.metaComparator ? this.metaComparator : rx_store_core_1.shallowCompare)).subscribe(callback);
                 return () => subscription === null || subscription === void 0 ? void 0 : subscription.unsubscribe();
             }
             observeMetaByField(field, callback) {
                 var _a, _b;
-                const subscription = (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.pipe((0, rxjs_1.map)((meta) => this.cloneMetaByField(field, meta)), (0, rxjs_1.distinctUntilChanged)((_b = this.metaComparatorMap) === null || _b === void 0 ? void 0 : _b[field])).subscribe(callback);
+                const comparator = (_a = this.metaComparatorMap) === null || _a === void 0 ? void 0 : _a[field];
+                const subscription = (_b = this.metadata$) === null || _b === void 0 ? void 0 : _b.pipe((0, rxjs_1.map)((meta) => this.cloneMetaByField(field, meta)), (0, rxjs_1.distinctUntilChanged)(comparator ? comparator : rx_store_core_1.shallowCompare)).subscribe(callback);
                 return () => subscription === null || subscription === void 0 ? void 0 : subscription.unsubscribe();
             }
             observeFormDatum(field, observer, comparator) {
-                const casted = this.connector;
+                const casted = this.cast(this.connector);
                 if (casted) {
                     const subscription = casted
                         .getDataSource()
-                        .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.map)((form) => this.findDatumByField(form, field)), (0, rxjs_1.distinctUntilChanged)(comparator))
+                        .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.map)((form) => this.findDatumByField(form, field)), (0, rxjs_1.distinctUntilChanged)(comparator ? comparator : rx_store_core_1.shallowCompare))
                         .subscribe(observer);
                     return () => subscription.unsubscribe();
                 }
@@ -431,7 +432,7 @@ let FormControllerImpl = (() => {
                 if (casted) {
                     const subscription = casted
                         .getDataSource()
-                        .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.map)((form) => this.findDatumByField(form, field).value), (0, rxjs_1.distinctUntilChanged)(comparator))
+                        .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.map)((form) => this.findDatumByField(form, field).value), (0, rxjs_1.distinctUntilChanged)(comparator ? comparator : rx_store_core_1.shallowCompare))
                         .subscribe(observer);
                     return () => subscription.unsubscribe();
                 }
@@ -453,7 +454,7 @@ let FormControllerImpl = (() => {
                             }
                             return acc;
                         }, []);
-                    }), (0, rxjs_1.distinctUntilChanged)(comparator))
+                    }), (0, rxjs_1.distinctUntilChanged)(comparator ? comparator : rx_store_core_1.shallowCompare))
                         .subscribe(observer);
                     return () => subscription.unsubscribe();
                 }
