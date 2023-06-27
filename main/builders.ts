@@ -6,13 +6,12 @@ import {
   FormControlData,
   FormController,
   FormStubs,
+  ImmutableFormController,
   ImmutableFormPluginBuilderParams,
   ImmutableMeta,
   NormalFormPluginBuilderParams,
-  PK,
   V,
 } from "./interfaces";
-import { Plugin } from "rx-store-types";
 import { ImmutableFormControllerImpl } from "./formControlIRS";
 import { List, Map } from "immutable";
 import { Subscriptions } from "./subscriptions";
@@ -103,7 +102,7 @@ class IRFormBuilder<
   M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
   S extends string = string
 > {
-  private IRF: ImmutableFormControllerImpl<F, M, S>;
+  private IRF: ImmutableFormController<F, M, S>;
   constructor({
     formSelector,
     validator,

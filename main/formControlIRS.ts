@@ -21,7 +21,7 @@ import {
   PV,
   V,
 } from "./interfaces";
-import { List, Map, fromJS, is, merge, mergeWith } from "immutable";
+import { List, Map, fromJS, is, merge } from "immutable";
 import {
   BehaviorSubject,
   Observable,
