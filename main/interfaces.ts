@@ -1,5 +1,5 @@
 import { List, Map } from "immutable";
-import { Any, Comparator, Initiator } from "rx-store-types";
+import { Any, Comparator, ImmutableBase, Initiator } from "rx-store-types";
 import { Observable } from "rxjs";
 
 export type FormControlBasicMetadata = {
@@ -39,7 +39,7 @@ type DatumAttr = {
 
 export type ImmutableMetaDatum = Map<
   "errors" | "info" | "warn" | "asyncIndicator",
-  any
+  ImmutableBase
 >;
 
 export type ImmutableMeta<
