@@ -15,6 +15,7 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     protected setDirectChildFromMutations(mutationList: MutationRecord[]): void;
     protected directChildIsTarget(): boolean | null;
     protected observer: MutationObserver;
+    private getChangeFunction;
     protected attachChildEventListeners(current: Node | null, formController: FormController<F, M, S> | ImmutableFormController<F, M, S> | null): void;
     private setInputDefault;
     private emitOnlyChildOnMount;

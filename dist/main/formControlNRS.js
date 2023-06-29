@@ -53,6 +53,7 @@ let FormControllerImpl = (() => {
     let _getFieldsMeta_decorators;
     let _observeMeta_decorators;
     let _observeMetaByField_decorators;
+    let _observeMetaByFields_decorators;
     let _observeFormDatum_decorators;
     let _observeFormValue_decorators;
     let _observeFormData_decorators;
@@ -69,6 +70,7 @@ let FormControllerImpl = (() => {
     let _removeFormData_decorators;
     let _setMetadata_decorators;
     let _setMetaByField_decorators;
+    let _toFormData_decorators;
     return _a = class FormControllerImpl extends rx_store_types_1.PluginImpl {
             constructor(id, validator, subscriptions) {
                 super(id);
@@ -215,6 +217,7 @@ let FormControllerImpl = (() => {
             removeDataByFields(fields, data) {
                 fields.forEach((field) => {
                     data.splice(data.findIndex((d) => d.field === field), 1);
+                    this.subscriptions.remove(field);
                 });
                 fields.forEach((field) => this.subscriptions.remove(field));
             }
@@ -247,11 +250,14 @@ let FormControllerImpl = (() => {
                     this.safeCommitMeta(meta);
                 });
             }
-            getExcludedMeta(connector) {
-                const excluded = connector
+            getExcludedFields(connector) {
+                return connector
                     .getState(this.id)
                     .filter(({ type }) => type === interfaces_1.DatumType.EXCLUDED)
                     .map(({ field }) => field);
+            }
+            getExcludedMeta(connector) {
+                const excluded = this.getExcludedFields(connector);
                 return this.getFieldsMeta(excluded);
             }
             getComparator(connector) {
@@ -407,13 +413,21 @@ let FormControllerImpl = (() => {
             }
             observeMeta(callback) {
                 var _a;
-                const subscription = (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.pipe((0, rxjs_1.map)(this.cloneMeta), (0, rxjs_1.distinctUntilChanged)(this.metaComparator ? this.metaComparator : rx_store_core_1.shallowCompare)).subscribe(callback);
+                const subscription = (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.pipe((0, rxjs_1.map)(this.cloneMeta), (0, rxjs_1.distinctUntilChanged)(this.metaComparator ? this.metaComparator : (v1, v2) => v1 === v2)).subscribe(callback);
                 return () => subscription === null || subscription === void 0 ? void 0 : subscription.unsubscribe();
             }
             observeMetaByField(field, callback) {
                 var _a, _b;
                 const comparator = (_a = this.metaComparatorMap) === null || _a === void 0 ? void 0 : _a[field];
                 const subscription = (_b = this.metadata$) === null || _b === void 0 ? void 0 : _b.pipe((0, rxjs_1.map)((meta) => this.cloneMetaByField(field, meta)), (0, rxjs_1.distinctUntilChanged)(comparator ? comparator : rx_store_core_1.shallowCompare)).subscribe(callback);
+                return () => subscription === null || subscription === void 0 ? void 0 : subscription.unsubscribe();
+            }
+            observeMetaByFields(fields, callback, comparator) {
+                var _a;
+                const subscription = (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.pipe((0, rxjs_1.map)((meta) => fields.reduce((acc, next) => {
+                    acc[next] = this.cloneMetaByField(next, meta);
+                    return acc;
+                }, {})), (0, rxjs_1.distinctUntilChanged)(comparator ? comparator : (v1, v2) => v1 === v2)).subscribe(callback);
                 return () => subscription === null || subscription === void 0 ? void 0 : subscription.unsubscribe();
             }
             observeFormDatum(field, observer, comparator) {
@@ -486,8 +500,20 @@ let FormControllerImpl = (() => {
                 });
                 return this;
             }
-            changeFieldType(field, type) {
+            changeFieldType(field, type, $validator) {
                 this.safeCommitMutation(field, (found) => {
+                    if (type === interfaces_1.DatumType.EXCLUDED && found.type !== interfaces_1.DatumType.EXCLUDED) {
+                        this.listenToExcludedAll([
+                            {
+                                field,
+                                type,
+                                $validator,
+                            },
+                        ]);
+                    }
+                    if (found.type === interfaces_1.DatumType.EXCLUDED && type !== interfaces_1.DatumType.EXCLUDED) {
+                        this.subscriptions.remove(field);
+                    }
                     found.type = type;
                 });
                 return this;
@@ -510,7 +536,20 @@ let FormControllerImpl = (() => {
             }
             resetFormAll() {
                 this.safeExecute((connector) => {
-                    connector.reset(this.id);
+                    const casted = this.cast(connector);
+                    const data = this.initiator();
+                    const excluded = this.getExcludedFields(casted);
+                    excluded.forEach((e) => {
+                        const target = data.find(({ field }) => e === field);
+                        if (!target) {
+                            this.subscriptions.remove(e);
+                            return;
+                        }
+                        if (target && target.type !== interfaces_1.DatumType.EXCLUDED) {
+                            this.subscriptions.remove(e);
+                        }
+                    });
+                    casted.reset(this.id);
                 });
                 return this;
             }
@@ -571,6 +610,18 @@ let FormControllerImpl = (() => {
                 });
                 return this;
             }
+            toFormData() {
+                return (form) => {
+                    return this.getFormData().reduce((acc, { field, value }) => {
+                        if (field) {
+                            acc.append(field, value instanceof Blob || typeof value === "string"
+                                ? value
+                                : String(value));
+                        }
+                        return acc;
+                    }, new FormData(form));
+                };
+            }
         },
         (() => {
             _safeCommitMeta_decorators = [rx_store_core_1.bound];
@@ -585,6 +636,7 @@ let FormControllerImpl = (() => {
             _getFieldsMeta_decorators = [rx_store_core_1.bound];
             _observeMeta_decorators = [rx_store_core_1.bound];
             _observeMetaByField_decorators = [rx_store_core_1.bound];
+            _observeMetaByFields_decorators = [rx_store_core_1.bound];
             _observeFormDatum_decorators = [rx_store_core_1.bound];
             _observeFormValue_decorators = [rx_store_core_1.bound];
             _observeFormData_decorators = [rx_store_core_1.bound];
@@ -601,6 +653,7 @@ let FormControllerImpl = (() => {
             _removeFormData_decorators = [rx_store_core_1.bound];
             _setMetadata_decorators = [rx_store_core_1.bound];
             _setMetaByField_decorators = [rx_store_core_1.bound];
+            _toFormData_decorators = [rx_store_core_1.bound];
             __esDecorate(_a, null, _safeCommitMeta_decorators, { kind: "method", name: "safeCommitMeta", static: false, private: false, access: { has: obj => "safeCommitMeta" in obj, get: obj => obj.safeCommitMeta } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _cloneMeta_decorators, { kind: "method", name: "cloneMeta", static: false, private: false, access: { has: obj => "cloneMeta" in obj, get: obj => obj.cloneMeta } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getFormData_decorators, { kind: "method", name: "getFormData", static: false, private: false, access: { has: obj => "getFormData" in obj, get: obj => obj.getFormData } }, null, _instanceExtraInitializers);
@@ -613,6 +666,7 @@ let FormControllerImpl = (() => {
             __esDecorate(_a, null, _getFieldsMeta_decorators, { kind: "method", name: "getFieldsMeta", static: false, private: false, access: { has: obj => "getFieldsMeta" in obj, get: obj => obj.getFieldsMeta } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _observeMeta_decorators, { kind: "method", name: "observeMeta", static: false, private: false, access: { has: obj => "observeMeta" in obj, get: obj => obj.observeMeta } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _observeMetaByField_decorators, { kind: "method", name: "observeMetaByField", static: false, private: false, access: { has: obj => "observeMetaByField" in obj, get: obj => obj.observeMetaByField } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _observeMetaByFields_decorators, { kind: "method", name: "observeMetaByFields", static: false, private: false, access: { has: obj => "observeMetaByFields" in obj, get: obj => obj.observeMetaByFields } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _observeFormDatum_decorators, { kind: "method", name: "observeFormDatum", static: false, private: false, access: { has: obj => "observeFormDatum" in obj, get: obj => obj.observeFormDatum } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _observeFormValue_decorators, { kind: "method", name: "observeFormValue", static: false, private: false, access: { has: obj => "observeFormValue" in obj, get: obj => obj.observeFormValue } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _observeFormData_decorators, { kind: "method", name: "observeFormData", static: false, private: false, access: { has: obj => "observeFormData" in obj, get: obj => obj.observeFormData } }, null, _instanceExtraInitializers);
@@ -629,6 +683,7 @@ let FormControllerImpl = (() => {
             __esDecorate(_a, null, _removeFormData_decorators, { kind: "method", name: "removeFormData", static: false, private: false, access: { has: obj => "removeFormData" in obj, get: obj => obj.removeFormData } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _setMetadata_decorators, { kind: "method", name: "setMetadata", static: false, private: false, access: { has: obj => "setMetadata" in obj, get: obj => obj.setMetadata } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _setMetaByField_decorators, { kind: "method", name: "setMetaByField", static: false, private: false, access: { has: obj => "setMetaByField" in obj, get: obj => obj.setMetaByField } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _toFormData_decorators, { kind: "method", name: "toFormData", static: false, private: false, access: { has: obj => "toFormData" in obj, get: obj => obj.toFormData } }, null, _instanceExtraInitializers);
         })(),
         _a;
 })();

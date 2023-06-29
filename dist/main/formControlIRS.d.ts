@@ -1,5 +1,5 @@
 import { Initiator, PluginImpl } from "rx-store-types";
-import { AsyncValidationConfig, DatumType, FormControlBasicMetadata, FormControlData, FormStubs, ImmutableFormController, ImmutableMeta, ImmutableMetaDatum, K, PK, PV, V } from "./interfaces";
+import { $ImmutableValidator, AsyncValidationConfig, DatumType, FormControlBasicMetadata, FormControlData, FormStubs, ImmutableFormController, ImmutableMeta, ImmutableMetaDatum, K, PK, PV, V } from "./interfaces";
 import { List, Map } from "immutable";
 import { Observable } from "rxjs";
 import { Subscriptions } from "./subscriptions";
@@ -26,6 +26,7 @@ export declare class ImmutableFormControllerImpl<F extends FormControlData, M ex
     private removeDataByFields;
     private commitMutation;
     private findDatumByField;
+    private getExcludedFields;
     private appendDataByFields;
     private cast;
     private getDatumIndex;
@@ -42,14 +43,15 @@ export declare class ImmutableFormControllerImpl<F extends FormControlData, M ex
     setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this;
     observeMeta(callback: (meta: ImmutableMeta<F, M>) => void): () => void | undefined;
     observeMetaByField<K extends keyof M>(field: K, callback: (metaOne: ImmutableMetaDatum) => void): () => void | undefined;
+    observeMetaByFields<KS extends Array<keyof M>>(fields: KS, callback: (meta: ImmutableMeta<F, M>) => void): () => void | undefined;
     observeFormData<CompareAts extends readonly number[] = number[]>(observer: (result: List<Map<keyof F[CompareAts[number]], PV<F[CompareAts[number]]>>> | ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]>) => void, fields?: F[CompareAts[number]]["field"][]): () => void;
     observeFormDatum<CompareAt extends number = number>(field: F[CompareAt]["field"], observer: (result: Map<keyof ReturnType<Record<S, () => F>[S]>[CompareAt], PV<ReturnType<Record<S, () => F>[S]>[CompareAt]>>) => void): () => void;
     observeFormValue<CompareAt extends number = number>(field: F[CompareAt]["field"], observer: (result: ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]) => void): () => void;
     getDatum<At extends number = number>(field: F[At]["field"]): Map<keyof F[At], PV<F[At]>>;
     getDatumValue<At extends number = number>(field: F[At]["field"]): NonNullable<V<F[number]>>;
     getFieldMeta<N extends number = number>(field: F[N]["field"]): ImmutableMetaDatum;
-    changeFieldType<N extends number>(field: F[N]["field"], type: DatumType): this;
-    getFieldsMeta(fields: F[number]["field"][] | List<F[number]["field"]>): Map<PK<M>, PV<M>>;
+    changeFieldType<N extends number>(field: F[N]["field"], type: DatumType, $immutableValidator?: $ImmutableValidator<F>): this;
+    getFieldsMeta(fields: F[number]["field"][]): Map<PK<M>, PV<M>>;
     setBulkAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: ImmutableMeta<F, M>) => Observable<ImmutableMeta<F, M>> | Promise<ImmutableMeta<F, M>>): void;
     changeFormValue<N extends number>(field: F[N]["field"], value: F[N]["value"]): this;
     touchFormField<N extends number>(field: F[N]["field"], touchOrNot: boolean): this;
@@ -58,5 +60,6 @@ export declare class ImmutableFormControllerImpl<F extends FormControlData, M ex
     hoverFormField<N extends number>(field: F[N]["field"], hoverOrNot: boolean): this;
     startValidation(): (() => void) | undefined;
     getMeta(): ImmutableMeta<F, M>;
+    toFormData(): (form?: HTMLFormElement) => FormData;
     initiator: Initiator<List<Map<K<F[number]>, V<F[number]>>>>;
 }

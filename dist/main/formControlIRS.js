@@ -52,6 +52,7 @@ exports.ImmutableFormControllerImpl = (() => {
     let _setMetaByField_decorators;
     let _observeMeta_decorators;
     let _observeMetaByField_decorators;
+    let _observeMetaByFields_decorators;
     let _observeFormData_decorators;
     let _observeFormDatum_decorators;
     let _observeFormValue_decorators;
@@ -68,6 +69,7 @@ exports.ImmutableFormControllerImpl = (() => {
     let _hoverFormField_decorators;
     let _startValidation_decorators;
     let _getMeta_decorators;
+    let _toFormData_decorators;
     return _a = class ImmutableFormControllerImpl extends rx_store_types_1.PluginImpl {
             constructor(id, validator, subscriptions) {
                 super(id);
@@ -169,7 +171,7 @@ exports.ImmutableFormControllerImpl = (() => {
             listenToExcludedAll(fields) {
                 this.subscriptions.pushAll(fields
                     .filter(({ type, $immutableValidator }) => type === interfaces_1.DatumType.EXCLUDED && $immutableValidator)
-                    .map(({ field, $immutableValidator, lazy, debounceDuration, datumKeys }) => ({
+                    .map(({ field, $immutableValidator, lazy, debounceDuration, datumKeys, }) => ({
                     id: field,
                     subscription: this.getFieldSource(field, datumKeys)
                         .pipe((0, rxjs_1.debounceTime)(Number(debounceDuration)), (0, rxjs_1.tap)(() => {
@@ -184,13 +186,17 @@ exports.ImmutableFormControllerImpl = (() => {
                 })));
             }
             removeDataByFields(fields, data) {
-                return data.withMutations((mutation) => {
-                    fields.forEach((f) => {
-                        mutation.remove(mutation.findIndex((m) => {
-                            return f === m.get("field");
-                        }));
+                let toBeRemoved = data;
+                fields.forEach((f) => {
+                    const removeIndex = toBeRemoved.findIndex((m) => {
+                        return f === m.get("field");
                     });
+                    if (removeIndex > -1) {
+                        toBeRemoved = toBeRemoved.remove(removeIndex);
+                        this.subscriptions.remove(f);
+                    }
                 });
+                return toBeRemoved;
             }
             commitMutation(data, connector) {
                 connector.setState({ [this.id]: data });
@@ -198,9 +204,15 @@ exports.ImmutableFormControllerImpl = (() => {
             findDatumByField(data, field) {
                 return data.find((datum) => datum.get("field") === field);
             }
+            getExcludedFields(connector) {
+                return connector
+                    .getState(this.id)
+                    .filter((datum) => datum.get("type") === interfaces_1.DatumType.EXCLUDED)
+                    .map((datum) => datum.get("field"));
+            }
             appendDataByFields(fields, data) {
                 return data.withMutations((mutation) => {
-                    fields.forEach(({ defaultValue, field, type }) => {
+                    fields.forEach(({ defaultValue, field, type, $immutableValidator }) => {
                         const datum = (0, immutable_1.Map)({
                             field,
                             touched: false,
@@ -211,6 +223,15 @@ exports.ImmutableFormControllerImpl = (() => {
                             type: type ? type : interfaces_1.DatumType.SYNC,
                         });
                         mutation.push(datum);
+                        if (type === interfaces_1.DatumType.EXCLUDED && $immutableValidator) {
+                            this.listenToExcludedAll([
+                                {
+                                    field,
+                                    type,
+                                    $immutableValidator,
+                                },
+                            ]);
+                        }
                     });
                 });
             }
@@ -300,7 +321,20 @@ exports.ImmutableFormControllerImpl = (() => {
             }
             resetFormAll() {
                 this.safeExecute((connector) => {
-                    connector.reset(this.id);
+                    const casted = this.cast(connector);
+                    const data = this.initiator();
+                    const excluded = this.getExcludedFields(casted);
+                    excluded.forEach((e) => {
+                        const target = data.find((datum) => e === datum.get("field"));
+                        if (!target) {
+                            this.subscriptions.remove(e);
+                            return;
+                        }
+                        if (target && target.get("type") !== interfaces_1.DatumType.EXCLUDED) {
+                            this.subscriptions.remove(e);
+                        }
+                    });
+                    casted.reset(this.id);
                 });
                 return this;
             }
@@ -346,6 +380,19 @@ exports.ImmutableFormControllerImpl = (() => {
             observeMetaByField(field, callback) {
                 var _a;
                 const subscription = (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.pipe((0, rxjs_1.map)((meta) => meta.get(field)), (0, rxjs_1.distinctUntilChanged)((var1, var2) => (0, immutable_1.is)(var1, var2))).subscribe((single) => {
+                    if (single) {
+                        callback(single);
+                    }
+                });
+                return () => subscription === null || subscription === void 0 ? void 0 : subscription.unsubscribe();
+            }
+            observeMetaByFields(fields, callback) {
+                var _a;
+                const subscription = (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.pipe((0, rxjs_1.map)((meta) => (0, immutable_1.Map)().withMutations((mutation) => {
+                    fields.forEach((field) => {
+                        mutation.set(field, meta.get(field));
+                    });
+                })), (0, rxjs_1.distinctUntilChanged)((var1, var2) => (0, immutable_1.is)(var1, var2))).subscribe((single) => {
                     if (single) {
                         callback(single);
                     }
@@ -399,15 +446,28 @@ exports.ImmutableFormControllerImpl = (() => {
                     return (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.value.get(field);
                 });
             }
-            changeFieldType(field, type) {
+            changeFieldType(field, type, $immutableValidator) {
                 this.safeExecute((connector) => {
-                    var _a;
                     const casted = this.cast(connector);
                     const targetIndex = this.getDatumIndex(field, casted);
                     if (targetIndex >= 0) {
-                        const mutation = (_a = casted
-                            .getState(this.id)
-                            .get(targetIndex)) === null || _a === void 0 ? void 0 : _a.set("type", type);
+                        const original = casted.getState(this.id).get(targetIndex);
+                        const mutation = original === null || original === void 0 ? void 0 : original.set("type", type);
+                        if (type === interfaces_1.DatumType.EXCLUDED &&
+                            (original === null || original === void 0 ? void 0 : original.get("type")) !== interfaces_1.DatumType.EXCLUDED &&
+                            $immutableValidator) {
+                            this.listenToExcludedAll([
+                                {
+                                    field,
+                                    type,
+                                    $immutableValidator,
+                                },
+                            ]);
+                        }
+                        if ((original === null || original === void 0 ? void 0 : original.get("type")) === interfaces_1.DatumType.EXCLUDED &&
+                            type !== interfaces_1.DatumType.EXCLUDED) {
+                            this.subscriptions.remove(field);
+                        }
                         mutation &&
                             this.commitMutation(casted.getState(this.id).set(targetIndex, mutation), casted);
                     }
@@ -507,6 +567,19 @@ exports.ImmutableFormControllerImpl = (() => {
                 var _a;
                 return (0, immutable_1.Map)((_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.value);
             }
+            toFormData() {
+                return (form) => {
+                    return this.getFormData().reduce((acc, datum) => {
+                        const field = datum.get("field");
+                        const value = datum.get("value");
+                        if (field)
+                            acc.append(field, value instanceof Blob || typeof value === "string"
+                                ? value
+                                : String(value));
+                        return acc;
+                    }, new FormData(form));
+                };
+            }
         },
         (() => {
             _getFormData_decorators = [rx_store_core_1.bound];
@@ -518,6 +591,7 @@ exports.ImmutableFormControllerImpl = (() => {
             _setMetaByField_decorators = [rx_store_core_1.bound];
             _observeMeta_decorators = [rx_store_core_1.bound];
             _observeMetaByField_decorators = [rx_store_core_1.bound];
+            _observeMetaByFields_decorators = [rx_store_core_1.bound];
             _observeFormData_decorators = [rx_store_core_1.bound];
             _observeFormDatum_decorators = [rx_store_core_1.bound];
             _observeFormValue_decorators = [rx_store_core_1.bound];
@@ -534,6 +608,7 @@ exports.ImmutableFormControllerImpl = (() => {
             _hoverFormField_decorators = [rx_store_core_1.bound];
             _startValidation_decorators = [rx_store_core_1.bound];
             _getMeta_decorators = [rx_store_core_1.bound];
+            _toFormData_decorators = [rx_store_core_1.bound];
             __esDecorate(_a, null, _getFormData_decorators, { kind: "method", name: "getFormData", static: false, private: false, access: { has: obj => "getFormData" in obj, get: obj => obj.getFormData } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _resetFormDatum_decorators, { kind: "method", name: "resetFormDatum", static: false, private: false, access: { has: obj => "resetFormDatum" in obj, get: obj => obj.resetFormDatum } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _resetFormAll_decorators, { kind: "method", name: "resetFormAll", static: false, private: false, access: { has: obj => "resetFormAll" in obj, get: obj => obj.resetFormAll } }, null, _instanceExtraInitializers);
@@ -543,6 +618,7 @@ exports.ImmutableFormControllerImpl = (() => {
             __esDecorate(_a, null, _setMetaByField_decorators, { kind: "method", name: "setMetaByField", static: false, private: false, access: { has: obj => "setMetaByField" in obj, get: obj => obj.setMetaByField } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _observeMeta_decorators, { kind: "method", name: "observeMeta", static: false, private: false, access: { has: obj => "observeMeta" in obj, get: obj => obj.observeMeta } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _observeMetaByField_decorators, { kind: "method", name: "observeMetaByField", static: false, private: false, access: { has: obj => "observeMetaByField" in obj, get: obj => obj.observeMetaByField } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _observeMetaByFields_decorators, { kind: "method", name: "observeMetaByFields", static: false, private: false, access: { has: obj => "observeMetaByFields" in obj, get: obj => obj.observeMetaByFields } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _observeFormData_decorators, { kind: "method", name: "observeFormData", static: false, private: false, access: { has: obj => "observeFormData" in obj, get: obj => obj.observeFormData } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _observeFormDatum_decorators, { kind: "method", name: "observeFormDatum", static: false, private: false, access: { has: obj => "observeFormDatum" in obj, get: obj => obj.observeFormDatum } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _observeFormValue_decorators, { kind: "method", name: "observeFormValue", static: false, private: false, access: { has: obj => "observeFormValue" in obj, get: obj => obj.observeFormValue } }, null, _instanceExtraInitializers);
@@ -559,6 +635,7 @@ exports.ImmutableFormControllerImpl = (() => {
             __esDecorate(_a, null, _hoverFormField_decorators, { kind: "method", name: "hoverFormField", static: false, private: false, access: { has: obj => "hoverFormField" in obj, get: obj => obj.hoverFormField } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _startValidation_decorators, { kind: "method", name: "startValidation", static: false, private: false, access: { has: obj => "startValidation" in obj, get: obj => obj.startValidation } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getMeta_decorators, { kind: "method", name: "getMeta", static: false, private: false, access: { has: obj => "getMeta" in obj, get: obj => obj.getMeta } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _toFormData_decorators, { kind: "method", name: "toFormData", static: false, private: false, access: { has: obj => "toFormData" in obj, get: obj => obj.toFormData } }, null, _instanceExtraInitializers);
         })(),
         _a;
 })();

@@ -7,6 +7,7 @@ import {
   Subscribable,
 } from "rx-store-types";
 import {
+  $ImmutableValidator,
   AsyncState,
   AsyncValidationConfig,
   DatumType,
@@ -198,39 +199,48 @@ export class ImmutableFormControllerImpl<
     this.subscriptions.pushAll(
       fields
         .filter(
-          ({ type, $immutableValidator }) => type === DatumType.EXCLUDED && $immutableValidator
+          ({ type, $immutableValidator }) =>
+            type === DatumType.EXCLUDED && $immutableValidator
         )
-        .map(({ field, $immutableValidator, lazy, debounceDuration, datumKeys }) => ({
-          id: field,
-          subscription: this.getFieldSource(field, datumKeys)
-            .pipe(
-              debounceTime(Number(debounceDuration)),
-              tap(() => {
-                this.commitMetaAsyncIndicator([field], AsyncState.PENDING);
-              }),
-              this.connect(lazy)((fieldData) =>
-                iif(
-                  () => Boolean(fieldData),
-                  this.getSingleSource($immutableValidator, fieldData!),
-                  of(this.getMeta())
+        .map(
+          ({
+            field,
+            $immutableValidator,
+            lazy,
+            debounceDuration,
+            datumKeys,
+          }) => ({
+            id: field,
+            subscription: this.getFieldSource(field, datumKeys)
+              .pipe(
+                debounceTime(Number(debounceDuration)),
+                tap(() => {
+                  this.commitMetaAsyncIndicator([field], AsyncState.PENDING);
+                }),
+                this.connect(lazy)((fieldData) =>
+                  iif(
+                    () => Boolean(fieldData),
+                    this.getSingleSource($immutableValidator, fieldData!),
+                    of(this.getMeta())
+                  )
+                ),
+                catchError(() =>
+                  of(this.getChangedMetaAsync([field], AsyncState.ERROR))
                 )
-              ),
-              catchError(() =>
-                of(this.getChangedMetaAsync([field], AsyncState.ERROR))
               )
-            )
-            .subscribe((meta) => {
-              this.commitMetaAsyncIndicator(
-                [field],
-                AsyncState.DONE,
-                meta,
-                (found) => {
-                  const indicator = found.get("asyncIndicator");
-                  return !indicator || indicator === AsyncState.PENDING;
-                }
-              );
-            }),
-        }))
+              .subscribe((meta) => {
+                this.commitMetaAsyncIndicator(
+                  [field],
+                  AsyncState.DONE,
+                  meta,
+                  (found) => {
+                    const indicator = found.get("asyncIndicator");
+                    return !indicator || indicator === AsyncState.PENDING;
+                  }
+                );
+              }),
+          })
+        )
     );
   }
 
@@ -238,15 +248,17 @@ export class ImmutableFormControllerImpl<
     fields: Array<F[number]["field"]>,
     data: List<Map<K<F[number]>, V<F[number]>>>
   ) {
-    return data.withMutations((mutation) => {
-      fields.forEach((f) => {
-        mutation.remove(
-          mutation.findIndex((m) => {
-            return f === m.get("field");
-          })
-        );
+    let toBeRemoved = data;
+    fields.forEach((f) => {
+      const removeIndex = toBeRemoved.findIndex((m) => {
+        return f === m.get("field");
       });
+      if (removeIndex > -1) {
+        toBeRemoved = toBeRemoved.remove(removeIndex);
+        this.subscriptions.remove(f);
+      }
     });
+    return toBeRemoved;
   }
 
   private commitMutation(
@@ -263,12 +275,21 @@ export class ImmutableFormControllerImpl<
     return data.find((datum) => datum.get("field") === field);
   }
 
+  private getExcludedFields(
+    connector: RxImStore<Record<S, () => List<Map<K<F[number]>, V<F[number]>>>>>
+  ) {
+    return connector
+      .getState(this.id)
+      .filter((datum) => datum.get("type") === DatumType.EXCLUDED)
+      .map((datum) => datum.get("field"));
+  }
+
   private appendDataByFields(
     fields: FormStubs<F>,
     data: List<Map<K<F[number]>, V<F[number]>>>
   ) {
     return data.withMutations((mutation) => {
-      fields.forEach(({ defaultValue, field, type }) => {
+      fields.forEach(({ defaultValue, field, type, $immutableValidator }) => {
         const datum = Map({
           field,
           touched: false,
@@ -279,6 +300,15 @@ export class ImmutableFormControllerImpl<
           type: type ? type : DatumType.SYNC,
         }) as Map<K<F[number]>, V<F[number]>>;
         mutation.push(datum);
+        if (type === DatumType.EXCLUDED && $immutableValidator) {
+          this.listenToExcludedAll([
+            {
+              field,
+              type,
+              $immutableValidator,
+            },
+          ]);
+        }
       });
     });
   }
@@ -438,7 +468,21 @@ export class ImmutableFormControllerImpl<
   @bound
   resetFormAll(): this {
     this.safeExecute((connector) => {
-      connector.reset(this.id);
+      const casted = this.cast(connector);
+      const data = this.initiator()!;
+      const excluded = this.getExcludedFields(casted);
+      excluded.forEach((e) => {
+        const target = data.find((datum) => e === datum.get("field"));
+        if (!target) {
+          this.subscriptions.remove(e as string);
+          return;
+        }
+
+        if (target && target.get("type") !== DatumType.EXCLUDED) {
+          this.subscriptions.remove(e as string);
+        }
+      });
+      casted.reset(this.id);
     });
     return this;
   }
@@ -501,6 +545,30 @@ export class ImmutableFormControllerImpl<
     const subscription = this.metadata$
       ?.pipe(
         map((meta) => meta.get(field)),
+        distinctUntilChanged((var1, var2) => is(var1, var2))
+      )
+      .subscribe((single) => {
+        if (single) {
+          callback(single);
+        }
+      });
+    return () => subscription?.unsubscribe();
+  }
+
+  @bound
+  observeMetaByFields<KS extends Array<keyof M>>(
+    fields: KS,
+    callback: (meta: ImmutableMeta<F, M>) => void
+  ): () => void | undefined {
+    const subscription = this.metadata$
+      ?.pipe(
+        map(
+          (meta) => <ImmutableMeta<F, M>>Map().withMutations((mutation) => {
+              fields.forEach((field) => {
+                mutation.set(field, meta.get(field));
+              });
+            })
+        ),
         distinctUntilChanged((var1, var2) => is(var1, var2))
       )
       .subscribe((single) => {
@@ -612,16 +680,37 @@ export class ImmutableFormControllerImpl<
   @bound
   changeFieldType<N extends number>(
     field: F[N]["field"],
-    type: DatumType
+    type: DatumType,
+    $immutableValidator?: $ImmutableValidator<F>
   ): this {
     this.safeExecute((connector) => {
       const casted = this.cast(connector);
       const targetIndex = this.getDatumIndex(field, casted);
       if (targetIndex >= 0) {
-        const mutation = casted
-          .getState(this.id)
-          .get(targetIndex)
-          ?.set("type", type as V<F[number]>);
+        const original = casted.getState(this.id).get(targetIndex);
+        const mutation = original?.set("type", type as V<F[number]>);
+
+        if (
+          type === DatumType.EXCLUDED &&
+          original?.get("type") !== DatumType.EXCLUDED &&
+          $immutableValidator
+        ) {
+          this.listenToExcludedAll([
+            {
+              field,
+              type,
+              $immutableValidator,
+            },
+          ]);
+        }
+
+        if (
+          original?.get("type") === DatumType.EXCLUDED &&
+          type !== DatumType.EXCLUDED
+        ) {
+          this.subscriptions.remove(field);
+        }
+
         mutation &&
           this.commitMutation(
             casted.getState(this.id).set(targetIndex, mutation),
@@ -633,9 +722,7 @@ export class ImmutableFormControllerImpl<
   }
 
   @bound
-  getFieldsMeta(
-    fields: F[number]["field"][] | List<F[number]["field"]>
-  ): Map<PK<M>, PV<M>> {
+  getFieldsMeta(fields: F[number]["field"][]): Map<PK<M>, PV<M>> {
     return Map().withMutations((mutation) => {
       fields.forEach((field) => {
         mutation.set(field, this.getFieldMeta(field));
@@ -777,6 +864,26 @@ export class ImmutableFormControllerImpl<
   @bound
   getMeta(): ImmutableMeta<F, M> {
     return Map(this.metadata$?.value);
+  }
+
+  @bound
+  toFormData() {
+    return (form?: HTMLFormElement) => {
+      return (
+        this.getFormData() as List<Map<keyof F[number], V<F[number]>>>
+      ).reduce((acc, datum) => {
+        const field = datum.get("field") as string;
+        const value = datum.get("value");
+        if (field)
+          acc.append(
+            field,
+            value instanceof Blob || typeof value === "string"
+              ? value
+              : String(value)
+          );
+        return acc;
+      }, new FormData(form));
+    };
   }
 
   initiator: Initiator<List<Map<K<F[number]>, V<F[number]>>>> = (connector) => {

@@ -45,48 +45,91 @@ exports.FormControlComponent = (() => {
     return _a = class FormControlComponent extends HTMLElement {
             constructor() {
                 super(...arguments);
-                this.fieldListEmitter = (__runInitializers(this, _instanceExtraInitializers), new rxjs_1.BehaviorSubject([]));
+                this.fieldListIncomingEmitter = (__runInitializers(this, _instanceExtraInitializers), new rxjs_1.BehaviorSubject([]));
                 this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
-                this.observer = new MutationObserver(this.setFieldListFromMutationRecords);
+                this.formIncomingEmitter = new rxjs_1.BehaviorSubject(null);
+                this.formHandlers = new WeakMap();
+                this.fieldsObserver = new MutationObserver(this.setFieldListFromMutationRecords);
             }
             setFieldListFromMutationRecords(mutationList) {
-                const nodes = [];
-                mutationList
-                    .filter((mutation) => mutation.type === "childList")
-                    .forEach((mutation) => Array.from(mutation.addedNodes).forEach((node) => {
-                    var _a;
-                    if (node instanceof field_1.FormFieldComponent) {
-                        nodes.push(node);
-                        return;
+                const filtered = mutationList.filter((mutation) => mutation.type === "childList");
+                const addedFields = filtered.reduce((acc, mutation) => {
+                    Array.from(mutation.addedNodes)
+                        .filter((node) => node instanceof field_1.FormFieldComponent)
+                        .forEach((node) => {
+                        acc.push(node);
+                    });
+                    return acc;
+                }, []);
+                if (addedFields.length) {
+                    this.fieldListIncomingEmitter.next(addedFields);
+                }
+                const insertedForm = filtered
+                    .reduce((acc, mutation) => {
+                    const nodes = Array.from(mutation.addedNodes);
+                    nodes.forEach((node) => {
+                        acc.push(node);
+                    });
+                    return acc;
+                }, [])
+                    .find((node) => node instanceof HTMLFormElement);
+                if (insertedForm) {
+                    this.formIncomingEmitter.next(insertedForm);
+                }
+                const removedForm = filtered
+                    .reduce((acc, mutation) => {
+                    const nodes = Array.from(mutation.removedNodes);
+                    nodes.forEach((node) => {
+                        acc.push(node);
+                    });
+                    return acc;
+                }, [])
+                    .find((node) => node instanceof HTMLFormElement);
+                if (removedForm) {
+                    const handlers = this.formHandlers.get(removedForm);
+                    if (handlers === null || handlers === void 0 ? void 0 : handlers.submit) {
+                        removedForm.removeEventListener("submit", handlers.submit);
                     }
-                    if (node instanceof HTMLFormElement) {
-                        const id = (_a = this.formControllerEmitter.value) === null || _a === void 0 ? void 0 : _a.selector();
-                        if (!id) {
-                            return;
-                        }
-                        this.fillFields(nodes, node.children);
-                        node.setAttribute("data-selector", id);
+                    if (handlers === null || handlers === void 0 ? void 0 : handlers.reset) {
+                        removedForm.removeEventListener("reset", handlers.reset);
                     }
-                }));
-                this.fieldListEmitter.next(nodes);
+                    this.formIncomingEmitter.next(null);
+                }
             }
             controlAll() {
                 return (0, rxjs_1.combineLatest)([
                     this.formControllerEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)()),
-                    this.fieldListEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)()),
-                ]).subscribe(([controller, fields]) => {
+                    this.fieldListIncomingEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)()),
+                    this.formIncomingEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)()),
+                ]).subscribe(([controller, fields, form]) => {
                     if (!controller || !fields) {
                         return;
+                    }
+                    if (form) {
+                        form.setAttribute("data-selector", controller.selector());
+                        const onSubmit = (e) => {
+                            var _a;
+                            e.preventDefault();
+                            (_a = this.submitCustomHandler) === null || _a === void 0 ? void 0 : _a.call(this, e, controller.toFormData());
+                        };
+                        const onReset = (e) => {
+                            var _a;
+                            e.preventDefault();
+                            (_a = this.resetCustomHandler) === null || _a === void 0 ? void 0 : _a.call(this, e);
+                            controller.resetFormAll();
+                        };
+                        form.addEventListener("submit", onSubmit);
+                        form.addEventListener("reset", onReset);
+                        this.formHandlers.set(form, {
+                            submit: onSubmit,
+                            reset: onReset,
+                        });
                     }
                     fields.forEach((node) => node.setFormController(controller));
                 });
             }
             getDirectForm() {
-                const formElement = this.children.item(0);
-                if (!(formElement instanceof HTMLFormElement)) {
-                    return null;
-                }
-                return formElement;
+                return this.querySelector("form");
             }
             fillFields(fields, all, map) {
                 var _a, _b;
@@ -95,28 +138,41 @@ exports.FormControlComponent = (() => {
                 for (const node of Array.from(all)) {
                     if (node instanceof field_1.FormFieldComponent && !map.has(node)) {
                         fields.push(node);
-                        map.set(node, node);
                     }
                     else {
                         this.fillFields(fields, node.children, map);
                     }
+                    map.set(node, node);
                 }
             }
             emitFieldChildrenOnMount() {
                 if (!this.children.length) {
                     return;
                 }
+                const form = this.getDirectForm();
+                if (!form) {
+                    return;
+                }
+                this.formIncomingEmitter.next(form);
                 const fields = [];
-                this.fillFields(fields);
-                this.fieldListEmitter.next(fields);
+                this.fillFields(fields, form.children);
+                if (fields.length) {
+                    this.fieldListIncomingEmitter.next(fields);
+                }
             }
             setFormController(controller) {
                 var _a;
                 (_a = this.getDirectForm()) === null || _a === void 0 ? void 0 : _a.setAttribute("data-selector", controller.selector());
                 this.formControllerEmitter.next(controller);
             }
+            setOnReset(reset) {
+                this.resetCustomHandler = reset;
+            }
+            setOnSubmit(submit) {
+                this.submitCustomHandler = submit;
+            }
             connectedCallback() {
-                this.observer.observe(this, {
+                this.fieldsObserver.observe(this, {
                     subtree: true,
                     childList: true,
                     attributes: false,
@@ -126,7 +182,7 @@ exports.FormControlComponent = (() => {
             }
             disconnectedCallback() {
                 var _a;
-                this.observer.disconnect();
+                this.fieldsObserver.disconnect();
                 (_a = this.subscription) === null || _a === void 0 ? void 0 : _a.unsubscribe();
             }
         },

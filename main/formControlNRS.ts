@@ -24,6 +24,7 @@ import {
   tap,
 } from "rxjs";
 import {
+  $Validator,
   AsyncState,
   AsyncValidationNConfig,
   DatumType,
@@ -284,6 +285,7 @@ class FormControllerImpl<
         data.findIndex((d) => d.field === field),
         1
       );
+      this.subscriptions.remove(field);
     });
     fields.forEach((field) => this.subscriptions.remove(field));
   }
@@ -321,13 +323,19 @@ class FormControllerImpl<
     });
   }
 
-  private getExcludedMeta(
+  private getExcludedFields(
     connector: RxNStore<Record<S, () => F>> & Subscribable<Record<S, () => F>>
   ) {
-    const excluded = connector
+    return connector
       .getState(this.id)
       .filter(({ type }) => type === DatumType.EXCLUDED)
       .map(({ field }) => field);
+  }
+
+  private getExcludedMeta(
+    connector: RxNStore<Record<S, () => F>> & Subscribable<Record<S, () => F>>
+  ) {
+    const excluded = this.getExcludedFields(connector);
     return this.getFieldsMeta(excluded);
   }
 
@@ -608,7 +616,7 @@ class FormControllerImpl<
       ?.pipe(
         map(this.cloneMeta),
         distinctUntilChanged(
-          this.metaComparator ? this.metaComparator : shallowCompare
+          this.metaComparator ? this.metaComparator : (v1, v2) => v1 === v2
         )
       )
       .subscribe(callback);
@@ -625,6 +633,26 @@ class FormControllerImpl<
       ?.pipe(
         map((meta) => this.cloneMetaByField(field, meta)),
         distinctUntilChanged(comparator ? comparator : shallowCompare)
+      )
+      .subscribe(callback);
+    return () => subscription?.unsubscribe();
+  }
+
+  @bound
+  observeMetaByFields<KS extends Array<keyof M>>(
+    fields: KS,
+    callback: (meta: Partial<M>) => void,
+    comparator?: (meta1: Partial<M>, meta2: Partial<M>) => boolean
+  ) {
+    const subscription = this.metadata$
+      ?.pipe(
+        map((meta) =>
+          fields.reduce((acc, next) => {
+            acc[next] = this.cloneMetaByField(next, meta);
+            return acc;
+          }, {} as Partial<M>)
+        ),
+        distinctUntilChanged(comparator ? comparator : (v1, v2) => v1 === v2)
       )
       .subscribe(callback);
     return () => subscription?.unsubscribe();
@@ -744,8 +772,25 @@ class FormControllerImpl<
   }
 
   @bound
-  changeFieldType<N extends number>(field: F[N]["field"], type: DatumType) {
+  changeFieldType<N extends number>(
+    field: F[N]["field"],
+    type: DatumType,
+    $validator?: $Validator
+  ) {
     this.safeCommitMutation(field, (found) => {
+      if (type === DatumType.EXCLUDED && found.type !== DatumType.EXCLUDED) {
+        this.listenToExcludedAll([
+          {
+            field,
+            type,
+            $validator,
+          },
+        ]);
+      }
+
+      if (found.type === DatumType.EXCLUDED && type !== DatumType.EXCLUDED) {
+        this.subscriptions.remove(field);
+      }
       found.type = type;
     });
     return this;
@@ -772,7 +817,21 @@ class FormControllerImpl<
   @bound
   resetFormAll() {
     this.safeExecute((connector) => {
-      connector.reset(this.id);
+      const casted = this.cast(connector);
+      const data: F = this.initiator()!;
+      const excluded = this.getExcludedFields(casted);
+      excluded.forEach((e) => {
+        const target = data.find(({ field }) => e === field);
+        if (!target) {
+          this.subscriptions.remove(e);
+          return;
+        }
+
+        if (target && target.type !== DatumType.EXCLUDED) {
+          this.subscriptions.remove(e);
+        }
+      });
+      casted.reset(this.id);
     });
     return this;
   }
@@ -847,6 +906,26 @@ class FormControllerImpl<
       this.metadata$?.next({ ...meta });
     });
     return this;
+  }
+
+  @bound
+  toFormData() {
+    return (form?: HTMLFormElement) => {
+      return (this.getFormData() as ReturnType<Record<S, () => F>[S]>).reduce(
+        (acc, { field, value }) => {
+          if (field) {
+            acc.append(
+              field,
+              value instanceof Blob || typeof value === "string"
+                ? value
+                : String(value)
+            );
+          }
+          return acc;
+        },
+        new FormData(form)
+      );
+    };
   }
 }
 

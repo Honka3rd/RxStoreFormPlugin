@@ -15,6 +15,7 @@ import {
   ListenersCache,
   V,
 } from "./interfaces";
+import { Any } from "rx-store-types";
 
 export class FormFieldComponent<
     F extends FormControlData,
@@ -131,6 +132,48 @@ export class FormFieldComponent<
 
   protected observer = new MutationObserver(this.setDirectChildFromMutations);
 
+  private getChangeFunction<E extends HTMLElement>(
+    current: E,
+    formController:
+      | FormController<F, M, S>
+      | ImmutableFormController<F, M, S>
+      | null,
+    field: F[N]["field"]
+  ) {
+    const { changeEventMapper } = this;
+    if (changeEventMapper) {
+      return (event: Any) => {
+        formController?.changeFormValue(field, changeEventMapper(event));
+      };
+    }
+
+    if (current instanceof HTMLTextAreaElement) {
+      return ({ target }: Any) => {
+        formController?.changeFormValue(field, target.value);
+      };
+    }
+
+    if (current instanceof HTMLInputElement) {
+      if (current.type === "checkbox" || current.type === "radio") {
+        return ({ target }: Any) => {
+          formController?.changeFormValue(field, target.checked);
+        };
+      }
+
+      if (current.type === "file") {
+        return ({ target }: Any) => {
+          formController?.changeFormValue(field, target.files);
+        };
+      }
+
+      return ({ target }: Any) => {
+        formController?.changeFormValue(field, target.value);
+      };
+    }
+
+    return () => {};
+  }
+
   protected attachChildEventListeners(
     current: Node | null,
     formController:
@@ -178,40 +221,9 @@ export class FormFieldComponent<
       formController?.changeFormValue(field!, event.target.value);
     }
 
-    function change(event: Event) {
-      if(!field) {
-        return;
-      }
-
-      if (context.changeEventMapper) {
-        formController?.changeFormValue(
-          field,
-          context.changeEventMapper(event)
-        );
-        return;
-      }
-      const { target } = event;
-      if(target instanceof HTMLTextAreaElement) {
-        formController?.changeFormValue(field, target.value);
-        return;
-      }
-
-      if (target instanceof HTMLInputElement) {
-        if (target.type === "checkbox" || target.type === "radio") {
-          formController?.changeFormValue(field, target.checked);
-          return;
-        }
-
-        if (target.type === "file") {
-          formController?.changeFormValue(field, target.files);
-          return;
-        }
-
-        formController?.changeFormValue(field, target.value);
-      }
-    }
-
     if (current instanceof HTMLElement) {
+      const change = this.getChangeFunction(current, formController, field);
+
       current.addEventListener("mouseover", mouseover);
 
       current.addEventListener("mouseleave", mouseleave);

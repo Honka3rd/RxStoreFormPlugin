@@ -1,6 +1,6 @@
 import { Comparator, Initiator, PluginImpl } from "rx-store-types";
 import { Observable } from "rxjs";
-import { AsyncValidationNConfig, DatumType, FormControlBasicMetadata, FormControlData, FormController, FormStubs } from "./interfaces";
+import { $Validator, AsyncValidationNConfig, DatumType, FormControlBasicMetadata, FormControlData, FormController, FormStubs } from "./interfaces";
 import { Subscriptions } from "./subscriptions";
 declare class FormControllerImpl<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> extends PluginImpl<S, F> implements FormController<F, M, S> {
     validator: (formData: F, metadata: Partial<M>) => Partial<M>;
@@ -42,6 +42,7 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     private removeDataByFields;
     private appendDataByFields;
     private validatorExecutor;
+    private getExcludedFields;
     private getExcludedMeta;
     private getComparator;
     private getChangedMetaAsync;
@@ -62,13 +63,14 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     getFieldsMeta<At extends number = number>(fields: F[At]["field"][]): Partial<M>;
     observeMeta(callback: (meta: Partial<M>) => void): () => void | undefined;
     observeMetaByField<K extends keyof M>(field: K, callback: (metaOne: Partial<M>[K]) => void): () => void | undefined;
+    observeMetaByFields<KS extends Array<keyof M>>(fields: KS, callback: (meta: Partial<M>) => void, comparator?: (meta1: Partial<M>, meta2: Partial<M>) => boolean): () => void | undefined;
     observeFormDatum<CompareAt extends number = number>(field: F[CompareAt]["field"], observer: (result: ReturnType<Record<S, () => F>[S]>[CompareAt]) => void, comparator?: Comparator<ReturnType<Record<S, () => F>[S]>[CompareAt]>): () => void;
     observeFormValue<CompareAt extends number = number>(field: F[CompareAt]["field"], observer: (result: ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]) => void, comparator?: Comparator<ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]>): () => void;
     observeFormData<CompareAts extends Readonly<number[]> = number[]>(observer: (result: F[CompareAts[number]][]) => void, fields?: F[CompareAts[number]]["field"][], comparator?: Comparator<F[CompareAts[number]][]>): () => void;
     startValidation(lazy?: boolean): (() => void) | undefined;
     changeFormValue<N extends number>(field: F[N]["field"], value: F[N]["value"]): this;
     hoverFormField<N extends number>(field: F[N]["field"], hoverOrNot: boolean): this;
-    changeFieldType<N extends number>(field: F[N]["field"], type: DatumType): this;
+    changeFieldType<N extends number>(field: F[N]["field"], type: DatumType, $validator?: $Validator): this;
     resetFormDatum<N extends number>(field: F[N]["field"]): this;
     resetFormAll(): this;
     touchFormField<N extends number>(field: F[N]["field"], touchOrNot: boolean): this;
@@ -78,5 +80,6 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     removeFormData(fields: Array<F[number]["field"]>): this;
     setMetadata(meta: Partial<M>): this;
     setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this;
+    toFormData(): (form?: HTMLFormElement) => FormData;
 }
 export default FormControllerImpl;
