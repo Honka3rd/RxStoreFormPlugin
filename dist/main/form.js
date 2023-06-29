@@ -53,17 +53,6 @@ exports.FormControlComponent = (() => {
             }
             setFieldListFromMutationRecords(mutationList) {
                 const filtered = mutationList.filter((mutation) => mutation.type === "childList");
-                const addedFields = filtered.reduce((acc, mutation) => {
-                    Array.from(mutation.addedNodes)
-                        .filter((node) => node instanceof field_1.FormFieldComponent)
-                        .forEach((node) => {
-                        acc.push(node);
-                    });
-                    return acc;
-                }, []);
-                if (addedFields.length) {
-                    this.fieldListIncomingEmitter.next(addedFields);
-                }
                 const insertedForm = filtered
                     .reduce((acc, mutation) => {
                     const nodes = Array.from(mutation.addedNodes);
@@ -75,6 +64,22 @@ exports.FormControlComponent = (() => {
                     .find((node) => node instanceof HTMLFormElement);
                 if (insertedForm) {
                     this.formIncomingEmitter.next(insertedForm);
+                    const fields = [];
+                    this.fillFields(fields, insertedForm.children);
+                    if (fields.length) {
+                        this.fieldListIncomingEmitter.next(fields);
+                    }
+                }
+                const addedFields = filtered.reduce((acc, mutation) => {
+                    Array.from(mutation.addedNodes)
+                        .filter((node) => node instanceof field_1.FormFieldComponent)
+                        .forEach((node) => {
+                        acc.push(node);
+                    });
+                    return acc;
+                }, []);
+                if (addedFields.length) {
+                    this.fieldListIncomingEmitter.next(addedFields);
                 }
                 const removedForm = filtered
                     .reduce((acc, mutation) => {

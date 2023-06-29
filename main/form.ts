@@ -67,19 +67,6 @@ export class FormControlComponent<
       (mutation) => mutation.type === "childList"
     );
 
-    const addedFields = filtered.reduce((acc, mutation) => {
-      Array.from(mutation.addedNodes)
-        .filter((node) => node instanceof FormFieldComponent)
-        .forEach((node) => {
-          acc.push(node as FormFieldComponent<F, M, S>);
-        });
-      return acc;
-    }, <FormFieldComponent<F, M, S>[]>[]);
-
-    if (addedFields.length) {
-      this.fieldListIncomingEmitter.next(addedFields);
-    }
-
     const insertedForm = filtered
       .reduce((acc, mutation) => {
         const nodes = Array.from(mutation.addedNodes);
@@ -92,6 +79,24 @@ export class FormControlComponent<
 
     if (insertedForm) {
       this.formIncomingEmitter.next(insertedForm);
+      const fields: FormFieldComponent<F, M, S, number>[] = [];
+      this.fillFields(fields, insertedForm.children);
+      if (fields.length) {
+        this.fieldListIncomingEmitter.next(fields);
+      }
+    }
+
+    const addedFields = filtered.reduce((acc, mutation) => {
+      Array.from(mutation.addedNodes)
+        .filter((node) => node instanceof FormFieldComponent)
+        .forEach((node) => {
+          acc.push(node as FormFieldComponent<F, M, S>);
+        });
+      return acc;
+    }, <FormFieldComponent<F, M, S>[]>[]);
+
+    if (addedFields.length) {
+      this.fieldListIncomingEmitter.next(addedFields);
     }
 
     const removedForm = filtered
