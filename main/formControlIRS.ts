@@ -722,12 +722,12 @@ export class ImmutableFormControllerImpl<
   }
 
   @bound
-  getFieldsMeta(fields: F[number]["field"][]): Map<PK<M>, PV<M>> {
+  getFieldsMeta(fields: F[number]["field"][]) {
     return Map().withMutations((mutation) => {
       fields.forEach((field) => {
         mutation.set(field, this.getFieldMeta(field));
       });
-    }) as Map<PK<M>, PV<M>>;
+    }) as ImmutableMeta<F, M>;
   }
 
   @bound

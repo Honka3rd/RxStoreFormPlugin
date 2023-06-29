@@ -153,7 +153,7 @@ export interface ImmutableFormController<F extends FormControlData, M extends Pa
     removeFormData(fields: Array<F[number]["field"]>): this;
     setMetadata(meta: ImmutableMeta<F, M>): this;
     setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this;
-    getFieldsMeta(fields: F[number]["field"][]): Map<PK<M>, PV<M>>;
+    getFieldsMeta(fields: F[number]["field"][]): ImmutableMeta<F, M>;
     observeMeta(callback: (meta: ImmutableMeta<F, M>) => void): () => void | undefined;
     observeMetaByField<K extends keyof M>(field: K, callback: (metaOne: ImmutableMetaDatum) => void): () => void | undefined;
     observeMetaByFields<KS extends (keyof M)[]>(fields: KS, callback: (meta: ImmutableMeta<F, M>) => void): () => void;

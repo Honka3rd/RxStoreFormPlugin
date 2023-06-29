@@ -51,7 +51,7 @@ export declare class ImmutableFormControllerImpl<F extends FormControlData, M ex
     getDatumValue<At extends number = number>(field: F[At]["field"]): NonNullable<V<F[number]>>;
     getFieldMeta<N extends number = number>(field: F[N]["field"]): ImmutableMetaDatum;
     changeFieldType<N extends number>(field: F[N]["field"], type: DatumType, $immutableValidator?: $ImmutableValidator<F>): this;
-    getFieldsMeta(fields: F[number]["field"][]): Map<PK<M>, PV<M>>;
+    getFieldsMeta(fields: F[number]["field"][]): ImmutableMeta<F, M>;
     setBulkAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: ImmutableMeta<F, M>) => Observable<ImmutableMeta<F, M>> | Promise<ImmutableMeta<F, M>>): void;
     changeFormValue<N extends number>(field: F[N]["field"], value: F[N]["value"]): this;
     touchFormField<N extends number>(field: F[N]["field"], touchOrNot: boolean): this;

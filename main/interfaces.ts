@@ -360,7 +360,7 @@ export interface ImmutableFormController<
 
   setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this;
 
-  getFieldsMeta(fields: F[number]["field"][]): Map<PK<M>, PV<M>>;
+  getFieldsMeta(fields: F[number]["field"][]): ImmutableMeta<F, M>;
 
   observeMeta(
     callback: (meta: ImmutableMeta<F, M>) => void
