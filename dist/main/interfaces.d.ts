@@ -104,7 +104,7 @@ export interface FormController<F extends FormControlData, M extends Partial<Rec
     getClonedMetaByField<CF extends keyof M>(field: CF): Partial<M>[CF];
     getFieldMeta(field: F[number]["field"]): Partial<M>[F[number]["field"]];
     observeMeta(callback: (meta: Partial<M>) => void): () => void | undefined;
-    observeMetaByFields<KS extends (keyof M)[]>(fields: KS, callback: (meta: Partial<M>) => void): () => void;
+    observeMetaByFields<KS extends (keyof M)[]>(fields: KS, callback: (meta: Partial<M>) => void, comparator?: (meta1: Partial<M>, meta2: Partial<M>) => boolean): () => void;
     observeMetaByField<K extends keyof M>(field: K, callback: (metaOne: Partial<M>[K]) => void): () => void | undefined;
     observeFormDatum<CompareAt extends number = number>(field: F[CompareAt]["field"], observer: (result: ReturnType<Record<S, () => F>[S]>[CompareAt]) => void, comparator?: Comparator<ReturnType<Record<S, () => F>[S]>[CompareAt]>): () => void;
     observeFormValue<CompareAt extends number = number>(field: F[CompareAt]["field"], observer: (result: ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]) => void, comparator?: Comparator<ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]>): () => void;

@@ -208,7 +208,8 @@ export interface FormController<
 
   observeMetaByFields<KS extends (keyof M)[]>(
     fields: KS,
-    callback: (meta: Partial<M>) => void
+    callback: (meta: Partial<M>) => void,
+    comparator?: (meta1: Partial<M>, meta2: Partial<M>) => boolean
   ): () => void;
 
   observeMetaByField<K extends keyof M>(
