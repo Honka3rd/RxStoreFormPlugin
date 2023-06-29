@@ -92,7 +92,7 @@ export interface FormController<F extends FormControlData, M extends Partial<Rec
     startValidation: () => (() => void) | undefined;
     getMeta(): Partial<M> | undefined;
     getClonedMeta(): Partial<M> | undefined;
-    getFieldsMeta(fields: F[number]["field"][]): Partial<M>;
+    getFieldsMeta<KS extends Array<keyof M>>(fields: KS): Partial<M>;
     changeFieldType<N extends number>(field: F[N]["field"], type: DatumType, $validator?: $Validator): this;
     resetFormDatum<N extends number>(field: F[N]["field"]): this;
     resetFormDatum<N extends number>(field: F[N]["field"]): this;

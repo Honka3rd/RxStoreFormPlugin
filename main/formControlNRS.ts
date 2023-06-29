@@ -600,7 +600,7 @@ class FormControllerImpl<
   }
 
   @bound
-  getFieldsMeta<At extends number = number>(fields: F[At]["field"][]) {
+  getFieldsMeta<KS extends Array<keyof M>>(fields: KS) {
     return fields.reduce((acc, next) => {
       const meta = this.getMeta()?.[next];
       if (meta !== undefined) {

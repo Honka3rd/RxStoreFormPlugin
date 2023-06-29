@@ -60,7 +60,7 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     getClonedMetaByField<CF extends keyof Partial<M>>(field: CF): Partial<M>[CF];
     getClonedMeta(): Partial<M>;
     getFieldMeta<At extends number = number>(field: F[At]["field"]): Partial<M>[F[At]["field"]];
-    getFieldsMeta<At extends number = number>(fields: F[At]["field"][]): Partial<M>;
+    getFieldsMeta<KS extends Array<keyof M>>(fields: KS): Partial<M>;
     observeMeta(callback: (meta: Partial<M>) => void): () => void | undefined;
     observeMetaByField<K extends keyof M>(field: K, callback: (metaOne: Partial<M>[K]) => void): () => void | undefined;
     observeMetaByFields<KS extends Array<keyof M>>(fields: KS, callback: (meta: Partial<M>) => void, comparator?: (meta1: Partial<M>, meta2: Partial<M>) => boolean): () => void | undefined;
