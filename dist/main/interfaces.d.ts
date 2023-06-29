@@ -145,7 +145,7 @@ export interface ImmutableFormController<F extends FormControlData, M extends Pa
     asyncValidator?(formData: List<Map<keyof F[number], V<F[number]>>>, meta: ImmutableMeta<F, M>): Observable<ImmutableMeta<F, M>> | Promise<ImmutableMeta<F, M>>;
     startValidation(): (() => void) | undefined;
     getMeta(): ImmutableMeta<F, M>;
-    getFieldMeta<N extends number = number>(field: F[N]["field"]): ImmutableMeta<F, M>;
+    getFieldMeta<N extends number = number>(field: F[N]["field"]): ImmutableMetaDatum;
     changeFieldType<N extends number>(field: F[N]["field"], type: DatumType, $immutableValidator?: $ImmutableValidator<F>): this;
     resetFormDatum<N extends number>(field: F[N]["field"]): this;
     resetFormAll(): this;
