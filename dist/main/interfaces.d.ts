@@ -7,7 +7,7 @@ export type FormControlBasicMetadata = {
     warn?: any;
     asyncIndicator?: AsyncState;
 };
-export type FormControlMetadata<E extends Any, I = any, W = any> = {
+export type FormControlMetadata<E extends Any = Any, I = any, W = any> = {
     errors: E;
     info?: I;
     warn?: W;
@@ -31,7 +31,7 @@ type DatumAttr = {
     type: DatumType;
     lazy?: boolean;
 };
-export type ImmutableMetaDatum<B extends FormControlBasicMetadata = FormControlBasicMetadata> = FromJS<B>;
+export type ImmutableMetaDatum<E extends Any = Any, I = any, W = any> = FromJS<FormControlMetadata<E, I, W>>;
 export type ImmutableMeta<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>> = Map<PK<M>, ImmutableMetaDatum>;
 export type FormControlBasicDatum = {
     field: string;
@@ -145,7 +145,7 @@ export interface ImmutableFormController<F extends FormControlData, M extends Pa
     asyncValidator?(formData: List<Map<keyof F[number], V<F[number]>>>, meta: ImmutableMeta<F, M>): Observable<ImmutableMeta<F, M>> | Promise<ImmutableMeta<F, M>>;
     startValidation(): (() => void) | undefined;
     getMeta(): ImmutableMeta<F, M>;
-    getFieldMeta<N extends number = number>(field: F[N]["field"]): ImmutableMetaDatum;
+    getFieldMeta<N extends number = number, E extends Any = Any, I = any, W = any>(field: F[N]["field"]): ImmutableMetaDatum<E, I, W>;
     changeFieldType<N extends number>(field: F[N]["field"], type: DatumType, $immutableValidator?: $ImmutableValidator<F>): this;
     resetFormDatum<N extends number>(field: F[N]["field"]): this;
     resetFormAll(): this;

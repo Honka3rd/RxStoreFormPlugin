@@ -366,8 +366,8 @@ exports.ImmutableFormControllerImpl = (() => {
                 this.safeExecute(() => {
                     var _a;
                     const meta = this.getMeta();
-                    const single = (0, immutable_1.Map)(Object.assign({}, metaOne));
-                    (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.next(meta.set(field, single));
+                    const single = (0, immutable_1.fromJS)(Object.assign({}, metaOne));
+                    single && ((_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.next(meta.set(field, single)));
                 });
                 return this;
             }

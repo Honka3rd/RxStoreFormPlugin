@@ -9,7 +9,7 @@ export type FormControlBasicMetadata = {
   asyncIndicator?: AsyncState;
 };
 
-export type FormControlMetadata<E extends Any, I = any, W = any> = {
+export type FormControlMetadata<E extends Any = Any, I = any, W = any> = {
   errors: E;
   info?: I;
   warn?: W;
@@ -37,9 +37,9 @@ type DatumAttr = {
   lazy?: boolean;
 };
 
-export type ImmutableMetaDatum<
-  B extends FormControlBasicMetadata = FormControlBasicMetadata
-> = FromJS<B>;
+export type ImmutableMetaDatum<E extends Any = Any, I = any, W = any> = FromJS<
+  FormControlMetadata<E, I, W>
+>;
 
 export type ImmutableMeta<
   F extends FormControlData,
@@ -338,9 +338,14 @@ export interface ImmutableFormController<
 
   getMeta(): ImmutableMeta<F, M>;
 
-  getFieldMeta<N extends number = number>(
+  getFieldMeta<
+    N extends number = number,
+    E extends Any = Any,
+    I = any,
+    W = any
+  >(
     field: F[N]["field"]
-  ): ImmutableMetaDatum;
+  ): ImmutableMetaDatum<E, I, W>;
 
   changeFieldType<N extends number>(
     field: F[N]["field"],

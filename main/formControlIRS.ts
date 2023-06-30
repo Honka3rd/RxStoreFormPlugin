@@ -521,8 +521,8 @@ export class ImmutableFormControllerImpl<
   setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this {
     this.safeExecute(() => {
       const meta = this.getMeta();
-      const single = Map({ ...metaOne }) as ImmutableMetaDatum;
-      this.metadata$?.next(meta.set(field, single));
+      const single = fromJS({ ...metaOne });
+      single && this.metadata$?.next(meta.set(field, single));
     });
     return this;
   }
@@ -538,9 +538,9 @@ export class ImmutableFormControllerImpl<
   }
 
   @bound
-  observeMetaByField<K extends keyof M>(
+  observeMetaByField<K extends keyof M, E extends Any = Any, I = any, W = any>(
     field: K,
-    callback: (metaOne: ImmutableMetaDatum) => void
+    callback: (metaOne: ImmutableMetaDatum<E, I, W>) => void
   ): () => void | undefined {
     const subscription = this.metadata$
       ?.pipe(
