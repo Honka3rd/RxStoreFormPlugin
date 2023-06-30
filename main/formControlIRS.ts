@@ -753,8 +753,10 @@ export class ImmutableFormControllerImpl<
       const mutation = casted
         .getState(this.id)
         .get(targetIndex)
-        ?.set("value", value)
-        ?.set("changed", true as V<F[number]>);
+        ?.withMutations((mutation) => {
+          mutation.set("value", value).set("changed", true as V<F[number]>);
+        });
+
       mutation &&
         this.commitMutation(
           casted.getState(this.id).set(targetIndex, mutation),

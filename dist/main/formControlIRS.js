@@ -487,12 +487,14 @@ exports.ImmutableFormControllerImpl = (() => {
             }
             changeFormValue(field, value) {
                 this.safeExecute((connector) => {
-                    var _a, _b;
+                    var _a;
                     const casted = this.cast(connector);
                     const targetIndex = this.getDatumIndex(field, casted);
-                    const mutation = (_b = (_a = casted
+                    const mutation = (_a = casted
                         .getState(this.id)
-                        .get(targetIndex)) === null || _a === void 0 ? void 0 : _a.set("value", value)) === null || _b === void 0 ? void 0 : _b.set("changed", true);
+                        .get(targetIndex)) === null || _a === void 0 ? void 0 : _a.withMutations((mutation) => {
+                        mutation.set("value", value).set("changed", true);
+                    });
                     mutation &&
                         this.commitMutation(casted.getState(this.id).set(targetIndex, mutation), casted);
                 });
