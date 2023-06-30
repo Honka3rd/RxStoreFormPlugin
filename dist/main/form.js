@@ -42,6 +42,7 @@ exports.FormControlComponent = (() => {
     var _a;
     let _instanceExtraInitializers = [];
     let _setFieldListFromMutationRecords_decorators;
+    let _compareFields_decorators;
     return _a = class FormControlComponent extends HTMLElement {
             constructor() {
                 super(...arguments);
@@ -50,6 +51,13 @@ exports.FormControlComponent = (() => {
                 this.formIncomingEmitter = new rxjs_1.BehaviorSubject(null);
                 this.formHandlers = new WeakMap();
                 this.fieldsObserver = new MutationObserver(this.setFieldListFromMutationRecords);
+            }
+            emitIncomingFields(insertedForm) {
+                const fields = [];
+                this.fillFields(fields, insertedForm.children);
+                if (fields.length) {
+                    this.fieldListIncomingEmitter.next(fields);
+                }
             }
             setFieldListFromMutationRecords(mutationList) {
                 const filtered = mutationList.filter((mutation) => mutation.type === "childList");
@@ -64,11 +72,7 @@ exports.FormControlComponent = (() => {
                     .find((node) => node instanceof HTMLFormElement);
                 if (insertedForm) {
                     this.formIncomingEmitter.next(insertedForm);
-                    const fields = [];
-                    this.fillFields(fields, insertedForm.children);
-                    if (fields.length) {
-                        this.fieldListIncomingEmitter.next(fields);
-                    }
+                    this.emitIncomingFields(insertedForm);
                 }
                 const addedFields = filtered.reduce((acc, mutation) => {
                     Array.from(mutation.addedNodes)
@@ -101,10 +105,15 @@ exports.FormControlComponent = (() => {
                     this.formIncomingEmitter.next(null);
                 }
             }
+            compareFields(fields1, fields2) {
+                return (0, rx_store_core_1.shallowCompare)([...fields1].sort(), [...fields2].sort());
+            }
             controlAll() {
                 return (0, rxjs_1.combineLatest)([
                     this.formControllerEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)()),
-                    this.fieldListIncomingEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)()),
+                    this.fieldListIncomingEmitter
+                        .asObservable()
+                        .pipe((0, rxjs_1.distinctUntilChanged)(this.compareFields)),
                     this.formIncomingEmitter.asObservable().pipe((0, rxjs_1.distinctUntilChanged)()),
                 ]).subscribe(([controller, fields, form]) => {
                     if (!controller || !fields) {
@@ -133,7 +142,18 @@ exports.FormControlComponent = (() => {
                     fields.forEach((node) => node.setFormController(controller));
                 });
             }
+            getDataset() {
+                return this.dataset;
+            }
             getDirectForm() {
+                const selector = this.getDataset().formID;
+                if (selector) {
+                    const form = this.querySelector(`form[formID=${selector}]`);
+                    if (!(form instanceof HTMLFormElement)) {
+                        throw new Error("a invalid form selector, which cannot bring a form element");
+                    }
+                    return form;
+                }
                 return this.querySelector("form");
             }
             fillFields(fields, all, map) {
@@ -159,11 +179,7 @@ exports.FormControlComponent = (() => {
                     return;
                 }
                 this.formIncomingEmitter.next(form);
-                const fields = [];
-                this.fillFields(fields, form.children);
-                if (fields.length) {
-                    this.fieldListIncomingEmitter.next(fields);
-                }
+                this.emitIncomingFields(form);
             }
             setFormController(controller) {
                 var _a;
@@ -193,7 +209,9 @@ exports.FormControlComponent = (() => {
         },
         (() => {
             _setFieldListFromMutationRecords_decorators = [rx_store_core_1.bound];
+            _compareFields_decorators = [rx_store_core_1.bound];
             __esDecorate(_a, null, _setFieldListFromMutationRecords_decorators, { kind: "method", name: "setFieldListFromMutationRecords", static: false, private: false, access: { has: obj => "setFieldListFromMutationRecords" in obj, get: obj => obj.setFieldListFromMutationRecords } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _compareFields_decorators, { kind: "method", name: "compareFields", static: false, private: false, access: { has: obj => "compareFields" in obj, get: obj => obj.compareFields } }, null, _instanceExtraInitializers);
         })(),
         _a;
 })();

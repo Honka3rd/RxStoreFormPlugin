@@ -1,4 +1,4 @@
-import { bound } from "rx-store-core";
+import { bound, shallowCompare } from "rx-store-core";
 import {
   BehaviorSubject,
   Subscription,
@@ -13,6 +13,7 @@ import {
   FormControlData,
   FormController,
   FormControllerInjector,
+  FormDataset,
   ImmutableFormController,
   OnResetInjector,
   OnSubmitInjector,
@@ -61,6 +62,14 @@ export class FormControlComponent<
     }
   >();
 
+  private emitIncomingFields(insertedForm: HTMLFormElement) {
+    const fields: FormFieldComponent<F, M, S, number>[] = [];
+    this.fillFields(fields, insertedForm.children);
+    if (fields.length) {
+      this.fieldListIncomingEmitter.next(fields);
+    }
+  }
+
   @bound
   private setFieldListFromMutationRecords(mutationList: MutationRecord[]) {
     const filtered = mutationList.filter(
@@ -79,11 +88,7 @@ export class FormControlComponent<
 
     if (insertedForm) {
       this.formIncomingEmitter.next(insertedForm);
-      const fields: FormFieldComponent<F, M, S, number>[] = [];
-      this.fillFields(fields, insertedForm.children);
-      if (fields.length) {
-        this.fieldListIncomingEmitter.next(fields);
-      }
+      this.emitIncomingFields(insertedForm);
     }
 
     const addedFields = filtered.reduce((acc, mutation) => {
@@ -127,10 +132,20 @@ export class FormControlComponent<
     this.setFieldListFromMutationRecords
   );
 
+  @bound
+  private compareFields(
+    fields1: FormFieldComponent<F, M, S, number>[],
+    fields2: FormFieldComponent<F, M, S, number>[]
+  ) {
+    return shallowCompare([...fields1].sort(), [...fields2].sort());
+  }
+
   private controlAll() {
     return combineLatest([
       this.formControllerEmitter.asObservable().pipe(distinctUntilChanged()),
-      this.fieldListIncomingEmitter.asObservable().pipe(distinctUntilChanged()),
+      this.fieldListIncomingEmitter
+        .asObservable()
+        .pipe(distinctUntilChanged(this.compareFields)),
       this.formIncomingEmitter.asObservable().pipe(distinctUntilChanged()),
     ] as const).subscribe(([controller, fields, form]) => {
       if (!controller || !fields) {
@@ -163,7 +178,21 @@ export class FormControlComponent<
     });
   }
 
+  private getDataset() {
+    return this.dataset as FormDataset;
+  }
+
   private getDirectForm() {
+    const selector = this.getDataset().formID;
+    if (selector) {
+      const form = this.querySelector(`form[formID=${selector}]`);
+      if (!(form instanceof HTMLFormElement)) {
+        throw new Error(
+          "a invalid form selector, which cannot bring a form element"
+        );
+      }
+      return form;
+    }
     return this.querySelector("form");
   }
 
@@ -191,11 +220,7 @@ export class FormControlComponent<
       return;
     }
     this.formIncomingEmitter.next(form);
-    const fields: FormFieldComponent<F, M, S, number>[] = [];
-    this.fillFields(fields, form.children);
-    if (fields.length) {
-      this.fieldListIncomingEmitter.next(fields);
-    }
+    this.emitIncomingFields(form);
   }
 
   setFormController(

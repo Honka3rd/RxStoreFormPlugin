@@ -10,6 +10,7 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     protected stopBinding?: () => void;
     protected listeners: WeakMap<Node, ListenersCache>;
     protected isValidDirectChild(target?: Node | null): target is HTMLElement;
+    private getDataset;
     private reportMultiChildError;
     protected removeEventListeners(removed: Node): void;
     protected setDirectChildFromMutations(mutationList: MutationRecord[]): void;

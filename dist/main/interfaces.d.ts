@@ -220,4 +220,16 @@ export type ListenedAttributes = {
     ["data-target_id"]?: string;
     ["data-target_selector"]?: string;
 };
+export type FormDataset = {
+    formID?: string;
+};
+export type FieldDataset<F extends FormControlData, N extends number = number> = {
+    field: F[N]["field"];
+    target_id?: string;
+    target_selector?: string;
+    focused?: string;
+    changed?: string;
+    touched?: string;
+    hovered?: string;
+};
 export {};

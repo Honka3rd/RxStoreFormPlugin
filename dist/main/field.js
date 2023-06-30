@@ -55,9 +55,12 @@ exports.FormFieldComponent = (() => {
             isValidDirectChild(target) {
                 return target instanceof HTMLElement && target.parentNode === this;
             }
+            getDataset() {
+                return this.dataset;
+            }
             reportMultiChildError() {
                 if (this.children.length > 1) {
-                    throw new Error(`${this.dataset.field} has multiple child, only accept one child`);
+                    throw new Error(`${this.getDataset().field} has multiple child, only accept one child`);
                 }
             }
             removeEventListeners(removed) {
@@ -91,7 +94,7 @@ exports.FormFieldComponent = (() => {
                         this.removeEventListeners(removed);
                     }
                 }
-                if (!this.dataset.target_selector && !this.dataset.target_id) {
+                if (!this.getDataset().target_selector && !this.getDataset().target_id) {
                     const first = mutations[0].addedNodes.item(0);
                     if (!this.isValidDirectChild(first)) {
                         return;
@@ -100,7 +103,7 @@ exports.FormFieldComponent = (() => {
                     this.directChildEmitter.next(first);
                     return;
                 }
-                if (this.dataset.target_id) {
+                if (this.getDataset().target_id) {
                     const allAdded = mutations.reduce((acc, next) => {
                         Array.from(next.addedNodes).forEach((node) => {
                             acc.push(node);
@@ -108,13 +111,14 @@ exports.FormFieldComponent = (() => {
                         return acc;
                     }, []);
                     const added = allAdded.find((a) => {
-                        a instanceof HTMLElement && a.id === this.dataset.target_id;
+                        a instanceof HTMLElement && a.id === this.getDataset().target_id;
                     });
                     added && this.directChildEmitter.next(added);
                     return;
                 }
-                if (this.dataset.target_selector) {
-                    const target = this.querySelector(this.dataset.target_selector);
+                const { target_selector } = this.getDataset();
+                if (target_selector) {
+                    const target = this.querySelector(target_selector);
                     target && this.directChildEmitter.next(target);
                 }
             }
@@ -205,7 +209,8 @@ exports.FormFieldComponent = (() => {
             }
             emitOnlyChildOnMount() {
                 var _a, _b;
-                if (!this.dataset.target_selector && !this.dataset.target_id) {
+                const { target_id, target_selector } = this.getDataset();
+                if (!target_selector && !target_id) {
                     const first = this.children.item(0);
                     if (!this.isValidDirectChild(first)) {
                         return this;
@@ -213,18 +218,18 @@ exports.FormFieldComponent = (() => {
                     this.directChildEmitter.next(first);
                     return this;
                 }
-                if (this.dataset.target_id) {
+                if (target_id) {
                     const first = (_a = this.children
-                        .item(0)) === null || _a === void 0 ? void 0 : _a.querySelector(`#${this.dataset.target_id}`);
+                        .item(0)) === null || _a === void 0 ? void 0 : _a.querySelector(`#${target_id}`);
                     if (!(first instanceof HTMLElement)) {
                         return this;
                     }
                     this.directChildEmitter.next(first);
                     return this;
                 }
-                if (this.dataset.target_selector) {
+                if (target_selector) {
                     const target = (_b = this.children
-                        .item(0)) === null || _b === void 0 ? void 0 : _b.querySelector(this.dataset.target_selector);
+                        .item(0)) === null || _b === void 0 ? void 0 : _b.querySelector(target_selector);
                     if (!(target instanceof HTMLElement)) {
                         return this;
                     }
