@@ -89,7 +89,6 @@ exports.ImmutableFormControllerImpl = (() => {
                         return (0, immutable_1.List)(this.fields.map(({ field, defaultValue, type }) => (0, immutable_1.Map)({
                             field,
                             touched: false,
-                            empty: true,
                             changed: false,
                             hovered: false,
                             focused: false,
@@ -488,12 +487,12 @@ exports.ImmutableFormControllerImpl = (() => {
             }
             changeFormValue(field, value) {
                 this.safeExecute((connector) => {
-                    var _a;
+                    var _a, _b;
                     const casted = this.cast(connector);
                     const targetIndex = this.getDatumIndex(field, casted);
-                    const mutation = (_a = casted
+                    const mutation = (_b = (_a = casted
                         .getState(this.id)
-                        .get(targetIndex)) === null || _a === void 0 ? void 0 : _a.set("value", value);
+                        .get(targetIndex)) === null || _a === void 0 ? void 0 : _a.set("value", value)) === null || _b === void 0 ? void 0 : _b.set("changed", true);
                     mutation &&
                         this.commitMutation(casted.getState(this.id).set(targetIndex, mutation), casted);
                 });

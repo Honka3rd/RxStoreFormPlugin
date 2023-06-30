@@ -753,7 +753,8 @@ export class ImmutableFormControllerImpl<
       const mutation = casted
         .getState(this.id)
         .get(targetIndex)
-        ?.set("value", value);
+        ?.set("value", value)
+        ?.set("changed", true as V<F[number]>);
       mutation &&
         this.commitMutation(
           casted.getState(this.id).set(targetIndex, mutation),
@@ -901,7 +902,6 @@ export class ImmutableFormControllerImpl<
           Map({
             field,
             touched: false,
-            empty: true,
             changed: false,
             hovered: false,
             focused: false,
