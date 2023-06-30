@@ -197,10 +197,10 @@ exports.FormFieldComponent = (() => {
                     },
                     keydown: (event) => {
                         if (this.keyboardEventMapper) {
-                            formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, this.keyboardEventMapper(event));
+                            formController.changeFormValue(field, this.keyboardEventMapper(event));
                             return;
                         }
-                        formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, event.target.value);
+                        formController.changeFormValue(field, event.target.value);
                     },
                     change: this.getChangeFunction(formController, field, current),
                 };

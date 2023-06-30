@@ -234,25 +234,25 @@ export class FormFieldComponent<
         formController.hoverFormField(field, true);
       },
       mouseleave() {
-        formController.hoverFormField(field!, false);
+        formController.hoverFormField(field, false);
       },
       focus() {
-        formController.focusFormField(field!, true);
+        formController.focusFormField(field, true);
       },
       blur() {
         formController
-          .focusFormField(field!, false)
-          .touchFormField(field!, true);
+          .focusFormField(field, false)
+          .touchFormField(field, true);
       },
       keydown: (event: any) => {
         if (this.keyboardEventMapper) {
-          formController?.changeFormValue(
-            field!,
+          formController.changeFormValue(
+            field,
             this.keyboardEventMapper(event)
           );
           return;
         }
-        formController?.changeFormValue(field!, event.target.value);
+        formController.changeFormValue(field, event.target.value);
       },
       change: this.getChangeFunction(formController, field, current),
     };
