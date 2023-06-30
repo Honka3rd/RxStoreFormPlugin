@@ -338,14 +338,9 @@ export interface ImmutableFormController<
 
   getMeta(): ImmutableMeta<F, M>;
 
-  getFieldMeta<
-    N extends number = number,
-    E extends Any = Any,
-    I = any,
-    W = any
-  >(
+  getFieldMeta<N extends number = number, E extends Any = Any>(
     field: F[N]["field"]
-  ): ImmutableMetaDatum<E, I, W>;
+  ): ImmutableMetaDatum<E>;
 
   changeFieldType<N extends number>(
     field: F[N]["field"],

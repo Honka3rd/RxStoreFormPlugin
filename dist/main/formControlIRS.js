@@ -440,10 +440,8 @@ exports.ImmutableFormControllerImpl = (() => {
                 return this.findDatumByField(casted.getState(this.id), field).get("value");
             }
             getFieldMeta(field) {
-                return this.safeExecute(() => {
-                    var _a;
-                    return (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.value.get(field);
-                });
+                var _a;
+                return (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.value.get(field);
             }
             changeFieldType(field, type, $immutableValidator) {
                 this.safeExecute((connector) => {

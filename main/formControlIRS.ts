@@ -671,10 +671,10 @@ export class ImmutableFormControllerImpl<
   }
 
   @bound
-  getFieldMeta<N extends number = number>(field: F[N]["field"]) {
-    return this.safeExecute(() => {
-      return this.metadata$?.value.get(field);
-    })!;
+  getFieldMeta<N extends number = number, E extends Any = Any>(
+    field: F[N]["field"]
+  ) {
+    return this.metadata$?.value.get(field)! as ImmutableMetaDatum<E>;
   }
 
   @bound
