@@ -49,7 +49,7 @@ export declare class ImmutableFormControllerImpl<F extends FormControlData, M ex
     observeFormValue<CompareAt extends number = number>(field: F[CompareAt]["field"], observer: (result: ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]) => void): () => void;
     getDatum<At extends number = number>(field: F[At]["field"]): Map<keyof F[At], PV<F[At]>>;
     getDatumValue<At extends number = number>(field: F[At]["field"]): NonNullable<V<F[number]>>;
-    getFieldMeta<N extends number = number>(field: F[N]["field"]): ImmutableMetaDatum;
+    getFieldMeta<N extends number = number>(field: F[N]["field"]): Map<keyof FormControlBasicMetadata, any>;
     changeFieldType<N extends number>(field: F[N]["field"], type: DatumType, $immutableValidator?: $ImmutableValidator<F>): this;
     getFieldsMeta(fields: F[number]["field"][]): ImmutableMeta<F, M>;
     setBulkAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: ImmutableMeta<F, M>) => Observable<ImmutableMeta<F, M>> | Promise<ImmutableMeta<F, M>>): void;

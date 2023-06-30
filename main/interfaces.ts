@@ -1,5 +1,5 @@
-import { List, Map } from "immutable";
-import { Any, Comparator, ImmutableBase, Initiator } from "rx-store-types";
+import { List, Map, FromJS } from "immutable";
+import { Any, Comparator, Initiator } from "rx-store-types";
 import { Observable } from "rxjs";
 
 export type FormControlBasicMetadata = {
@@ -37,10 +37,9 @@ type DatumAttr = {
   lazy?: boolean;
 };
 
-export type ImmutableMetaDatum = Map<
-  "errors" | "info" | "warn" | "asyncIndicator",
-  ImmutableBase
->;
+export type ImmutableMetaDatum<
+  B extends FormControlBasicMetadata = FormControlBasicMetadata
+> = FromJS<B>;
 
 export type ImmutableMeta<
   F extends FormControlData,
@@ -481,9 +480,7 @@ export interface IRFieldAttributeBinderInjector<F extends FormControlData> {
 }
 
 export interface OnSubmitInjector {
-  setOnSubmit(
-    submit: <T>(e: T, toFormData: ToFormData) => void
-  ): void;
+  setOnSubmit(submit: <T>(e: T, toFormData: ToFormData) => void): void;
 }
 
 export interface OnResetInjector {
