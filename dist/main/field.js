@@ -154,8 +154,8 @@ exports.FormFieldComponent = (() => {
                 if (!formController || !field) {
                     return;
                 }
-                const { manualBinding } = this.getDataset();
-                if (manualBinding === "true") {
+                const { manual_binding } = this.getDataset();
+                if (manual_binding === "true") {
                     return;
                 }
                 if (!current) {
@@ -180,6 +180,14 @@ exports.FormFieldComponent = (() => {
                 }
             }
             getBindingListeners(formController, field, current) {
+                const { keyboardEventMapper } = this;
+                const keydown = keyboardEventMapper
+                    ? (event) => {
+                        formController.changeFormValue(field, keyboardEventMapper(event));
+                    }
+                    : (event) => {
+                        formController.changeFormValue(field, event.target.value);
+                    };
                 return {
                     mouseover() {
                         formController.hoverFormField(field, true);
@@ -191,17 +199,9 @@ exports.FormFieldComponent = (() => {
                         formController.focusFormField(field, true);
                     },
                     blur() {
-                        formController
-                            .focusFormField(field, false)
-                            .touchFormField(field, true);
+                        formController.focusFormField(field, false).touchFormField(field, true);
                     },
-                    keydown: (event) => {
-                        if (this.keyboardEventMapper) {
-                            formController.changeFormValue(field, this.keyboardEventMapper(event));
-                            return;
-                        }
-                        formController.changeFormValue(field, event.target.value);
-                    },
+                    keydown,
                     change: this.getChangeFunction(formController, field, current),
                 };
             }

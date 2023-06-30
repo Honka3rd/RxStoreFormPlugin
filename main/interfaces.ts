@@ -541,7 +541,7 @@ export type FieldDataset<
   field: F[N]["field"];
   target_id?: string;
   target_selector?: string;
-  manualBinding?: "true" | "false";
+  manual_binding?: "true" | "false";
   focused?: string;
   changed?: string;
   touched?: string;

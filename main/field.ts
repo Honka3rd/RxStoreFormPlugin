@@ -187,9 +187,9 @@ export class FormFieldComponent<
       return;
     }
 
-    const { manualBinding } = this.getDataset();
+    const { manual_binding } = this.getDataset();
 
-    if (manualBinding === "true") {
+    if (manual_binding === "true") {
       return;
     }
 
@@ -229,6 +229,14 @@ export class FormFieldComponent<
     field: F[N]["field"],
     current?: E
   ) {
+    const { keyboardEventMapper } = this;
+    const keydown = keyboardEventMapper
+      ? (event: any) => {
+          formController.changeFormValue(field, keyboardEventMapper(event));
+        }
+      : (event: any) => {
+          formController.changeFormValue(field, event.target.value);
+        };
     return {
       mouseover() {
         formController.hoverFormField(field, true);
@@ -240,20 +248,9 @@ export class FormFieldComponent<
         formController.focusFormField(field, true);
       },
       blur() {
-        formController
-          .focusFormField(field, false)
-          .touchFormField(field, true);
+        formController.focusFormField(field, false).touchFormField(field, true);
       },
-      keydown: (event: any) => {
-        if (this.keyboardEventMapper) {
-          formController.changeFormValue(
-            field,
-            this.keyboardEventMapper(event)
-          );
-          return;
-        }
-        formController.changeFormValue(field, event.target.value);
-      },
+      keydown,
       change: this.getChangeFunction(formController, field, current),
     };
   }
