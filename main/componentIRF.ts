@@ -58,13 +58,7 @@ export class IRFieldComponent<
             this.attrSetter(target),
             datum as Map<K<F[number]>, V<F[number]>>
           );
-          return;
         }
-        if ("value" in target) {
-          target.setAttribute("value", String(value));
-          return;
-        }
-        target.setAttribute("data-value", String(value));
       });
     }
   }

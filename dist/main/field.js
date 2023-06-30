@@ -126,16 +126,11 @@ exports.FormFieldComponent = (() => {
                 const { value } = this.directChildEmitter;
                 return value && value === this.children.item(0);
             }
-            getChangeFunction(current, formController, field) {
+            getChangeFunction(formController, field, current) {
                 const { changeEventMapper } = this;
                 if (changeEventMapper) {
                     return (event) => {
                         formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, changeEventMapper(event));
-                    };
-                }
-                if (current instanceof HTMLTextAreaElement) {
-                    return ({ target }) => {
-                        formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, target.value);
                     };
                 }
                 if (current instanceof HTMLInputElement) {
@@ -149,42 +144,25 @@ exports.FormFieldComponent = (() => {
                             formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, target.files);
                         };
                     }
-                    return ({ target }) => {
-                        formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, target.value);
-                    };
                 }
-                return () => { };
+                return ({ target }) => {
+                    formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, target.value);
+                };
             }
             attachChildEventListeners(current, formController) {
                 const { field } = this;
                 if (!formController || !field) {
                     return;
                 }
+                const { manualBinding } = this.getDataset();
+                if (manualBinding === "true") {
+                    return;
+                }
                 if (!current) {
                     return;
                 }
-                function mouseover() {
-                    formController === null || formController === void 0 ? void 0 : formController.hoverFormField(field, true);
-                }
-                function mouseleave() {
-                    formController === null || formController === void 0 ? void 0 : formController.hoverFormField(field, false);
-                }
-                function focus() {
-                    formController === null || formController === void 0 ? void 0 : formController.focusFormField(field, true);
-                }
-                function blur() {
-                    formController === null || formController === void 0 ? void 0 : formController.focusFormField(field, false).touchFormField(field, true);
-                }
-                const context = this;
-                function keydown(event) {
-                    if (context.keyboardEventMapper) {
-                        formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, context.keyboardEventMapper(event));
-                        return;
-                    }
-                    formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, event.target.value);
-                }
                 if (current instanceof HTMLElement) {
-                    const change = this.getChangeFunction(current, formController, field);
+                    const { change, mouseleave, mouseover, blur, keydown, focus } = this.getBindingListeners(formController, field, current);
                     current.addEventListener("mouseover", mouseover);
                     current.addEventListener("mouseleave", mouseleave);
                     current.addEventListener("focus", focus);
@@ -200,6 +178,32 @@ exports.FormFieldComponent = (() => {
                         change,
                     });
                 }
+            }
+            getBindingListeners(formController, field, current) {
+                return {
+                    mouseover() {
+                        formController.hoverFormField(field, true);
+                    },
+                    mouseleave() {
+                        formController.hoverFormField(field, false);
+                    },
+                    focus() {
+                        formController.focusFormField(field, true);
+                    },
+                    blur() {
+                        formController
+                            .focusFormField(field, false)
+                            .touchFormField(field, true);
+                    },
+                    keydown: (event) => {
+                        if (this.keyboardEventMapper) {
+                            formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, this.keyboardEventMapper(event));
+                            return;
+                        }
+                        formController === null || formController === void 0 ? void 0 : formController.changeFormValue(field, event.target.value);
+                    },
+                    change: this.getChangeFunction(formController, field, current),
+                };
             }
             setInputDefault(target, key, next) {
                 if (target instanceof HTMLInputElement ||
@@ -219,8 +223,7 @@ exports.FormFieldComponent = (() => {
                     return this;
                 }
                 if (target_id) {
-                    const first = (_a = this.children
-                        .item(0)) === null || _a === void 0 ? void 0 : _a.querySelector(`#${target_id}`);
+                    const first = (_a = this.children.item(0)) === null || _a === void 0 ? void 0 : _a.querySelector(`#${target_id}`);
                     if (!(first instanceof HTMLElement)) {
                         return this;
                     }
@@ -228,8 +231,7 @@ exports.FormFieldComponent = (() => {
                     return this;
                 }
                 if (target_selector) {
-                    const target = (_b = this.children
-                        .item(0)) === null || _b === void 0 ? void 0 : _b.querySelector(target_selector);
+                    const target = (_b = this.children.item(0)) === null || _b === void 0 ? void 0 : _b.querySelector(target_selector);
                     if (!(target instanceof HTMLElement)) {
                         return this;
                     }

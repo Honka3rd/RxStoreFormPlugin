@@ -20,13 +20,7 @@ class IRFieldComponent extends field_1.FormFieldComponent {
                 value && this.setAttribute("data-value", String(value));
                 if (this.attributeBinder) {
                     this.attributeBinder(this.attrSetter(target), datum);
-                    return;
                 }
-                if ("value" in target) {
-                    target.setAttribute("value", String(value));
-                    return;
-                }
-                target.setAttribute("data-value", String(value));
             });
         }
     }

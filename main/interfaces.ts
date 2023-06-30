@@ -482,12 +482,25 @@ export interface IRFieldAttributeBinderInjector<F extends FormControlData> {
 
 export interface OnSubmitInjector {
   setOnSubmit(
-    submit: <T extends Any = Event>(e: T, toFormData: ToFormData) => void
+    submit: <T>(e: T, toFormData: ToFormData) => void
   ): void;
 }
 
 export interface OnResetInjector {
-  setOnReset(reset: <T extends Any = Event>(e: T) => void): void;
+  setOnReset(reset: <T>(e: T) => void): void;
+}
+
+export interface ListenerAccessor<
+  F extends FormControlData,
+  M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
+  S extends string,
+  N extends number = number
+> {
+  getBindingListeners<E extends HTMLElement>(
+    formController: FormController<F, M, S> | ImmutableFormController<F, M, S>,
+    field: F[N]["field"],
+    current?: E
+  ): ListenersCache;
 }
 
 export type InstallDefinition = Partial<{
@@ -528,6 +541,7 @@ export type FieldDataset<
   field: F[N]["field"];
   target_id?: string;
   target_selector?: string;
+  manualBinding?: "true" | "false";
   focused?: string;
   changed?: string;
   touched?: string;

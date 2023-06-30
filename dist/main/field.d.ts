@@ -1,6 +1,7 @@
 import { BehaviorSubject } from "rxjs";
-import { AttributeChangedCallback, ConnectedCallback, DatumType, FieldDataMapperInjector, FormControlBasicMetadata, FormControlData, FormController, FormControllerInjector, ImmutableFormController, K, ListenedAttributes, ListenersCache, V } from "./interfaces";
-export declare class FormFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends HTMLElement implements ConnectedCallback, FieldDataMapperInjector<F, N>, FormControllerInjector<F, M, S>, AttributeChangedCallback<HTMLElement, ListenedAttributes> {
+import { AttributeChangedCallback, ConnectedCallback, DatumType, FieldDataMapperInjector, FormControlBasicMetadata, FormControlData, FormController, FormControllerInjector, ImmutableFormController, K, ListenedAttributes, ListenerAccessor, ListenersCache, V } from "./interfaces";
+import { Any } from "rx-store-types";
+export declare class FormFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends HTMLElement implements ConnectedCallback, FieldDataMapperInjector<F, N>, FormControllerInjector<F, M, S>, AttributeChangedCallback<HTMLElement, ListenedAttributes>, ListenerAccessor<F, M, S> {
     protected field?: F[N]["field"];
     protected type?: DatumType;
     protected keyboardEventMapper?: (ev: any) => F[N]["value"];
@@ -18,6 +19,14 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     protected observer: MutationObserver;
     private getChangeFunction;
     protected attachChildEventListeners(current: Node | null, formController: FormController<F, M, S> | ImmutableFormController<F, M, S> | null): void;
+    getBindingListeners<E extends HTMLElement>(formController: FormController<F, M, S> | ImmutableFormController<F, M, S>, field: F[N]["field"], current?: E): {
+        mouseover(): void;
+        mouseleave(): void;
+        focus(): void;
+        blur(): void;
+        keydown: (event: any) => void;
+        change: (event: Any) => void;
+    };
     private setInputDefault;
     private emitOnlyChildOnMount;
     protected attrSetter(target: HTMLElement): (k: string, v: any) => void;

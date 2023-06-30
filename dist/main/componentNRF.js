@@ -19,20 +19,9 @@ class NRFieldComponent extends field_1.FormFieldComponent {
                 this.setAttribute("data-changed", String(datum.changed));
                 this.setAttribute("data-touched", String(datum.touched));
                 this.setAttribute("data-hovered", String(datum.hovered));
-                this.setAttribute("data-value", datum.value);
+                this.setAttribute("data-value", String(datum.value));
                 if (this.attributeBinder) {
                     this.attributeBinder(this.attrSetter(target), datum);
-                    return;
-                }
-                try {
-                    if (target.getAttribute("value") !== datum.value) {
-                        target.setAttribute("value", datum.value);
-                    }
-                }
-                catch (e) {
-                    if (target.dataset.value !== datum.value) {
-                        target.setAttribute("data-value", String(datum.value));
-                    }
                 }
             });
         }

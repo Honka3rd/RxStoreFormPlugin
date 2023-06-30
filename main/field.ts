@@ -13,6 +13,7 @@ import {
   ImmutableFormController,
   K,
   ListenedAttributes,
+  ListenerAccessor,
   ListenersCache,
   V,
 } from "./interfaces";
@@ -29,7 +30,8 @@ export class FormFieldComponent<
     ConnectedCallback,
     FieldDataMapperInjector<F, N>,
     FormControllerInjector<F, M, S>,
-    AttributeChangedCallback<HTMLElement, ListenedAttributes>
+    AttributeChangedCallback<HTMLElement, ListenedAttributes>,
+    ListenerAccessor<F, M, S>
 {
   protected field?: F[N]["field"];
   protected type?: DatumType;
@@ -139,23 +141,17 @@ export class FormFieldComponent<
   protected observer = new MutationObserver(this.setDirectChildFromMutations);
 
   private getChangeFunction<E extends HTMLElement>(
-    current: E,
     formController:
       | FormController<F, M, S>
       | ImmutableFormController<F, M, S>
       | null,
-    field: F[N]["field"]
+    field: F[N]["field"],
+    current?: E
   ) {
     const { changeEventMapper } = this;
     if (changeEventMapper) {
       return (event: Any) => {
         formController?.changeFormValue(field, changeEventMapper(event));
-      };
-    }
-
-    if (current instanceof HTMLTextAreaElement) {
-      return ({ target }: Any) => {
-        formController?.changeFormValue(field, target.value);
       };
     }
 
@@ -171,13 +167,11 @@ export class FormFieldComponent<
           formController?.changeFormValue(field, target.files);
         };
       }
-
-      return ({ target }: Any) => {
-        formController?.changeFormValue(field, target.value);
-      };
     }
 
-    return () => {};
+    return ({ target }: Any) => {
+      formController?.changeFormValue(field, target.value);
+    };
   }
 
   protected attachChildEventListeners(
@@ -188,7 +182,14 @@ export class FormFieldComponent<
       | null
   ) {
     const { field } = this;
+
     if (!formController || !field) {
+      return;
+    }
+
+    const { manualBinding } = this.getDataset();
+
+    if (manualBinding === "true") {
       return;
     }
 
@@ -196,39 +197,9 @@ export class FormFieldComponent<
       return;
     }
 
-    function mouseover() {
-      formController?.hoverFormField(field!, true);
-    }
-
-    function mouseleave() {
-      formController?.hoverFormField(field!, false);
-    }
-
-    function focus() {
-      formController?.focusFormField(field!, true);
-    }
-
-    function blur() {
-      formController
-        ?.focusFormField(field!, false)
-        .touchFormField(field!, true);
-    }
-
-    const context = this;
-
-    function keydown(event: any) {
-      if (context.keyboardEventMapper) {
-        formController?.changeFormValue(
-          field!,
-          context.keyboardEventMapper(event)
-        );
-        return;
-      }
-      formController?.changeFormValue(field!, event.target.value);
-    }
-
     if (current instanceof HTMLElement) {
-      const change = this.getChangeFunction(current, formController, field);
+      const { change, mouseleave, mouseover, blur, keydown, focus } =
+        this.getBindingListeners(formController, field, current);
 
       current.addEventListener("mouseover", mouseover);
 
@@ -253,6 +224,40 @@ export class FormFieldComponent<
     }
   }
 
+  getBindingListeners<E extends HTMLElement>(
+    formController: FormController<F, M, S> | ImmutableFormController<F, M, S>,
+    field: F[N]["field"],
+    current?: E
+  ) {
+    return {
+      mouseover() {
+        formController.hoverFormField(field, true);
+      },
+      mouseleave() {
+        formController.hoverFormField(field!, false);
+      },
+      focus() {
+        formController.focusFormField(field!, true);
+      },
+      blur() {
+        formController
+          .focusFormField(field!, false)
+          .touchFormField(field!, true);
+      },
+      keydown: (event: any) => {
+        if (this.keyboardEventMapper) {
+          formController?.changeFormValue(
+            field!,
+            this.keyboardEventMapper(event)
+          );
+          return;
+        }
+        formController?.changeFormValue(field!, event.target.value);
+      },
+      change: this.getChangeFunction(formController, field, current),
+    };
+  }
+
   private setInputDefault(target: Node, key: string, next: string) {
     if (
       target instanceof HTMLInputElement ||
@@ -275,9 +280,7 @@ export class FormFieldComponent<
     }
 
     if (target_id) {
-      const first = this.children
-        .item(0)
-        ?.querySelector(`#${target_id}`);
+      const first = this.children.item(0)?.querySelector(`#${target_id}`);
       if (!(first instanceof HTMLElement)) {
         return this;
       }
@@ -286,9 +289,7 @@ export class FormFieldComponent<
     }
 
     if (target_selector) {
-      const target = this.children
-        .item(0)
-        ?.querySelector(target_selector);
+      const target = this.children.item(0)?.querySelector(target_selector);
       if (!(target instanceof HTMLElement)) {
         return this;
       }
