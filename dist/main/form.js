@@ -162,7 +162,7 @@ exports.FormControlComponent = (() => {
             getDirectForm() {
                 const selector = this.getDataset().form_id;
                 if (selector) {
-                    const form = this.querySelector(`form[formID=${selector}]`);
+                    const form = this.querySelector(`form[data-locator=${selector}]`);
                     if (!(form instanceof HTMLFormElement)) {
                         throw new Error("a invalid form selector, which cannot locate a form element");
                     }
