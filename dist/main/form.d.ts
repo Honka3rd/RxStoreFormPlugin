@@ -7,6 +7,7 @@ export declare class FormControlComponent<F extends FormControlData, M extends P
     private subscription?;
     private submitCustomHandler?;
     private resetCustomHandler?;
+    private locator?;
     private formHandlers;
     private getFieldsFromContainer;
     private emitIncomingFields;
@@ -15,6 +16,7 @@ export declare class FormControlComponent<F extends FormControlData, M extends P
     private compareFields;
     private controlAll;
     private getDataset;
+    private setFormLocator;
     private getDirectForm;
     private fillFields;
     private emitFieldChildrenOnMount;

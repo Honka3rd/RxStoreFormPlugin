@@ -49,6 +49,7 @@ exports.FormControlComponent = (() => {
                 this.fieldListIncomingEmitter = (__runInitializers(this, _instanceExtraInitializers), new rxjs_1.BehaviorSubject([]));
                 this.formControllerEmitter = new rxjs_1.BehaviorSubject(null);
                 this.formIncomingEmitter = new rxjs_1.BehaviorSubject(null);
+                this.locator = null;
                 this.formHandlers = new WeakMap();
                 this.fieldsObserver = new MutationObserver(this.setFieldListFromMutationRecords);
             }
@@ -157,7 +158,10 @@ exports.FormControlComponent = (() => {
                 });
             }
             getDataset() {
-                return this.dataset;
+                return { form_id: this.locator };
+            }
+            setFormLocator() {
+                this.locator = this.getAttribute("data-form_id");
             }
             getDirectForm() {
                 const selector = this.getDataset().form_id;
@@ -209,6 +213,7 @@ exports.FormControlComponent = (() => {
                 this.submitCustomHandler = submit;
             }
             connectedCallback() {
+                this.setFormLocator();
                 this.fieldsObserver.observe(this, {
                     subtree: true,
                     childList: true,

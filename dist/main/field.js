@@ -56,7 +56,7 @@ exports.FormFieldComponent = (() => {
                 return target instanceof HTMLElement && target.parentNode === this;
             }
             getDataset() {
-                return this.dataset;
+                return Object.assign(Object.assign({}, this.dataset), { field: this.field });
             }
             reportMultiChildError() {
                 if (this.children.length > 1) {

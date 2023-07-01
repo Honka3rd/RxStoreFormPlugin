@@ -54,6 +54,8 @@ export class FormControlComponent<
 
   private resetCustomHandler?: <T extends Any = Event>(e: T) => void;
 
+  private locator?: string | null = null;
+
   private formHandlers = new WeakMap<
     HTMLFormElement,
     {
@@ -195,7 +197,11 @@ export class FormControlComponent<
   }
 
   private getDataset() {
-    return this.dataset as FormDataset;
+    return { form_id: this.locator } as FormDataset;
+  }
+
+  private setFormLocator() {
+    this.locator = this.getAttribute("data-form_id");
   }
 
   private getDirectForm() {
@@ -259,6 +265,7 @@ export class FormControlComponent<
   }
 
   connectedCallback(): void {
+    this.setFormLocator();
     this.fieldsObserver.observe(this, {
       subtree: true,
       childList: true,

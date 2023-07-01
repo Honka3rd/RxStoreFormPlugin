@@ -53,7 +53,7 @@ export class FormFieldComponent<
   }
 
   private getDataset() {
-    return this.dataset as FieldDataset<F, N>;
+    return { ...this.dataset, field: this.field } as FieldDataset<F, N>;
   }
 
   private reportMultiChildError() {
