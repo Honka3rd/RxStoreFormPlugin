@@ -528,7 +528,7 @@ export type ListenedAttributes = {
 };
 
 export type FormDataset = {
-  formID?: string;
+  form_id?: string;
 };
 
 export type FieldDataset<

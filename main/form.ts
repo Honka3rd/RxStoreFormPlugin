@@ -199,12 +199,12 @@ export class FormControlComponent<
   }
 
   private getDirectForm() {
-    const selector = this.getDataset().formID;
+    const selector = this.getDataset().form_id;
     if (selector) {
       const form = this.querySelector(`form[formID=${selector}]`);
       if (!(form instanceof HTMLFormElement)) {
         throw new Error(
-          "a invalid form selector, which cannot bring a form element"
+          "a invalid form selector, which cannot locate a form element"
         );
       }
       return form;
@@ -221,7 +221,9 @@ export class FormControlComponent<
       if (node instanceof FormFieldComponent && !map.has(node)) {
         fields.push(node);
       } else {
-        this.fillFields(fields, node.children, map);
+        if (!(node instanceof FormControlComponent)) {
+          this.fillFields(fields, node.children, map);
+        }
       }
       map.set(node, node);
     }

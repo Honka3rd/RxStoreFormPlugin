@@ -224,7 +224,7 @@ export type ListenedAttributes = {
     ["data-target_selector"]?: string;
 };
 export type FormDataset = {
-    formID?: string;
+    form_id?: string;
 };
 export type FieldDataset<F extends FormControlData, N extends number = number> = {
     field: F[N]["field"];

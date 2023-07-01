@@ -160,11 +160,11 @@ exports.FormControlComponent = (() => {
                 return this.dataset;
             }
             getDirectForm() {
-                const selector = this.getDataset().formID;
+                const selector = this.getDataset().form_id;
                 if (selector) {
                     const form = this.querySelector(`form[formID=${selector}]`);
                     if (!(form instanceof HTMLFormElement)) {
-                        throw new Error("a invalid form selector, which cannot bring a form element");
+                        throw new Error("a invalid form selector, which cannot locate a form element");
                     }
                     return form;
                 }
@@ -179,7 +179,9 @@ exports.FormControlComponent = (() => {
                         fields.push(node);
                     }
                     else {
-                        this.fillFields(fields, node.children, map);
+                        if (!(node instanceof FormControlComponent)) {
+                            this.fillFields(fields, node.children, map);
+                        }
                     }
                     map.set(node, node);
                 }
