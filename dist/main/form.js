@@ -52,9 +52,16 @@ exports.FormControlComponent = (() => {
                 this.formHandlers = new WeakMap();
                 this.fieldsObserver = new MutationObserver(this.setFieldListFromMutationRecords);
             }
-            emitIncomingFields(insertedForm) {
+            getFieldsFromContainer(inserted) {
+                if (inserted instanceof field_1.FormFieldComponent) {
+                    return [inserted];
+                }
                 const fields = [];
-                this.fillFields(fields, insertedForm.children);
+                this.fillFields(fields, inserted.children);
+                return fields;
+            }
+            emitIncomingFields(inserted) {
+                const fields = this.getFieldsFromContainer(inserted);
                 if (fields.length) {
                     this.fieldListIncomingEmitter.next(fields);
                 }
@@ -72,14 +79,21 @@ exports.FormControlComponent = (() => {
                     .find((node) => node instanceof HTMLFormElement);
                 if (insertedForm) {
                     this.formIncomingEmitter.next(insertedForm);
-                    this.emitIncomingFields(insertedForm);
                 }
-                const addedFields = filtered.reduce((acc, mutation) => {
-                    Array.from(mutation.addedNodes)
-                        .filter((node) => node instanceof field_1.FormFieldComponent)
-                        .forEach((node) => {
+                const containedFields = filtered.reduce((acc, mutation) => {
+                    const nodes = Array.from(mutation.addedNodes);
+                    nodes.forEach((node) => {
                         acc.push(node);
                     });
+                    return acc;
+                }, []);
+                const addedFields = containedFields.reduce((acc, container) => {
+                    if (container instanceof HTMLElement) {
+                        const fields = this.getFieldsFromContainer(container);
+                        fields.forEach((f) => {
+                            acc.push(f);
+                        });
+                    }
                     return acc;
                 }, []);
                 if (addedFields.length) {

@@ -62,9 +62,17 @@ export class FormControlComponent<
     }
   >();
 
-  private emitIncomingFields(insertedForm: HTMLFormElement) {
+  private getFieldsFromContainer(inserted: HTMLElement) {
+    if (inserted instanceof FormFieldComponent) {
+      return [inserted] as FormFieldComponent<F, M, S, number>[];
+    }
     const fields: FormFieldComponent<F, M, S, number>[] = [];
-    this.fillFields(fields, insertedForm.children);
+    this.fillFields(fields, inserted.children);
+    return fields;
+  }
+
+  private emitIncomingFields(inserted: HTMLElement) {
+    const fields = this.getFieldsFromContainer(inserted);
     if (fields.length) {
       this.fieldListIncomingEmitter.next(fields);
     }
@@ -88,15 +96,23 @@ export class FormControlComponent<
 
     if (insertedForm) {
       this.formIncomingEmitter.next(insertedForm);
-      this.emitIncomingFields(insertedForm);
     }
 
-    const addedFields = filtered.reduce((acc, mutation) => {
-      Array.from(mutation.addedNodes)
-        .filter((node) => node instanceof FormFieldComponent)
-        .forEach((node) => {
-          acc.push(node as FormFieldComponent<F, M, S>);
+    const containedFields = filtered.reduce((acc, mutation) => {
+      const nodes = Array.from(mutation.addedNodes);
+      nodes.forEach((node) => {
+        acc.push(node);
+      });
+      return acc;
+    }, <Node[]>[]);
+
+    const addedFields = containedFields.reduce((acc, container) => {
+      if (container instanceof HTMLElement) {
+        const fields = this.getFieldsFromContainer(container);
+        fields.forEach((f) => {
+          acc.push(f);
         });
+      }
       return acc;
     }, <FormFieldComponent<F, M, S>[]>[]);
 

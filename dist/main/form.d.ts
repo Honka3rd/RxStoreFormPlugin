@@ -8,6 +8,7 @@ export declare class FormControlComponent<F extends FormControlData, M extends P
     private submitCustomHandler?;
     private resetCustomHandler?;
     private formHandlers;
+    private getFieldsFromContainer;
     private emitIncomingFields;
     private setFieldListFromMutationRecords;
     private fieldsObserver;
