@@ -175,9 +175,12 @@ exports.FormControlComponent = (() => {
                 return this.querySelector("form");
             }
             fillFields(fields, all, map) {
-                var _a, _b;
-                if (all === void 0) { all = (_b = (_a = this.getDirectForm()) === null || _a === void 0 ? void 0 : _a.children) !== null && _b !== void 0 ? _b : []; }
+                var _a;
+                if (all === void 0) { all = (_a = this.getDirectForm()) === null || _a === void 0 ? void 0 : _a.children; }
                 if (map === void 0) { map = new WeakMap(); }
+                if (!all) {
+                    return;
+                }
                 for (const node of Array.from(all)) {
                     if (node instanceof field_1.FormFieldComponent && !map.has(node)) {
                         fields.push(node);

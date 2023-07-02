@@ -220,9 +220,12 @@ export class FormControlComponent<
 
   private fillFields(
     fields: FormFieldComponent<F, M, S, number>[],
-    all = this.getDirectForm()?.children ?? [],
+    all = this.getDirectForm()?.children,
     map = new WeakMap()
   ) {
+    if (!all) {
+      return;
+    }
     for (const node of Array.from(all)) {
       if (node instanceof FormFieldComponent && !map.has(node)) {
         fields.push(node);
