@@ -1,68 +1,126 @@
 # RxStoreFormPlugin
 
-Beta version, do not use this in production!!!
+A form Validation JavaScript library based on [rx-store-core](https://www.npmjs.com/package/rx-store-core)
 
-** Code Example **
+## Install
+
+npm i rx-store-form-plugin
+
+## Validation for normal JavaScript object validation
+
+import library:
+
 ```javascript
+import { NRFormBuilder } from "rx-store-form-plugin";
+```
+
+## Define field types and meta types
+
+### fields is an array contains information to describe each field state
+type define:
+{
+field: string; // field name, should be unique
+value: any; // field value
+touched: boolean; // the field is touched or not
+changed: boolean; // the value in this field is changed or not
+focused: boolean; // this field is focused or not
+hovered: boolean; // this field is hovered by mouse or not
+type: DatumType; // field is SYNC(sync validated) or ASYNC(bulk async validated) or EXCLUDED(excluded async validated)
+lazy?: boolean; // if field type is EXCLUDED, whether wait for previous resolve
+}[]
+
+### metadata stands for the validation result for each field
+type define
+{
+errors: object; // required error message
+warn?: any; // optional warning message
+info?: any; // optional information
+}
+
+can be shortly written by: FormControlMetadata<errors>
+
+```javascript
+import { FormControlStrDatum, FormControlDatum, FormControlMetadata } from "rx-store-form-plugin"; // handy type definitions for define form types
+// NRFormBuilder<Fields, Metadata>(...)
 const sampleFormBuilder = new NRFormBuilder<
   [
-    FormControlStrDatum<"uid">,
-    FormControlStrDatum<"username">,
-    FormControlDatum<"subscribed", boolean>
+    FormControlStrDatum<"uid">, // define a field with the name of 'uid' and value type is string
+    FormControlStrDatum<"username">, // define a field with the name of 'username' and value type is string
+    FormControlDatum<"subscribed", boolean> // define a field with the name of 'subscribed' and value type is boolean
   ],
   {
-    uid: FormControlMetadata<{
-      invalidLength?: "length should be greater than 5" | null
-    }>,
+    uid: {
+      errors: {
+        invalidLength?: "length should be greater than 5" | null
+      }
+    }, // define metadata for 'uid'
     username: FormControlMetadata<{
       invalidSymbol?: "user's name should not contains symbol of '$'" | null
-    }>,
+    }>,// define metadata for 'username'
   }
->({
-  formSelector: "sample" as const,
-  validator: (form, meta) => {
-    /*     if (!meta.uid) {
-      meta.uid = {
-        errors: {},
-      };
-    }
+>(...)
+```
 
-    if (!meta.username) {
-      meta.username = {
-        errors: {},
-      };
-    }
- */
-    if (form.find(({ field, value }) => field === "uid" && value.length < 5)) {
-      if (meta.uid) {
-        meta.uid.errors = {
-          ...meta.uid.errors,
-          invalidLength: "length should be greater than 5",
-        };
-      }
-    }
+## Form ID and Sync validator
 
-    if (
-      form.find(
-        ({ field, value }) =>
-          field === "username" && String(value).includes("$")
-      )
-    ) {
-      if (meta.username) {
-        meta.username.errors = {
-          ...meta.username.errors,
-          invalidSymbol: "user's name should not contains symbol of '$'",
-        };
+formSelector stands for id of a form
+validator is for Sync validate and return a metadata object
+
+```javascript
+const sampleFormBuilder = new NRFormBuilder<...>(
+  {
+    formSelector: "sample" as const,
+      validator: (form, meta) => {
+        // validate uid field
+      if (form[0].value.length < 5)) {
+        if (meta.uid) {
+          meta.uid.errors = {
+            invalidLength: "length should be greater than 5",
+          };
+        }
       }
+      // validate username field
+      if (
+        form[1].value.includes("$")
+      ) {
+        if (meta.username) {
+          meta.username.errors = {
+            invalidSymbol: "user's name should not contains symbol of '$'",
+          };
+        }
+      }
+      return meta;
     }
-    console.log("in validator", meta);
-    return meta;
-  },
-})
+  }
+)
+
+```
+
+## Init typed form fields
+
+```javascript
+const sampleFormBuilder = new NRFormBuilder<...>({...})
   .setFields([
     {
-      field: "uid",
-      defaultValue: "",
+      field: "uid", // field name
+      defaultValue: "", // default value for this field
+      /* 
+        type?: field is SYNC(sync validated) or ASYNC(bulk async validated) or EXCLUDED(excluded async validated)
+        $validator?: function description: (
+          arg1 is field value, 
+          arg2 is metadata for this field, 
+          arg3 is entire form data
+          ) => Promise or Observable resolve metadata, just for NRF
+        $immutableValidator?: function description: (
+          arg1 is field value, 
+          arg2 is metadata for this field, 
+          arg3 is entire immutable form data
+          ) => Promise or Observable resolve immutable metadata, just for IRF
+        lazy?: if field type is EXCLUDED, whether wait for previous pending get resolved
+        debounceDuration?: if field type is EXCLUDED, the debounce time
+        datumKeys?: the selected fields for comparing
+        comparator?: if the form type NRF, (v1: any, v2: any) => boolean
+      */
     },
     {
       field: "username",
@@ -72,12 +130,22 @@ const sampleFormBuilder = new NRFormBuilder<
       field: "subscribed",
       defaultValue: false,
     },
-  ])
+  ])  
+  // default metadata to start
   .setDefaultMeta({
-    uid: { errors: {} },
+    uid: { 
+      errors: {
+        invalidLength: "length should be greater than 5"
+      } 
+    },
     username: { errors: {} },
   });
 
+```
+
+** Code Example **
+
+```javascript
 const {
   selector,
   initiator,
