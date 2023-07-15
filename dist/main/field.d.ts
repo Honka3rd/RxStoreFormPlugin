@@ -26,6 +26,7 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
         blur(): void;
         keydown: (event: any) => void;
         change: (event: Any) => void;
+        destruct: () => void;
     };
     private setInputDefault;
     private emitOnlyChildOnMount;

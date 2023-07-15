@@ -72,6 +72,7 @@ exports.FormFieldComponent = (() => {
                     removed.removeEventListener("blur", cachedListeners.mouseover);
                     removed.removeEventListener("keydown", cachedListeners.mouseover);
                     removed.removeEventListener("change", cachedListeners.focus);
+                    cachedListeners.destruct();
                 }
             }
             setDirectChildFromMutations(mutationList) {
@@ -162,7 +163,7 @@ exports.FormFieldComponent = (() => {
                     return;
                 }
                 if (current instanceof HTMLElement) {
-                    const { change, mouseleave, mouseover, blur, keydown, focus } = this.getBindingListeners(formController, field, current);
+                    const { change, mouseleave, mouseover, blur, keydown, focus, destruct } = this.getBindingListeners(formController, field, current);
                     current.addEventListener("mouseover", mouseover);
                     current.addEventListener("mouseleave", mouseleave);
                     current.addEventListener("focus", focus);
@@ -176,6 +177,7 @@ exports.FormFieldComponent = (() => {
                         mouseover,
                         keydown,
                         change,
+                        destruct,
                     });
                 }
             }
@@ -188,6 +190,20 @@ exports.FormFieldComponent = (() => {
                     : (event) => {
                         formController.changeFormValue(field, event.target.value);
                     };
+                const destruct = formController.observeFormValue(field, (val) => {
+                    if (current instanceof HTMLInputElement) {
+                        if (current.type === "checkbox" || current.type === "radio") {
+                            current.checked = Boolean(val);
+                            return;
+                        }
+                        if (current.type === "file" &&
+                            Object.getPrototypeOf(val) === FileList.prototype) {
+                            current.files = val;
+                            return;
+                        }
+                        current.value = val;
+                    }
+                });
                 return {
                     mouseover() {
                         formController.hoverFormField(field, true);
@@ -203,6 +219,7 @@ exports.FormFieldComponent = (() => {
                     },
                     keydown,
                     change: this.getChangeFunction(formController, field, current),
+                    destruct,
                 };
             }
             setInputDefault(target, key, next) {
