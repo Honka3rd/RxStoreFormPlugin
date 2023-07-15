@@ -226,6 +226,35 @@ export class FormFieldComponent<
     }
   }
 
+  @bound
+  private getChangeObserver<E extends HTMLElement>(current?: E) {
+    if (current instanceof HTMLInputElement) {
+      if (current.type === "checkbox" || current.type === "radio") {
+        return (val: ReturnType<Record<S, () => F>[S]>[N]["value"]) => {
+          current.checked = Boolean(val);
+        };
+      }
+
+      if (current.type === "file") {
+        return (val: ReturnType<Record<S, () => F>[S]>[N]["value"]) => {
+          if (Object.getPrototypeOf(val) === FileList.prototype) {
+            current.files = val;
+          }
+        };
+      }
+
+      return (val: ReturnType<Record<S, () => F>[S]>[N]["value"]) => {
+        current.value = val;
+      };
+    }
+
+    return (val: ReturnType<Record<S, () => F>[S]>[N]["value"]) => {
+      if (current) {
+        current.dataset.value = val;
+      }
+    };
+  }
+
   getBindingListeners<E extends HTMLElement>(
     formController: FormController<F, M, S> | ImmutableFormController<F, M, S>,
     field: F[N]["field"],
@@ -240,24 +269,10 @@ export class FormFieldComponent<
           formController.changeFormValue(field, event.target.value);
         };
 
-    const destruct = formController.observeFormValue(field, (val) => {
-      if (current instanceof HTMLInputElement) {
-        if (current.type === "checkbox" || current.type === "radio") {
-          current.checked = Boolean(val);
-          return;
-        }
-
-        if (
-          current.type === "file" &&
-          Object.getPrototypeOf(val) === FileList.prototype
-        ) {
-          current.files = val;
-          return;
-        }
-
-        current.value = val;
-      }
-    });
+    const destruct = formController.observeFormValue(
+      field,
+      this.getChangeObserver(current)
+    );
     return {
       mouseover() {
         formController.hoverFormField(field, true);

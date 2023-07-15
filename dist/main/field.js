@@ -42,6 +42,7 @@ exports.FormFieldComponent = (() => {
     var _a;
     let _instanceExtraInitializers = [];
     let _setDirectChildFromMutations_decorators;
+    let _getChangeObserver_decorators;
     let _attrSetter_decorators;
     return _a = class FormFieldComponent extends HTMLElement {
             constructor() {
@@ -181,6 +182,30 @@ exports.FormFieldComponent = (() => {
                     });
                 }
             }
+            getChangeObserver(current) {
+                if (current instanceof HTMLInputElement) {
+                    if (current.type === "checkbox" || current.type === "radio") {
+                        return (val) => {
+                            current.checked = Boolean(val);
+                        };
+                    }
+                    if (current.type === "file") {
+                        return (val) => {
+                            if (Object.getPrototypeOf(val) === FileList.prototype) {
+                                current.files = val;
+                            }
+                        };
+                    }
+                    return (val) => {
+                        current.value = val;
+                    };
+                }
+                return (val) => {
+                    if (current) {
+                        current.dataset.value = val;
+                    }
+                };
+            }
             getBindingListeners(formController, field, current) {
                 const { keyboardEventMapper } = this;
                 const keydown = keyboardEventMapper
@@ -190,20 +215,7 @@ exports.FormFieldComponent = (() => {
                     : (event) => {
                         formController.changeFormValue(field, event.target.value);
                     };
-                const destruct = formController.observeFormValue(field, (val) => {
-                    if (current instanceof HTMLInputElement) {
-                        if (current.type === "checkbox" || current.type === "radio") {
-                            current.checked = Boolean(val);
-                            return;
-                        }
-                        if (current.type === "file" &&
-                            Object.getPrototypeOf(val) === FileList.prototype) {
-                            current.files = val;
-                            return;
-                        }
-                        current.value = val;
-                    }
-                });
+                const destruct = formController.observeFormValue(field, this.getChangeObserver(current));
                 return {
                     mouseover() {
                         formController.hoverFormField(field, true);
@@ -338,8 +350,10 @@ exports.FormFieldComponent = (() => {
         },
         (() => {
             _setDirectChildFromMutations_decorators = [rx_store_core_1.bound];
+            _getChangeObserver_decorators = [rx_store_core_1.bound];
             _attrSetter_decorators = [rx_store_core_1.bound];
             __esDecorate(_a, null, _setDirectChildFromMutations_decorators, { kind: "method", name: "setDirectChildFromMutations", static: false, private: false, access: { has: obj => "setDirectChildFromMutations" in obj, get: obj => obj.setDirectChildFromMutations } }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _getChangeObserver_decorators, { kind: "method", name: "getChangeObserver", static: false, private: false, access: { has: obj => "getChangeObserver" in obj, get: obj => obj.getChangeObserver } }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _attrSetter_decorators, { kind: "method", name: "attrSetter", static: false, private: false, access: { has: obj => "attrSetter" in obj, get: obj => obj.attrSetter } }, null, _instanceExtraInitializers);
         })(),
         _a;

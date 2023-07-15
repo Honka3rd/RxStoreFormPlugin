@@ -19,6 +19,7 @@ export declare class FormFieldComponent<F extends FormControlData, M extends Par
     protected observer: MutationObserver;
     private getChangeFunction;
     protected attachChildEventListeners(current: Node | null, formController: FormController<F, M, S> | ImmutableFormController<F, M, S> | null): void;
+    private getChangeObserver;
     getBindingListeners<E extends HTMLElement>(formController: FormController<F, M, S> | ImmutableFormController<F, M, S>, field: F[N]["field"], current?: E): {
         mouseover(): void;
         mouseleave(): void;

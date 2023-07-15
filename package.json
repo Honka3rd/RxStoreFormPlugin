@@ -1,6 +1,6 @@
 {
   "name": "rx-store-form-plugin",
-  "version": "2.5.2",
+  "version": "2.5.3",
   "description": "a type safe form validation plugin based on Rx-Store-core",
   "keywords": ["Web Component", "Reactive", "Immutable", "Form Validation"],
   "main": "dist/index.js",
