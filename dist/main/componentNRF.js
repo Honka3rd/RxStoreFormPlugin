@@ -26,6 +26,14 @@ class NRFieldComponent extends field_1.FormFieldComponent {
             });
         }
     }
+    metaAttributesBind(current, controller) {
+        if (current) {
+            const cached = this.listeners.get(current);
+            if (cached) {
+                cached.metaDestruct = this.attributesBinding(current, controller);
+            }
+        }
+    }
     makeControl() {
         const controller$ = this.formControllerEmitter.pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.filter)(Boolean));
         const directChild$ = this.directChildEmitter
@@ -37,7 +45,7 @@ class NRFieldComponent extends field_1.FormFieldComponent {
                 throw new Error("Invalid controller, require instance of FormControllerImpl");
             }
             this.attachChildEventListeners(current, controller);
-            this.stopBinding = this.attributesBinding(current, controller);
+            this.metaAttributesBind(current, controller);
         }))
             .subscribe();
     }
@@ -49,14 +57,7 @@ class NRFieldComponent extends field_1.FormFieldComponent {
         this.attributeBinder = binder;
     }
     disconnectedCallback() {
-        var _a;
-        this.observer.disconnect();
-        this.subscription.unsubscribe();
-        (_a = this.stopBinding) === null || _a === void 0 ? void 0 : _a.call(this);
-        const removed = this.directChildEmitter.value;
-        if (removed) {
-            this.removeEventListeners(removed);
-        }
+        this.onDestroy();
     }
 }
 exports.NRFieldComponent = NRFieldComponent;

@@ -65,6 +65,7 @@ exports.FormFieldComponent = (() => {
                 }
             }
             removeEventListeners(removed) {
+                var _a;
                 const cachedListeners = this.listeners.get(removed);
                 if (cachedListeners) {
                     removed.removeEventListener("mouseover", cachedListeners.mouseover);
@@ -74,27 +75,25 @@ exports.FormFieldComponent = (() => {
                     removed.removeEventListener("keydown", cachedListeners.mouseover);
                     removed.removeEventListener("change", cachedListeners.focus);
                     cachedListeners.destruct();
+                    (_a = cachedListeners.metaDestruct) === null || _a === void 0 ? void 0 : _a.call(cachedListeners);
                 }
             }
             setDirectChildFromMutations(mutationList) {
                 const mutations = mutationList.filter((mutation) => mutation.type === "childList");
-                if (this.stopBinding) {
-                    const removed = mutations
-                        .map((mutation) => {
-                        return Array.from(mutation.removedNodes);
-                    })
-                        .reduce((nodes, next) => {
-                        next.forEach((node) => {
-                            nodes.push(node);
-                        });
-                        return nodes;
-                    }, [])
-                        .find((node) => node === this.directChildEmitter.value);
-                    if (removed) {
-                        this.stopBinding();
-                        this.directChildEmitter.next(null);
-                        this.removeEventListeners(removed);
-                    }
+                const removed = mutations
+                    .map((mutation) => {
+                    return Array.from(mutation.removedNodes);
+                })
+                    .reduce((nodes, next) => {
+                    next.forEach((node) => {
+                        nodes.push(node);
+                    });
+                    return nodes;
+                }, [])
+                    .find((node) => node === this.directChildEmitter.value);
+                if (removed) {
+                    this.directChildEmitter.next(null);
+                    this.removeEventListeners(removed);
                 }
                 if (!this.getDataset().target_selector && !this.getDataset().target_id) {
                     const first = mutations[0].addedNodes.item(0);
@@ -233,6 +232,15 @@ exports.FormFieldComponent = (() => {
                     change: this.getChangeFunction(formController, field, current),
                     destruct,
                 };
+            }
+            onDestroy() {
+                var _a;
+                this.observer.disconnect();
+                (_a = this.subscription) === null || _a === void 0 ? void 0 : _a.unsubscribe();
+                const removed = this.directChildEmitter.value;
+                if (removed) {
+                    this.removeEventListeners(removed);
+                }
             }
             setInputDefault(target, key, next) {
                 if (target instanceof HTMLInputElement ||

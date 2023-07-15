@@ -219,6 +219,7 @@ export type ListenersCache = {
     keydown: (event: any) => void;
     change: (event: Event) => void;
     destruct: () => void;
+    metaDestruct?: () => void;
 };
 export type ListenedAttributes = {
     ["data-target_id"]?: string;

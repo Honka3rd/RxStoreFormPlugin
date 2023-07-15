@@ -1,5 +1,5 @@
 import { bound } from "rx-store-core";
-import { BehaviorSubject } from "rxjs";
+import { BehaviorSubject, Subscription } from "rxjs";
 import {
   AttributeChangedCallback,
   ConnectedCallback,
@@ -37,6 +37,7 @@ export class FormFieldComponent<
   protected type?: DatumType;
   protected keyboardEventMapper?: (ev: any) => F[N]["value"];
   protected changeEventMapper?: (ev: any) => F[N]["value"];
+  protected subscription?: Subscription;
 
   protected formControllerEmitter: BehaviorSubject<
     FormController<F, M, S> | ImmutableFormController<F, M, S> | null
@@ -45,7 +46,6 @@ export class FormFieldComponent<
   >(null);
   protected directChildEmitter: BehaviorSubject<HTMLElement | null> =
     new BehaviorSubject<HTMLElement | null>(null);
-  protected stopBinding?: () => void;
   protected listeners: WeakMap<Node, ListenersCache> = new WeakMap();
 
   protected isValidDirectChild(target?: Node | null): target is HTMLElement {
@@ -74,6 +74,7 @@ export class FormFieldComponent<
       removed.removeEventListener("keydown", cachedListeners.mouseover);
       removed.removeEventListener("change", cachedListeners.focus);
       cachedListeners.destruct();
+      cachedListeners.metaDestruct?.();
     }
   }
 
@@ -83,23 +84,20 @@ export class FormFieldComponent<
       (mutation) => mutation.type === "childList"
     );
 
-    if (this.stopBinding) {
-      const removed = mutations
-        .map((mutation) => {
-          return Array.from(mutation.removedNodes);
-        })
-        .reduce((nodes, next) => {
-          next.forEach((node) => {
-            nodes.push(node);
-          });
-          return nodes;
-        }, <Node[]>[])
-        .find((node) => node === this.directChildEmitter.value);
-      if (removed) {
-        this.stopBinding();
-        this.directChildEmitter.next(null);
-        this.removeEventListeners(removed);
-      }
+    const removed = mutations
+      .map((mutation) => {
+        return Array.from(mutation.removedNodes);
+      })
+      .reduce((nodes, next) => {
+        next.forEach((node) => {
+          nodes.push(node);
+        });
+        return nodes;
+      }, <Node[]>[])
+      .find((node) => node === this.directChildEmitter.value);
+    if (removed) {
+      this.directChildEmitter.next(null);
+      this.removeEventListeners(removed);
     }
 
     if (!this.getDataset().target_selector && !this.getDataset().target_id) {
@@ -290,6 +288,15 @@ export class FormFieldComponent<
       change: this.getChangeFunction(formController, field, current),
       destruct,
     };
+  }
+
+  protected onDestroy() {
+    this.observer.disconnect();
+    this.subscription?.unsubscribe();
+    const removed = this.directChildEmitter.value;
+    if (removed) {
+      this.removeEventListeners(removed);
+    }
   }
 
   private setInputDefault(target: Node, key: string, next: string) {

@@ -29,7 +29,6 @@ export class NRFieldComponent<
     FormControllerInjector<F, M, S>,
     DisconnectedCallback
 {
-  private subscription: Subscription;
   private attributeBinder?: <D extends FormControlBasicDatum>(
     attributeSetter: (k: string, v: any) => void,
     attrs: D
@@ -58,7 +57,19 @@ export class NRFieldComponent<
     }
   }
 
-  protected makeControl() {
+  private metaAttributesBind(current: HTMLElement | null, controller: unknown) {
+    if (current) {
+      const cached = this.listeners.get(current);
+      if (cached) {
+        cached.metaDestruct = this.attributesBinding(
+          current,
+          controller as FormController<F, M, S>
+        );
+      }
+    }
+  }
+
+  private makeControl() {
     const controller$ = this.formControllerEmitter.pipe(
       distinctUntilChanged(),
       filter(Boolean)
@@ -76,10 +87,7 @@ export class NRFieldComponent<
             );
           }
           this.attachChildEventListeners(current, controller);
-          this.stopBinding = this.attributesBinding(
-            current,
-            controller as FormController<F, M, S>
-          );
+          this.metaAttributesBind(current, controller);
         })
       )
       .subscribe();
@@ -100,12 +108,6 @@ export class NRFieldComponent<
   }
 
   disconnectedCallback(): void {
-    this.observer.disconnect();
-    this.subscription.unsubscribe();
-    this.stopBinding?.();
-    const removed = this.directChildEmitter.value;
-    if (removed) {
-      this.removeEventListeners(removed);
-    }
+    this.onDestroy();
   }
 }

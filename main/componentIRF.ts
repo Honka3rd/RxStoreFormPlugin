@@ -30,7 +30,6 @@ export class IRFieldComponent<
     DisconnectedCallback,
     FormControllerInjector<F, M, S>
 {
-  private subscription: Subscription;
   private attributeBinder?: (
     attributeSetter: (k: string, v: any) => void,
     attrs: Map<K<F[number]>, V<F[number]>>
@@ -63,7 +62,19 @@ export class IRFieldComponent<
     }
   }
 
-  protected makeControl() {
+  private metaAttributesBind(current: HTMLElement | null, controller: unknown) {
+    if (current) {
+      const cached = this.listeners.get(current);
+      if (cached) {
+        cached.metaDestruct = this.attributesBinding(
+          current,
+          controller as ImmutableFormController<F, M, S>
+        );
+      }
+    }
+  }
+
+  private makeControl() {
     const controller$ = this.formControllerEmitter.pipe(
       distinctUntilChanged(),
       filter(Boolean)
@@ -81,9 +92,12 @@ export class IRFieldComponent<
             );
           }
           this.attachChildEventListeners(current, controller);
-          this.stopBinding = this.attributesBinding(
+          this.metaAttributesBind(
             current,
-            controller as ImmutableFormController<F, M, S>
+            this.attributesBinding(
+              current,
+              controller as ImmutableFormController<F, M, S>
+            )
           );
         })
       )
@@ -105,12 +119,6 @@ export class IRFieldComponent<
   }
 
   disconnectedCallback(): void {
-    this.observer.disconnect();
-    this.subscription.unsubscribe();
-    this.stopBinding?.();
-    const removed = this.directChildEmitter.value;
-    if (removed) {
-      this.removeEventListeners(removed);
-    }
+    this.onDestroy();
   }
 }
