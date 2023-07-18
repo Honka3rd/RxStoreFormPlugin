@@ -18,26 +18,34 @@ import { NRFormBuilder } from "rx-store-form-plugin";
 
 ### fields is an array contains information to describe each field state
 type define:
+```javascript
 {
-field: string; // field name, should be unique
-value: any; // field value
-touched: boolean; // the field is touched or not
-changed: boolean; // the value in this field is changed or not
-focused: boolean; // this field is focused or not
-hovered: boolean; // this field is hovered by mouse or not
-type: DatumType; // field is SYNC(sync validated) or ASYNC(bulk async validated) or EXCLUDED(excluded async validated)
-lazy?: boolean; // if field type is EXCLUDED, whether wait for previous resolve
+  field: string; // field name, should be unique
+  value: any; // field value
+  touched: boolean; // the field is touched or not
+  changed: boolean; // the value in this field is changed or not
+  focused: boolean; // this field is focused or not
+  hovered: boolean; // this field is hovered by mouse or not
+  type: DatumType; // field is SYNC(sync validated) or ASYNC(bulk async validated) or EXCLUDED(excluded async validated)
+  lazy?: boolean; // if field type is EXCLUDED, whether wait for previous resolve
 }[]
+```
+each element inside this array is a field data
 
 ### metadata stands for the validation result for each field
 type define
+```javascript
 {
-errors: object; // required error message
-warn?: any; // optional warning message
-info?: any; // optional information
+  errors: object; // required error message
+  warn?: any; // optional warning message
+  info?: any; // optional information
 }
+```
 
-can be shortly written by: FormControlMetadata<errors>
+can be shortly written by: 
+```javascript
+FormControlMetadata<Error extends object, Warn = any, Info = any>
+```
 
 ```javascript
 import { FormControlStrDatum, FormControlDatum, FormControlMetadata } from "rx-store-form-plugin"; // handy type definitions for define form types
@@ -65,7 +73,7 @@ const sampleFormBuilder = new NRFormBuilder<
 
 formSelector stands for id of a form
 validator is for Sync validate and return a metadata object
-
+validator will be called once the entire form data change
 ```javascript
 const sampleFormBuilder = new NRFormBuilder<...>(
   {
@@ -104,24 +112,24 @@ const sampleFormBuilder = new NRFormBuilder<...>({...})
     {
       field: "uid", // field name
       defaultValue: "", // default value for this field
-      /* 
-        type?: field is SYNC(sync validated) or ASYNC(bulk async validated) or EXCLUDED(excluded async validated)
+        type?: field is SYNC(sync validated) or ASYNC(bulk async validated) or EXCLUDED(excluded async validated),
         $validator?: function description: (
           arg1 is field value, 
           arg2 is metadata for this field, 
           arg3 is entire form data
-          ) => Promise or Observable resolve metadata, just for NRF
+          ) => Promise or Observable resolve metadata, 
+          // triggered by current field data changed, just for NRF
         $immutableValidator?: function description: (
           arg1 is field value, 
           arg2 is metadata for this field, 
           arg3 is entire immutable form data
-          ) => Promise or Observable resolve immutable metadata, just for IRF
-        lazy?: if field type is EXCLUDED, whether wait for previous pending get resolved
+          ) => Promise or Observable resolve immutable metadata, 
+          // triggered by current field data changed, just for IRF
+        lazy?: if field type is EXCLUDED, whether wait for previous pending get resolved,
         debounceDuration?: if field type is EXCLUDED, the debounce time
-        datumKeys?: the selected fields for comparing
-        comparator?: if the form type NRF, (v1: any, v2: any) => boolean
-      */
-    },
+        datumKeys?: if field type is EXCLUDED, only the selected fields for comparing,
+        comparator?: if the form type is NRF and field type is EXCLUDED, a comparator determine whether to call $validator or not, type def: (v1: any, v2: any) => boolean
+      },
     {
       field: "username",
       defaultValue: "",
