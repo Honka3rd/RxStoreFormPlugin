@@ -24,13 +24,20 @@ class IRFieldComponent extends field_1.FormFieldComponent {
             });
         }
     }
-    metaAttributesBind(current, controller) {
+    attributeUnbind(current, unbind) {
         if (current) {
             const cached = this.listeners.get(current);
-            if (cached) {
-                cached.metaDestruct = this.attributesBinding(current, controller);
+            if (cached && unbind) {
+                cached.metaDestruct = unbind;
             }
         }
+    }
+    isValidImmutableFormController(obj) {
+        return obj instanceof formControlIRS_1.ImmutableFormControllerImpl;
+    }
+    reportInvalidImmutableController(obj) {
+        console.error(obj);
+        throw new Error("Invalid controller, require instance of ImmutableFormControllerImpl");
     }
     makeControl() {
         const controller$ = this.formControllerEmitter.pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.filter)(Boolean));
@@ -39,11 +46,12 @@ class IRFieldComponent extends field_1.FormFieldComponent {
             .pipe((0, rxjs_1.distinctUntilChanged)());
         return (0, rxjs_1.combineLatest)([controller$, directChild$])
             .pipe((0, rxjs_1.tap)(([controller, current]) => {
-            if (!(controller instanceof formControlIRS_1.ImmutableFormControllerImpl)) {
-                throw new Error("Invalid controller, require instance of ImmutableFormControllerImpl");
+            if (!this.isValidImmutableFormController(controller)) {
+                return this.reportInvalidImmutableController(controller);
             }
             this.attachChildEventListeners(current, controller);
-            this.metaAttributesBind(current, this.attributesBinding(current, controller));
+            const unbind = this.attributesBinding(current, controller);
+            this.attributeUnbind(current, unbind);
         }))
             .subscribe();
     }

@@ -56,17 +56,26 @@ export class NRFieldComponent<
     }
   }
 
-  private metaAttributesBind(current: HTMLElement | null, controller: unknown) {
+  private attributeUnbind(current: HTMLElement | null, unbind?: () => void) {
     if (current) {
       const cached = this.listeners.get(current);
-      if (cached) {
-        cached.metaDestruct = this.attributesBinding(
-          current,
-          controller as FormController<F, M, S>
-        );
+      if (cached && unbind) {
+        cached.metaDestruct = unbind;
       }
     }
   }
+
+  private isValidFormController(obj: any): obj is FormController<F, M, S> {
+    return obj instanceof FormControllerImpl;
+  }
+
+  private reportInvalidController(obj: any) {
+    console.error(obj);
+    throw new Error(
+      "Invalid controller, require instance of ImmutableFormControllerImpl"
+    );
+  }
+
 
   private makeControl() {
     const controller$ = this.formControllerEmitter.pipe(
@@ -80,13 +89,12 @@ export class NRFieldComponent<
     return combineLatest([controller$, directChild$] as const)
       .pipe(
         tap(([controller, current]) => {
-          if (!(controller instanceof FormControllerImpl)) {
-            throw new Error(
-              "Invalid controller, require instance of FormControllerImpl"
-            );
+          if (!this.isValidFormController(controller)) {
+            return this.reportInvalidController(controller);
           }
           this.attachChildEventListeners(current, controller);
-          this.metaAttributesBind(current, controller);
+          const unbind = this.attributesBinding(current, controller)
+          this.attributeUnbind(current, unbind);
         })
       )
       .subscribe();

@@ -1,9 +1,4 @@
-import {
-  combineLatest,
-  distinctUntilChanged,
-  filter,
-  tap,
-} from "rxjs";
+import { combineLatest, distinctUntilChanged, filter, tap } from "rxjs";
 import { FormFieldComponent } from "./field";
 import {
   DisconnectedCallback,
@@ -61,16 +56,24 @@ export class IRFieldComponent<
     }
   }
 
-  private metaAttributesBind(current: HTMLElement | null, controller: unknown) {
+  private attributeUnbind(current: HTMLElement | null, unbind?: () => void) {
     if (current) {
       const cached = this.listeners.get(current);
-      if (cached) {
-        cached.metaDestruct = this.attributesBinding(
-          current,
-          controller as ImmutableFormController<F, M, S>
-        );
+      if (cached && unbind) {
+        cached.metaDestruct = unbind;
       }
     }
+  }
+
+  private isValidImmutableFormController(obj: any): obj is ImmutableFormController<F, M, S> {
+    return obj instanceof ImmutableFormControllerImpl;
+  }
+
+  private reportInvalidImmutableController(obj: any) {
+    console.error(obj);
+    throw new Error(
+      "Invalid controller, require instance of ImmutableFormControllerImpl"
+    );
   }
 
   private makeControl() {
@@ -85,19 +88,12 @@ export class IRFieldComponent<
     return combineLatest([controller$, directChild$] as const)
       .pipe(
         tap(([controller, current]) => {
-          if (!(controller instanceof ImmutableFormControllerImpl)) {
-            throw new Error(
-              "Invalid controller, require instance of ImmutableFormControllerImpl"
-            );
+          if (!this.isValidImmutableFormController(controller)) {
+            return this.reportInvalidImmutableController(controller);
           }
           this.attachChildEventListeners(current, controller);
-          this.metaAttributesBind(
-            current,
-            this.attributesBinding(
-              current,
-              controller as ImmutableFormController<F, M, S>
-            )
-          );
+          const unbind = this.attributesBinding(current, controller);
+          this.attributeUnbind(current, unbind);
         })
       )
       .subscribe();

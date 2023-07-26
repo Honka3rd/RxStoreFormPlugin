@@ -26,13 +26,20 @@ class NRFieldComponent extends field_1.FormFieldComponent {
             });
         }
     }
-    metaAttributesBind(current, controller) {
+    attributeUnbind(current, unbind) {
         if (current) {
             const cached = this.listeners.get(current);
-            if (cached) {
-                cached.metaDestruct = this.attributesBinding(current, controller);
+            if (cached && unbind) {
+                cached.metaDestruct = unbind;
             }
         }
+    }
+    isValidFormController(obj) {
+        return obj instanceof formControlNRS_1.default;
+    }
+    reportInvalidController(obj) {
+        console.error(obj);
+        throw new Error("Invalid controller, require instance of ImmutableFormControllerImpl");
     }
     makeControl() {
         const controller$ = this.formControllerEmitter.pipe((0, rxjs_1.distinctUntilChanged)(), (0, rxjs_1.filter)(Boolean));
@@ -41,11 +48,12 @@ class NRFieldComponent extends field_1.FormFieldComponent {
             .pipe((0, rxjs_1.distinctUntilChanged)());
         return (0, rxjs_1.combineLatest)([controller$, directChild$])
             .pipe((0, rxjs_1.tap)(([controller, current]) => {
-            if (!(controller instanceof formControlNRS_1.default)) {
-                throw new Error("Invalid controller, require instance of FormControllerImpl");
+            if (!this.isValidFormController(controller)) {
+                return this.reportInvalidController(controller);
             }
             this.attachChildEventListeners(current, controller);
-            this.metaAttributesBind(current, controller);
+            const unbind = this.attributesBinding(current, controller);
+            this.attributeUnbind(current, unbind);
         }))
             .subscribe();
     }

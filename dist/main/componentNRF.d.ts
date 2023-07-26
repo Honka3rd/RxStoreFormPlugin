@@ -3,7 +3,9 @@ import { FormControlBasicDatum, FormControlBasicMetadata, FormControlData, FormC
 export declare class NRFieldComponent<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string = string, N extends number = number> extends FormFieldComponent<F, M, S, N> implements NRFieldAttributeBinderInjector, FormControllerInjector<F, M, S>, DisconnectedCallback {
     private attributeBinder?;
     private attributesBinding;
-    private metaAttributesBind;
+    private attributeUnbind;
+    private isValidFormController;
+    private reportInvalidController;
     private makeControl;
     constructor();
     setAttrBinder(binder: <D extends FormControlBasicDatum>(attributeSetter: (k: string, v: any) => void, attrs: D) => void): void;
