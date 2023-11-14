@@ -53,14 +53,14 @@ export type AsyncValidationConfig = {
 export interface AsyncValidationNConfig extends AsyncValidationConfig {
     compare?: (var1: any, var2: any) => boolean;
 }
-export type $Validator = <A extends FormControlBasicDatum, B extends Partial<Record<C[number]["field"], FormControlBasicMetadata>>, C extends FormControlData>(fieldData: A, metadata: B, formData: C) => Observable<B> | Promise<B>;
-export type $ImmutableValidator<F extends FormControlBasicDatum[]> = <A extends Map<keyof F[number], V<F[number]>>, B extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, C extends List<Map<keyof F[number], V<F[number]>>>>(fieldData: A, metadata: ImmutableMeta<F, B>, formData: C) => Observable<ImmutableMeta<F, B>> | Promise<ImmutableMeta<F, B>>;
-export type FormStubs<F extends FormControlBasicDatum[]> = Array<{
-    field: F[number]["field"];
-    defaultValue?: F[number]["value"];
+export type $Validator<F extends FormControlBasicDatum, M extends Partial<Record<F["field"], FormControlBasicMetadata>>, D extends FormControlData> = (fieldData: F, metadata: () => M, formData: () => D) => Observable<M> | Promise<M>;
+export type $ImmutableValidator<F extends FormControlBasicDatum[], M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>> = (fieldData: Map<keyof F[number], V<F[number]>>, metadata: () => ImmutableMeta<F, M>, formData: () => List<Map<keyof F[number], V<F[number]>>>) => Observable<ImmutableMeta<F, Partial<Record<F[number]["field"], FormControlBasicMetadata>>>> | Promise<ImmutableMeta<F, Partial<Record<F[number]["field"], FormControlBasicMetadata>>>>;
+export type FormStubs<F extends FormControlBasicDatum[], M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, I extends number = number> = Array<{
+    field: F[I]["field"];
+    defaultValue?: F[I]["value"];
     type?: DatumType;
-    $validator?: $Validator;
-    $immutableValidator?: $ImmutableValidator<F>;
+    $validator?: $Validator<F[I], M, F>;
+    $immutableValidator?: $ImmutableValidator<F, M>;
     lazy?: boolean;
     debounceDuration?: number;
     datumKeys?: Array<keyof F[number]>;
@@ -68,8 +68,8 @@ export type FormStubs<F extends FormControlBasicDatum[]> = Array<{
 }>;
 export interface FormController<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> {
     setBulkAsyncValidator(asyncValidator: (formData: F, metadata: Partial<M>) => Observable<Partial<M>> | Promise<Partial<M>>): void;
-    setFields(fields: FormStubs<F>): void;
-    getFields(): FormStubs<F>;
+    setFields(fields: FormStubs<F, M>): void;
+    getFields(): FormStubs<F, M>;
     setMetaComparator(metaComparator: (meta1: Partial<M>, meta2: Partial<M>) => boolean): void;
     setMetaComparatorMap(metaComparatorMap: {
         [K in keyof Partial<M>]: (m1: Partial<M>[K], m2: Partial<M>[K]) => boolean;
@@ -93,11 +93,11 @@ export interface FormController<F extends FormControlData, M extends Partial<Rec
     getMeta(): Partial<M> | undefined;
     getClonedMeta(): Partial<M> | undefined;
     getFieldsMeta<KS extends Array<keyof M>>(fields: KS): Partial<M>;
-    changeFieldType<N extends number>(field: F[N]["field"], type: DatumType, $validator?: $Validator): this;
+    changeFieldType<N extends number>(field: F[N]["field"], type: DatumType, $validator?: $Validator<F[N], M, F>): this;
     resetFormDatum<N extends number>(field: F[N]["field"]): this;
     resetFormDatum<N extends number>(field: F[N]["field"]): this;
     resetFormAll(): this;
-    appendFormData(fields: FormStubs<F>): this;
+    appendFormData(fields: FormStubs<F, M>): this;
     removeFormData(fields: Array<F[number]["field"]>): this;
     setMetadata(meta: Partial<M>): this;
     setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this;
@@ -111,7 +111,7 @@ export interface FormController<F extends FormControlData, M extends Partial<Rec
     observeFormData<CompareAts extends readonly number[] = number[]>(observer: (result: F[CompareAts[number]][]) => void, fields?: F[CompareAts[number]]["field"][], comparator?: Comparator<F[CompareAts[number]][]>): () => void;
     getDatum<At extends number = number>(field: F[At]["field"]): F[At] | undefined;
     getDatumValue<At extends number = number>(field: F[At]["field"]): F[At]["value"] | undefined;
-    getFormData<Ats extends Readonly<number[]> = number[]>(fields?: F[Ats[number]]["field"][]): ReturnType<Record<S, () => F>[S]> | F[Ats[number]][];
+    getFormData<Ats extends Readonly<number[]> = number[]>(fields?: F[Ats[number]]["field"][]): F;
     toFormData(): ToFormData;
 }
 export type NormalFormPluginBuilderParams<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> = {
@@ -131,7 +131,7 @@ export type ImmutableFormStubs = List<Map<K<FormStub>, V<FormStub>>>;
 export type ToFormData = (form?: HTMLFormElement) => FormData;
 export interface ImmutableFormController<F extends FormControlData, M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, S extends string> {
     setBulkAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: ImmutableMeta<F, M>) => Observable<ImmutableMeta<F, M>> | Promise<ImmutableMeta<F, M>>): void;
-    setFields(fields: FormStubs<F>): void;
+    setFields(fields: FormStubs<F, M>): void;
     setDefaultMeta(meta: Partial<M>): void;
     setAsyncConfig(cfg: AsyncValidationConfig): void;
     changeFormValue<N extends number>(field: F[N]["field"], value: F[N]["value"]): this;
@@ -146,10 +146,10 @@ export interface ImmutableFormController<F extends FormControlData, M extends Pa
     startValidation(): (() => void) | undefined;
     getMeta(): ImmutableMeta<F, M>;
     getFieldMeta<N extends number = number, E extends Any = Any>(field: F[N]["field"]): ImmutableMetaDatum<E>;
-    changeFieldType<N extends number>(field: F[N]["field"], type: DatumType, $immutableValidator?: $ImmutableValidator<F>): this;
+    changeFieldType<N extends number>(field: F[N]["field"], type: DatumType, $immutableValidator?: $ImmutableValidator<F, M>): this;
     resetFormDatum<N extends number>(field: F[N]["field"]): this;
     resetFormAll(): this;
-    appendFormData(fields: FormStubs<F>): this;
+    appendFormData(fields: FormStubs<F, M>): this;
     removeFormData(fields: Array<F[number]["field"]>): this;
     setMetadata(meta: ImmutableMeta<F, M>): this;
     setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this;
@@ -160,7 +160,7 @@ export interface ImmutableFormController<F extends FormControlData, M extends Pa
     observeFormData<Ats extends number[] = number[]>(observer: (result: List<Map<PK<F[Ats[number]]>, PV<F[Ats[number]]>>> | ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]>) => void, fields?: F[Ats[number]]["field"][]): () => void;
     observeFormDatum<CompareAt extends number = number>(field: F[CompareAt]["field"], observer: (result: Map<PK<ReturnType<Record<S, () => F>[S]>[CompareAt]>, PV<ReturnType<Record<S, () => F>[S]>[CompareAt]>>) => void): () => void;
     observeFormValue<CompareAt extends number = number>(field: F[CompareAt]["field"], observer: (result: ReturnType<Record<S, () => F>[S]>[CompareAt]["value"]) => void): () => void;
-    getFormData<Ats extends number[] = number[]>(fields?: F[Ats[number]]["field"][]): List<Map<PK<F[Ats[number]]>, PV<F[Ats[number]]>>> | ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]>;
+    getFormData<Ats extends number[] = number[]>(fields?: F[Ats[number]]["field"][]): List<Map<PK<F[Ats[number]]>, PV<F[Ats[number]]>>>;
     getDatum<At extends number = number>(field: F[At]["field"]): Map<PK<F[At]>, PV<F[At]>>;
     getDatumValue<At extends number = number>(field: F[At]["field"]): NonNullable<V<F[number]>>;
     toFormData(): ToFormData;

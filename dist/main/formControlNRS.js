@@ -112,8 +112,7 @@ let FormControllerImpl = (() => {
                     .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.distinctUntilChanged)(this.getComparator(this.cast(this.connector))), (0, rxjs_1.map)((formData) => formData.find((f) => f.field === field)), ...datumKeys.map((key) => (0, rxjs_1.distinctUntilKeyChanged)(key)), (0, rxjs_1.distinctUntilChanged)(comparator));
             }
             getSingleSource($validator, fieldData) {
-                const metadata = this.getMeta();
-                const source = $validator(fieldData, metadata, this.getFormData());
+                const source = $validator(fieldData, this.getMeta, this.getFormData);
                 return source instanceof Promise ? (0, rxjs_1.from)(source) : source;
             }
             connect(lazy) {
@@ -605,6 +604,9 @@ let FormControllerImpl = (() => {
                 this.safeExecute(() => {
                     var _a;
                     const meta = this.getMeta();
+                    if (!metaOne) {
+                        return this;
+                    }
                     meta[field] = metaOne;
                     (_a = this.metadata$) === null || _a === void 0 ? void 0 : _a.next(Object.assign({}, meta));
                 });

@@ -49,7 +49,7 @@ class FormControllerImpl<
     formData: F,
     metadata: Partial<M>
   ) => Observable<Partial<M>> | Promise<Partial<M>>;
-  private fields?: FormStubs<F>;
+  private fields?: FormStubs<F, M>;
   private metaComparator?: (meta1: Partial<M>, meta2: Partial<M>) => boolean;
   private metaComparatorMap?: {
     [K in keyof Partial<M>]: (m1: Partial<M>[K], m2: Partial<M>[K]) => boolean;
@@ -105,14 +105,13 @@ class FormControllerImpl<
   }
 
   private getSingleSource(
-    $validator: FormStubs<F>[number]["$validator"],
+    $validator: FormStubs<F, M>[number]["$validator"],
     fieldData: ReturnType<Record<S, () => F>[S]>[number]
   ) {
-    const metadata = this.getMeta() as M;
     const source = $validator!(
       fieldData,
-      metadata,
-      this.getFormData() as ReturnType<Record<S, () => F>[S]>
+      this.getMeta,
+      this.getFormData
     );
     return source instanceof Promise ? from(source) : source;
   }
@@ -121,7 +120,7 @@ class FormControllerImpl<
     return lazy ? exhaustMap : switchMap;
   }
 
-  private listenToExcludedAll(fields: FormStubs<F>) {
+  private listenToExcludedAll(fields: FormStubs<F, M>) {
     this.subscriptions.pushAll(
       fields
         .filter(
@@ -174,13 +173,13 @@ class FormControllerImpl<
     );
   }
 
-  setFields(fields: FormStubs<F>) {
+  setFields(fields: FormStubs<F, M>) {
     if (!this.fields) {
       this.fields = fields;
     }
   }
 
-  getFields(): FormStubs<F> {
+  getFields(): FormStubs<F, M> {
     if (!this.fields) {
       throw new Error("Fields information has not been set");
     }
@@ -290,7 +289,7 @@ class FormControllerImpl<
     fields.forEach((field) => this.subscriptions.remove(field));
   }
 
-  private appendDataByFields(fields: FormStubs<F>, data: F) {
+  private appendDataByFields(fields: FormStubs<F, M>, data: F) {
     fields.forEach(({ defaultValue, field, type, lazy, $validator }) => {
       data.push({
         field,
@@ -540,7 +539,7 @@ class FormControllerImpl<
   @bound
   getFormData<Ats extends Readonly<number[]> = number[]>(
     fields?: F[Ats[number]]["field"][]
-  ) {
+  ): F {
     return this.safeExecute((connector) => {
       const casted = this.cast(connector);
       const form = casted.getState(this.id)!;
@@ -552,15 +551,15 @@ class FormControllerImpl<
           }
           return acc;
         }, [] as F[Ats[number]][]);
-        return reduced;
+        return reduced as F;
       }
-      return form;
+      return form as F
     })!;
   }
 
   @bound
   getMeta() {
-    return { ...this.metadata$?.value } as Partial<M>;
+    return { ...this.metadata$?.value } as M;
   }
 
   @bound
@@ -775,7 +774,7 @@ class FormControllerImpl<
   changeFieldType<N extends number>(
     field: F[N]["field"],
     type: DatumType,
-    $validator?: $Validator
+    $validator?: $Validator<F[N], M, F>
   ) {
     this.safeCommitMutation(field, (found) => {
       if (type === DatumType.EXCLUDED && found.type !== DatumType.EXCLUDED) {
@@ -869,7 +868,7 @@ class FormControllerImpl<
   }
 
   @bound
-  appendFormData(fields: FormStubs<F>) {
+  appendFormData(fields: FormStubs<F, M>) {
     this.safeExecute((connector) => {
       const casted = this.cast(connector);
       const data = casted.getClonedState(this.id);
@@ -902,6 +901,9 @@ class FormControllerImpl<
   setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]) {
     this.safeExecute(() => {
       const meta = this.getMeta();
+      if(!metaOne) {
+        return this;
+      }
       meta[field] = metaOne;
       this.metadata$?.next({ ...meta });
     });

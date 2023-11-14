@@ -140,8 +140,7 @@ exports.ImmutableFormControllerImpl = (() => {
                     : (field1, field2) => (0, immutable_1.is)(field1, field2)));
             }
             getSingleSource($validator, fieldData) {
-                const metadata = this.getMeta();
-                const source = $validator(fieldData, metadata, this.getFormData());
+                const source = $validator(fieldData, this.getMeta, this.getFormData);
                 return source instanceof Promise ? (0, rxjs_1.from)(source) : source;
             }
             connect(lazy) {

@@ -1,5 +1,5 @@
 import { Any, Initiator, PluginImpl } from "rx-store-types";
-import { $ImmutableValidator, AsyncValidationConfig, DatumType, FormControlBasicMetadata, FormControlData, FormStubs, ImmutableFormController, ImmutableMeta, ImmutableMetaDatum, K, PK, PV, V } from "./interfaces";
+import { $ImmutableValidator, AsyncValidationConfig, DatumType, FormControlBasicMetadata, FormControlData, FormStubs, ImmutableFormController, ImmutableMeta, ImmutableMetaDatum, K, PV, V } from "./interfaces";
 import { List, Map } from "immutable";
 import { Observable } from "rxjs";
 import { Subscriptions } from "./subscriptions";
@@ -12,8 +12,8 @@ export declare class ImmutableFormControllerImpl<F extends FormControlData, M ex
     private defaultMeta?;
     asyncValidator?: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: ImmutableMeta<F, M>) => Observable<ImmutableMeta<F, M>> | Promise<ImmutableMeta<F, M>>;
     constructor(id: S, validator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: ImmutableMeta<F, M>) => ImmutableMeta<F, M>, subscriptions: Subscriptions);
-    setFields(fields: FormStubs<F>): void;
-    getFields(): FormStubs<F>;
+    setFields(fields: FormStubs<F, M>): void;
+    getFields(): FormStubs<F, M>;
     setDefaultMeta(meta: Partial<M>): void;
     setAsyncConfig(cfg: AsyncValidationConfig): void;
     private partialCompare;
@@ -34,10 +34,10 @@ export declare class ImmutableFormControllerImpl<F extends FormControlData, M ex
     private isPromise;
     private getAsyncFields;
     private asyncValidatorExecutor;
-    getFormData<CompareAts extends readonly number[] = number[]>(fields?: F[CompareAts[number]]["field"][]): List<Map<PK<F[CompareAts[number]]>, PV<F[CompareAts[number]]>>> | ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]>;
+    getFormData<CompareAts extends readonly number[] = number[]>(fields?: F[CompareAts[number]]["field"][]): List<Map<keyof F[number], V<F[number]>>>;
     resetFormDatum<N extends number>(field: F[N]["field"]): this;
     resetFormAll(): this;
-    appendFormData(fields: FormStubs<F>): this;
+    appendFormData(fields: FormStubs<F, M>): this;
     removeFormData(fields: F[number]["field"][]): this;
     setMetadata(meta: ImmutableMeta<F, M>): this;
     setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this;
@@ -50,7 +50,7 @@ export declare class ImmutableFormControllerImpl<F extends FormControlData, M ex
     getDatum<At extends number = number>(field: F[At]["field"]): Map<keyof F[At], PV<F[At]>>;
     getDatumValue<At extends number = number>(field: F[At]["field"]): NonNullable<V<F[number]>>;
     getFieldMeta<N extends number = number, E extends Any = Any>(field: F[N]["field"]): ImmutableMetaDatum<E>;
-    changeFieldType<N extends number>(field: F[N]["field"], type: DatumType, $immutableValidator?: $ImmutableValidator<F>): this;
+    changeFieldType<N extends number>(field: F[N]["field"], type: DatumType, $immutableValidator?: $ImmutableValidator<F, M>): this;
     getFieldsMeta(fields: F[number]["field"][]): ImmutableMeta<F, M>;
     setBulkAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: ImmutableMeta<F, M>) => Observable<ImmutableMeta<F, M>> | Promise<ImmutableMeta<F, M>>): void;
     changeFormValue<N extends number>(field: F[N]["field"], value: F[N]["value"]): this;

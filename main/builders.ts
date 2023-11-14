@@ -43,7 +43,7 @@ class NRFormBuilder<
     return this;
   }
 
-  setFields(fields: FormStubs<F>) {
+  setFields(fields: FormStubs<F, M>) {
     this.NRF.setFields(fields);
     this.setDefaultMeta(
       fields.reduce((meta, next) => {
@@ -126,7 +126,7 @@ class IRFormBuilder<
     return this;
   }
 
-  setFields(fields: FormStubs<F>) {
+  setFields(fields: FormStubs<F, M>) {
     this.IRF.setFields(fields);
     this.setDefaultMeta(
       fields.reduce((meta, next) => {

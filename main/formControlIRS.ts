@@ -54,7 +54,7 @@ export class ImmutableFormControllerImpl<
   };
 
   private metadata$?: BehaviorSubject<ImmutableMeta<F, M>>;
-  private fields?: FormStubs<F>;
+  private fields?: FormStubs<F, M>;
   private defaultMeta?: ImmutableMeta<F, M>;
 
   asyncValidator?: (
@@ -73,14 +73,14 @@ export class ImmutableFormControllerImpl<
     super(id);
   }
 
-  setFields(fields: FormStubs<F>) {
+  setFields(fields: FormStubs<F, M>) {
     if (!this.fields) {
       this.fields = fields;
       this.listenToExcludedAll(fields);
     }
   }
 
-  getFields(): FormStubs<F> {
+  getFields(): FormStubs<F, M> {
     if (!this.fields) {
       throw new Error("Fields information has not been set");
     }
@@ -143,15 +143,10 @@ export class ImmutableFormControllerImpl<
   }
 
   private getSingleSource(
-    $validator: FormStubs<F>[number]["$immutableValidator"],
+    $validator: FormStubs<F, M>[number]["$immutableValidator"],
     fieldData: Map<keyof F[number], V<F[number]>>
   ) {
-    const metadata = this.getMeta();
-    const source = $validator!(
-      fieldData,
-      metadata,
-      this.getFormData() as List<Map<keyof F[number], V<F[number]>>>
-    );
+    const source = $validator!(fieldData, this.getMeta, this.getFormData);
     return source instanceof Promise ? from(source) : source;
   }
 
@@ -195,7 +190,7 @@ export class ImmutableFormControllerImpl<
     this.metadata$?.next(reduced);
   }
 
-  private listenToExcludedAll(fields: FormStubs<F>) {
+  private listenToExcludedAll(fields: FormStubs<F, M>) {
     this.subscriptions.pushAll(
       fields
         .filter(
@@ -285,7 +280,7 @@ export class ImmutableFormControllerImpl<
   }
 
   private appendDataByFields(
-    fields: FormStubs<F>,
+    fields: FormStubs<F, M>,
     data: List<Map<K<F[number]>, V<F[number]>>>
   ) {
     return data.withMutations((mutation) => {
@@ -420,9 +415,7 @@ export class ImmutableFormControllerImpl<
   @bound
   getFormData<CompareAts extends readonly number[] = number[]>(
     fields?: F[CompareAts[number]]["field"][]
-  ):
-    | List<Map<PK<F[CompareAts[number]]>, PV<F[CompareAts[number]]>>>
-    | ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]> {
+  ): List<Map<keyof F[number], V<F[number]>>> {
     return this.safeExecute((connector) => {
       const casted = this.cast(connector);
       const form = casted.getState(this.id)!;
@@ -488,7 +481,7 @@ export class ImmutableFormControllerImpl<
   }
 
   @bound
-  appendFormData(fields: FormStubs<F>): this {
+  appendFormData(fields: FormStubs<F, M>): this {
     this.safeExecute((connector) => {
       const casted = this.cast(connector);
       const data = this.appendDataByFields(fields, casted.getState(this.id));
@@ -681,7 +674,7 @@ export class ImmutableFormControllerImpl<
   changeFieldType<N extends number>(
     field: F[N]["field"],
     type: DatumType,
-    $immutableValidator?: $ImmutableValidator<F>
+    $immutableValidator?: $ImmutableValidator<F, M>
   ): this {
     this.safeExecute((connector) => {
       const casted = this.cast(connector);

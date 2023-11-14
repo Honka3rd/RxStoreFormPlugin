@@ -20,8 +20,8 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     private getSingleSource;
     private connect;
     private listenToExcludedAll;
-    setFields(fields: FormStubs<F>): void;
-    getFields(): FormStubs<F>;
+    setFields(fields: FormStubs<F, M>): void;
+    getFields(): FormStubs<F, M>;
     setMetaComparator(metaComparator: (meta1: Partial<M>, meta2: Partial<M>) => boolean): void;
     setMetaComparatorMap(metaComparatorMap: {
         [K in keyof Partial<M>]: (m1: Partial<M>[K], m2: Partial<M>[K]) => boolean;
@@ -53,13 +53,13 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     private cloneMeta;
     private cast;
     initiator: Initiator<F>;
-    getFormData<Ats extends Readonly<number[]> = number[]>(fields?: F[Ats[number]]["field"][]): ReturnType<Record<S, () => F>[S]> | F[Ats[number]][];
-    getMeta(): Partial<M>;
+    getFormData<Ats extends Readonly<number[]> = number[]>(fields?: F[Ats[number]]["field"][]): F;
+    getMeta(): M;
     getDatum<At extends number = number>(field: F[At]["field"]): F[At] | undefined;
     getDatumValue<At extends number = number>(field: F[At]["field"]): F[At]["value"] | undefined;
     getClonedMetaByField<CF extends keyof Partial<M>>(field: CF): Partial<M>[CF];
     getClonedMeta(): Partial<M>;
-    getFieldMeta<At extends number = number>(field: F[At]["field"]): Partial<M>[F[At]["field"]];
+    getFieldMeta<At extends number = number>(field: F[At]["field"]): M[F[At]["field"]];
     getFieldsMeta<KS extends Array<keyof M>>(fields: KS): Partial<M>;
     observeMeta(callback: (meta: Partial<M>) => void): () => void | undefined;
     observeMetaByField<K extends keyof M>(field: K, callback: (metaOne: Partial<M>[K]) => void): () => void | undefined;
@@ -70,13 +70,13 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     startValidation(lazy?: boolean): (() => void) | undefined;
     changeFormValue<N extends number>(field: F[N]["field"], value: F[N]["value"]): this;
     hoverFormField<N extends number>(field: F[N]["field"], hoverOrNot: boolean): this;
-    changeFieldType<N extends number>(field: F[N]["field"], type: DatumType, $validator?: $Validator): this;
+    changeFieldType<N extends number>(field: F[N]["field"], type: DatumType, $validator?: $Validator<F[N], M, F>): this;
     resetFormDatum<N extends number>(field: F[N]["field"]): this;
     resetFormAll(): this;
     touchFormField<N extends number>(field: F[N]["field"], touchOrNot: boolean): this;
     emptyFormField<N extends number>(field: F[N]["field"]): this;
     focusFormField<N extends number>(field: F[N]["field"], focusOrNot: boolean): this;
-    appendFormData(fields: FormStubs<F>): this;
+    appendFormData(fields: FormStubs<F, M>): this;
     removeFormData(fields: Array<F[number]["field"]>): this;
     setMetadata(meta: Partial<M>): this;
     setMetaByField<K extends keyof M>(field: K, metaOne: Partial<M>[K]): this;

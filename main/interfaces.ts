@@ -72,32 +72,47 @@ export interface AsyncValidationNConfig extends AsyncValidationConfig {
   compare?: (var1: any, var2: any) => boolean;
 }
 
-export type $Validator = <
-  A extends FormControlBasicDatum,
-  B extends Partial<Record<C[number]["field"], FormControlBasicMetadata>>,
-  C extends FormControlData
->(
-  fieldData: A,
-  metadata: B,
-  formData: C
-) => Observable<B> | Promise<B>;
+export type $Validator<
+  F extends FormControlBasicDatum,
+  M extends Partial<Record<F["field"], FormControlBasicMetadata>>,
+  D extends FormControlData
+> = (
+  fieldData: F,
+  metadata: () => M,
+  formData: () => D
+) => Observable<M> | Promise<M>;
 
-export type $ImmutableValidator<F extends FormControlBasicDatum[]> = <
-  A extends Map<keyof F[number], V<F[number]>>,
-  B extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
-  C extends List<Map<keyof F[number], V<F[number]>>>
->(
-  fieldData: A,
-  metadata: ImmutableMeta<F, B>,
-  formData: C
-) => Observable<ImmutableMeta<F, B>> | Promise<ImmutableMeta<F, B>>;
+export type $ImmutableValidator<
+  F extends FormControlBasicDatum[],
+  M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>
+> = (
+  fieldData: Map<keyof F[number], V<F[number]>>,
+  metadata: () => ImmutableMeta<F, M>,
+  formData: () => List<Map<keyof F[number], V<F[number]>>>
+) =>
+  | Observable<
+      ImmutableMeta<
+        F,
+        Partial<Record<F[number]["field"], FormControlBasicMetadata>>
+      >
+    >
+  | Promise<
+      ImmutableMeta<
+        F,
+        Partial<Record<F[number]["field"], FormControlBasicMetadata>>
+      >
+    >;
 
-export type FormStubs<F extends FormControlBasicDatum[]> = Array<{
-  field: F[number]["field"];
-  defaultValue?: F[number]["value"];
+export type FormStubs<
+  F extends FormControlBasicDatum[],
+  M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>,
+  I extends number = number
+> = Array<{
+  field: F[I]["field"];
+  defaultValue?: F[I]["value"];
   type?: DatumType;
-  $validator?: $Validator;
-  $immutableValidator?: $ImmutableValidator<F>;
+  $validator?: $Validator<F[I], M, F>;
+  $immutableValidator?: $ImmutableValidator<F, M>;
   lazy?: boolean;
   debounceDuration?: number;
   datumKeys?: Array<keyof F[number]>;
@@ -116,9 +131,9 @@ export interface FormController<
     ) => Observable<Partial<M>> | Promise<Partial<M>>
   ): void;
 
-  setFields(fields: FormStubs<F>): void;
+  setFields(fields: FormStubs<F, M>): void;
 
-  getFields(): FormStubs<F>;
+  getFields(): FormStubs<F, M>;
 
   setMetaComparator(
     metaComparator: (meta1: Partial<M>, meta2: Partial<M>) => boolean
@@ -182,7 +197,7 @@ export interface FormController<
   changeFieldType<N extends number>(
     field: F[N]["field"],
     type: DatumType,
-    $validator?: $Validator
+    $validator?: $Validator<F[N], M, F>
   ): this;
 
   resetFormDatum<N extends number>(field: F[N]["field"]): this;
@@ -191,7 +206,7 @@ export interface FormController<
 
   resetFormAll(): this;
 
-  appendFormData(fields: FormStubs<F>): this;
+  appendFormData(fields: FormStubs<F, M>): this;
 
   removeFormData(fields: Array<F[number]["field"]>): this;
 
@@ -248,7 +263,7 @@ export interface FormController<
 
   getFormData<Ats extends Readonly<number[]> = number[]>(
     fields?: F[Ats[number]]["field"][]
-  ): ReturnType<Record<S, () => F>[S]> | F[Ats[number]][];
+  ): F;
 
   toFormData(): ToFormData;
 }
@@ -292,7 +307,7 @@ export interface ImmutableFormController<
     ) => Observable<ImmutableMeta<F, M>> | Promise<ImmutableMeta<F, M>>
   ): void;
 
-  setFields(fields: FormStubs<F>): void;
+  setFields(fields: FormStubs<F, M>): void;
 
   setDefaultMeta(meta: Partial<M>): void;
 
@@ -345,14 +360,14 @@ export interface ImmutableFormController<
   changeFieldType<N extends number>(
     field: F[N]["field"],
     type: DatumType,
-    $immutableValidator?: $ImmutableValidator<F>
+    $immutableValidator?: $ImmutableValidator<F, M>
   ): this;
 
   resetFormDatum<N extends number>(field: F[N]["field"]): this;
 
   resetFormAll(): this;
 
-  appendFormData(fields: FormStubs<F>): this;
+  appendFormData(fields: FormStubs<F, M>): this;
 
   removeFormData(fields: Array<F[number]["field"]>): this;
 
@@ -406,9 +421,7 @@ export interface ImmutableFormController<
 
   getFormData<Ats extends number[] = number[]>(
     fields?: F[Ats[number]]["field"][]
-  ):
-    | List<Map<PK<F[Ats[number]]>, PV<F[Ats[number]]>>>
-    | ReturnType<Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]>;
+  ): List<Map<PK<F[Ats[number]]>, PV<F[Ats[number]]>>>;
 
   getDatum<At extends number = number>(
     field: F[At]["field"]
