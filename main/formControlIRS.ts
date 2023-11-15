@@ -59,7 +59,7 @@ export class ImmutableFormControllerImpl<
 
   asyncValidator?: (
     formData: List<Map<keyof F[number], V<F[number]>>>,
-    meta: ImmutableMeta<F, M>
+    meta: () => ImmutableMeta<F, M>
   ) => Observable<ImmutableMeta<F, M>> | Promise<ImmutableMeta<F, M>>;
 
   constructor(
@@ -371,9 +371,8 @@ export class ImmutableFormControllerImpl<
         ),
         distinctUntilChanged((var1, var2) => is(var1, var2)),
         connect((formData) => {
-          const oldMeta = this.getMeta();
           if (!formData.size) {
-            return of(oldMeta);
+            return of(this.getMeta());
           }
           this.commitMetaAsyncIndicator(
             this.getAsyncFields(),
@@ -383,7 +382,7 @@ export class ImmutableFormControllerImpl<
             this.getFormData() as ReturnType<
               Record<S, () => List<Map<keyof F[number], V<F[number]>>>>[S]
             >,
-            oldMeta
+            this.getMeta
           );
           const reduced$ = this.isPromise(async$) ? from(async$) : async$;
           return reduced$.pipe(
@@ -727,7 +726,7 @@ export class ImmutableFormControllerImpl<
   setBulkAsyncValidator(
     asyncValidator: (
       formData: List<Map<keyof F[number], V<F[number]>>>,
-      meta: ImmutableMeta<F, M>
+      meta: () => ImmutableMeta<F, M>
     ) => Observable<ImmutableMeta<F, M>> | Promise<ImmutableMeta<F, M>>
   ): void {
     if (!this.asyncValidator) {

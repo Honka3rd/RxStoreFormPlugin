@@ -78,7 +78,7 @@ export type $Validator<
   D extends FormControlData
 > = (
   fieldData: F,
-  metadata: () => M,
+  metadata: () => Partial<M>,
   formData: () => D
 ) => Observable<M> | Promise<M>;
 
@@ -127,7 +127,7 @@ export interface FormController<
   setBulkAsyncValidator(
     asyncValidator: (
       formData: F,
-      metadata: Partial<M>
+      metadata: () => Partial<M>
     ) => Observable<Partial<M>> | Promise<Partial<M>>
   ): void;
 
@@ -181,7 +181,7 @@ export interface FormController<
 
   asyncValidator?: (
     formData: F,
-    metadata: Partial<M>
+    metadata: () => M
   ) => Observable<Partial<M>> | Promise<Partial<M>>;
 
   selector: () => S;
@@ -303,7 +303,7 @@ export interface ImmutableFormController<
   setBulkAsyncValidator(
     asyncValidator: (
       formData: List<Map<keyof F[number], V<F[number]>>>,
-      meta: ImmutableMeta<F, M>
+      meta: () => ImmutableMeta<F, M>
     ) => Observable<ImmutableMeta<F, M>> | Promise<ImmutableMeta<F, M>>
   ): void;
 
@@ -346,7 +346,7 @@ export interface ImmutableFormController<
 
   asyncValidator?(
     formData: List<Map<keyof F[number], V<F[number]>>>,
-    meta: ImmutableMeta<F, M>
+    meta: () => ImmutableMeta<F, M>
   ): Observable<ImmutableMeta<F, M>> | Promise<ImmutableMeta<F, M>>;
 
   startValidation(): (() => void) | undefined;

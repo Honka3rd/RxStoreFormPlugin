@@ -36,7 +36,7 @@ class NRFormBuilder<
   setBulkAsyncValidator(
     asyncValidator: (
       formData: F,
-      metadata: Partial<M>
+      metadata: () => Partial<M>
     ) => Observable<Partial<M>> | Promise<Partial<M>>
   ) {
     this.NRF.setBulkAsyncValidator(asyncValidator);
@@ -117,7 +117,7 @@ class IRFormBuilder<
   setBulkAsyncValidator(
     asyncValidator: (
       formData: List<Map<keyof F[number], V<F[number]>>>,
-      meta: ImmutableMeta<F, M>
+      meta: () => ImmutableMeta<F, M>
     ) =>
       | Observable<ImmutableMeta<F, M>>
       | Promise<ImmutableMeta<F, M>>

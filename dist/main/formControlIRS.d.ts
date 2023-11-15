@@ -10,7 +10,7 @@ export declare class ImmutableFormControllerImpl<F extends FormControlData, M ex
     private metadata$?;
     private fields?;
     private defaultMeta?;
-    asyncValidator?: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: ImmutableMeta<F, M>) => Observable<ImmutableMeta<F, M>> | Promise<ImmutableMeta<F, M>>;
+    asyncValidator?: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: () => ImmutableMeta<F, M>) => Observable<ImmutableMeta<F, M>> | Promise<ImmutableMeta<F, M>>;
     constructor(id: S, validator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: ImmutableMeta<F, M>) => ImmutableMeta<F, M>, subscriptions: Subscriptions);
     setFields(fields: FormStubs<F, M>): void;
     getFields(): FormStubs<F, M>;
@@ -52,7 +52,7 @@ export declare class ImmutableFormControllerImpl<F extends FormControlData, M ex
     getFieldMeta<N extends number = number, E extends Any = Any>(field: F[N]["field"]): ImmutableMetaDatum<E>;
     changeFieldType<N extends number>(field: F[N]["field"], type: DatumType, $immutableValidator?: $ImmutableValidator<F, M>): this;
     getFieldsMeta(fields: F[number]["field"][]): ImmutableMeta<F, M>;
-    setBulkAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: ImmutableMeta<F, M>) => Observable<ImmutableMeta<F, M>> | Promise<ImmutableMeta<F, M>>): void;
+    setBulkAsyncValidator(asyncValidator: (formData: List<Map<keyof F[number], V<F[number]>>>, meta: () => ImmutableMeta<F, M>) => Observable<ImmutableMeta<F, M>> | Promise<ImmutableMeta<F, M>>): void;
     changeFormValue<N extends number>(field: F[N]["field"], value: F[N]["value"]): this;
     touchFormField<N extends number>(field: F[N]["field"], touchOrNot: boolean): this;
     emptyFormField<N extends number>(field: F[N]["field"]): this;

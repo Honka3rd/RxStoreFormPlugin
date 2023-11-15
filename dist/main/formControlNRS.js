@@ -112,7 +112,7 @@ let FormControllerImpl = (() => {
                     .pipe((0, rxjs_1.map)((states) => states[this.id]), (0, rxjs_1.distinctUntilChanged)(this.getComparator(this.cast(this.connector))), (0, rxjs_1.map)((formData) => formData.find((f) => f.field === field)), ...datumKeys.map((key) => (0, rxjs_1.distinctUntilKeyChanged)(key)), (0, rxjs_1.distinctUntilChanged)(comparator));
             }
             getSingleSource($validator, fieldData) {
-                const source = $validator(fieldData, this.getMeta, this.getFormData);
+                const source = $validator(fieldData, () => this.cloneMeta(this.getMeta()), this.getFormData);
                 return source instanceof Promise ? (0, rxjs_1.from)(source) : source;
             }
             connect(lazy) {
@@ -302,11 +302,10 @@ let FormControllerImpl = (() => {
                     .pipe((0, rxjs_1.map)((states) => states[this.id].filter(({ type }) => type === interfaces_1.DatumType.ASYNC)), (0, rxjs_1.distinctUntilChanged)(this.getComparator(connector)), (0, rxjs_1.tap)((formData) => {
                     this.commitMetaAsyncIndicator(formData.map(({ field }) => field), interfaces_1.AsyncState.PENDING);
                 }), this.connect(lazy)((formData) => {
-                    const oldMeta = this.getMeta();
                     if (!formData.length) {
-                        return (0, rxjs_1.of)(oldMeta);
+                        return (0, rxjs_1.of)(this.cloneMeta(this.getMeta()));
                     }
-                    const async$ = this.asyncValidator(this.getFormData(), oldMeta);
+                    const async$ = this.asyncValidator(this.getFormData(), () => this.cloneMeta(this.getMeta()));
                     const reduced$ = async$ instanceof Promise ? (0, rxjs_1.from)(async$) : async$;
                     return reduced$.pipe((0, rxjs_1.map)((meta) => {
                         return Object.assign(Object.assign(Object.assign({}, this.getMeta()), meta), this.getExcludedMeta(connector));

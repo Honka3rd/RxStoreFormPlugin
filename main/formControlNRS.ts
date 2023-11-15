@@ -47,7 +47,7 @@ class FormControllerImpl<
   private metadata$?: BehaviorSubject<Partial<M>>;
   public asyncValidator?: (
     formData: F,
-    metadata: Partial<M>
+    metadata: () => Partial<M>
   ) => Observable<Partial<M>> | Promise<Partial<M>>;
   private fields?: FormStubs<F, M>;
   private metaComparator?: (meta1: Partial<M>, meta2: Partial<M>) => boolean;
@@ -77,7 +77,7 @@ class FormControllerImpl<
   setBulkAsyncValidator(
     asyncValidator: (
       formData: F,
-      metadata: Partial<M>
+      metadata: () => Partial<M>
     ) => Observable<Partial<M>> | Promise<Partial<M>>
   ) {
     if (!this.asyncValidator) {
@@ -110,7 +110,7 @@ class FormControllerImpl<
   ) {
     const source = $validator!(
       fieldData,
-      this.getMeta,
+      () => this.cloneMeta(this.getMeta()),
       this.getFormData
     );
     return source instanceof Promise ? from(source) : source;
@@ -421,13 +421,12 @@ class FormControllerImpl<
           );
         }),
         this.connect(lazy)((formData) => {
-          const oldMeta = this.getMeta();
           if (!formData.length) {
-            return of(oldMeta);
+            return of(this.cloneMeta(this.getMeta()));
           }
           const async$ = this.asyncValidator!(
             this.getFormData() as ReturnType<Record<S, () => F>[S]>,
-            oldMeta
+            () => this.cloneMeta(this.getMeta())
           );
           const reduced$ = async$ instanceof Promise ? from(async$) : async$;
           return reduced$.pipe(
@@ -559,7 +558,7 @@ class FormControllerImpl<
 
   @bound
   getMeta() {
-    return { ...this.metadata$?.value } as M;
+    return { ...this.metadata$?.value } as Partial<M>;
   }
 
   @bound

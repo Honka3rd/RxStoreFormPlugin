@@ -6,7 +6,7 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     validator: (formData: F, metadata: Partial<M>) => Partial<M>;
     private subscriptions;
     private metadata$?;
-    asyncValidator?: (formData: F, metadata: Partial<M>) => Observable<Partial<M>> | Promise<Partial<M>>;
+    asyncValidator?: (formData: F, metadata: () => Partial<M>) => Observable<Partial<M>> | Promise<Partial<M>>;
     private fields?;
     private metaComparator?;
     private metaComparatorMap?;
@@ -15,7 +15,7 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     private defaultMeta?;
     private asyncConfig;
     constructor(id: S, validator: (formData: F, metadata: Partial<M>) => Partial<M>, subscriptions: Subscriptions);
-    setBulkAsyncValidator(asyncValidator: (formData: F, metadata: Partial<M>) => Observable<Partial<M>> | Promise<Partial<M>>): void;
+    setBulkAsyncValidator(asyncValidator: (formData: F, metadata: () => Partial<M>) => Observable<Partial<M>> | Promise<Partial<M>>): void;
     private getFieldSource;
     private getSingleSource;
     private connect;
@@ -54,12 +54,12 @@ declare class FormControllerImpl<F extends FormControlData, M extends Partial<Re
     private cast;
     initiator: Initiator<F>;
     getFormData<Ats extends Readonly<number[]> = number[]>(fields?: F[Ats[number]]["field"][]): F;
-    getMeta(): M;
+    getMeta(): Partial<M>;
     getDatum<At extends number = number>(field: F[At]["field"]): F[At] | undefined;
     getDatumValue<At extends number = number>(field: F[At]["field"]): F[At]["value"] | undefined;
     getClonedMetaByField<CF extends keyof Partial<M>>(field: CF): Partial<M>[CF];
     getClonedMeta(): Partial<M>;
-    getFieldMeta<At extends number = number>(field: F[At]["field"]): M[F[At]["field"]];
+    getFieldMeta<At extends number = number>(field: F[At]["field"]): Partial<M>[F[At]["field"]];
     getFieldsMeta<KS extends Array<keyof M>>(fields: KS): Partial<M>;
     observeMeta(callback: (meta: Partial<M>) => void): () => void | undefined;
     observeMetaByField<K extends keyof M>(field: K, callback: (metaOne: Partial<M>[K]) => void): () => void | undefined;

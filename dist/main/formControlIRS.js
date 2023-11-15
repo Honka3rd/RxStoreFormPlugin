@@ -266,12 +266,11 @@ exports.ImmutableFormControllerImpl = (() => {
                 const subscription = connector
                     .getDataSource()
                     .pipe((0, rxjs_1.debounceTime)(this.asyncConfig.debounceDuration), (0, rxjs_1.map)((states) => states[this.id].filter((datum) => datum.get("type") === interfaces_1.DatumType.ASYNC)), (0, rxjs_1.distinctUntilChanged)((var1, var2) => (0, immutable_1.is)(var1, var2)), connect((formData) => {
-                    const oldMeta = this.getMeta();
                     if (!formData.size) {
-                        return (0, rxjs_1.of)(oldMeta);
+                        return (0, rxjs_1.of)(this.getMeta());
                     }
                     this.commitMetaAsyncIndicator(this.getAsyncFields(), interfaces_1.AsyncState.PENDING);
-                    const async$ = this.asyncValidator(this.getFormData(), oldMeta);
+                    const async$ = this.asyncValidator(this.getFormData(), this.getMeta);
                     const reduced$ = this.isPromise(async$) ? (0, rxjs_1.from)(async$) : async$;
                     return reduced$.pipe((0, rxjs_1.catchError)(() => {
                         return (0, rxjs_1.of)(this.getChangedMetaAsync(this.getAsyncFields(), interfaces_1.AsyncState.ERROR));
