@@ -80,7 +80,7 @@ export type $Validator<
   fieldData: F,
   metadata: () => Partial<M>,
   formData: () => D
-) => Observable<M> | Promise<M>;
+) => Observable<Partial<M>> | Promise<Partial<M>>;
 
 export type $ImmutableValidator<
   F extends FormControlBasicDatum[],

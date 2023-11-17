@@ -53,7 +53,7 @@ export type AsyncValidationConfig = {
 export interface AsyncValidationNConfig extends AsyncValidationConfig {
     compare?: (var1: any, var2: any) => boolean;
 }
-export type $Validator<F extends FormControlBasicDatum, M extends Partial<Record<F["field"], FormControlBasicMetadata>>, D extends FormControlData> = (fieldData: F, metadata: () => Partial<M>, formData: () => D) => Observable<M> | Promise<M>;
+export type $Validator<F extends FormControlBasicDatum, M extends Partial<Record<F["field"], FormControlBasicMetadata>>, D extends FormControlData> = (fieldData: F, metadata: () => Partial<M>, formData: () => D) => Observable<Partial<M>> | Promise<Partial<M>>;
 export type $ImmutableValidator<F extends FormControlBasicDatum[], M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>> = (fieldData: Map<keyof F[number], V<F[number]>>, metadata: () => ImmutableMeta<F, M>, formData: () => List<Map<keyof F[number], V<F[number]>>>) => Observable<ImmutableMeta<F, Partial<Record<F[number]["field"], FormControlBasicMetadata>>>> | Promise<ImmutableMeta<F, Partial<Record<F[number]["field"], FormControlBasicMetadata>>>>;
 export type FormStubs<F extends FormControlBasicDatum[], M extends Partial<Record<F[number]["field"], FormControlBasicMetadata>>, I extends number = number> = Array<{
     field: F[I]["field"];
